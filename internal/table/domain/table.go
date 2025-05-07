@@ -8,9 +8,9 @@ type Table struct {
 	Seats       int32  `json:"seats"`
 }
 
-type CreateTableParam struct {
-	TableNumber int32
-	Seats       int32
+type TableStatus struct {
+	ID       int64
+	StatusID int64
 }
 
 type SearchTables struct {

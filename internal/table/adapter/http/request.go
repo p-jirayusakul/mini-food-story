@@ -1,8 +1,17 @@
 package http
 
-type createTable struct {
+type Table struct {
 	TableNumber int32 `json:"tableNumber" validate:"required,gte=1"`
 	Seats       int32 `json:"seats" validate:"required,gte=1"`
+}
+
+type updateTableStatus struct {
+	StatusID int64 `json:"statusID" validate:"required"`
+}
+
+type TableSession struct {
+	TableID        int64 `json:"tableID" validate:"required"`
+	NumberOfPeople int32 `json:"numberOfPeople" validate:"required,gte=1"`
 }
 
 type SearchTable struct {

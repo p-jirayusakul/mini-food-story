@@ -3,6 +3,43 @@ INSERT INTO public.tables(id, table_number, status_id, seats)
 VALUES ($1, $2, (SELECT id FROM public.md_table_statuses WHERE code = 'DISABLED'), $3)
 RETURNING id;
 
+-- name: UpdateTables :exec
+UPDATE public.tables
+SET table_number=$2, seats=$3, updated_at = NOW()
+WHERE id=$1;
+
+-- name: IsTableExists :one
+SELECT COUNT(id) > 0 FROM public.tables WHERE id = $1;
+
+-- name: IsTableAvailableOrReserved :one
+SELECT COUNT(id) > 0 FROM public.tables WHERE id = sqlc.arg(id)::bigint
+AND (status_id = (select id from public.md_table_statuses WHERE code = 'AVAILABLE') OR status_id = (select id from public.md_table_statuses WHERE code = 'RESERVED'));
+
+-- name: UpdateTablesStatus :exec
+UPDATE public.tables
+SET status_id=$2, updated_at = NOW()
+WHERE id=$1;
+
+-- name: UpdateTablesStatusAvailable :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'AVAILABLE'), updated_at = NOW()
+WHERE id=$1;
+
+-- name: UpdateTablesStatusReserved :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'RESERVED'), updated_at = NOW()
+WHERE id=$1;
+
+-- name: UpdateTablesStatusDisabled :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'DISABLED'), updated_at = NOW()
+WHERE id=$1;
+
+-- name: UpdateTablesStatusOccupied :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'OCCUPIED'), updated_at = NOW()
+WHERE id=sqlc.arg(id)::bigint;
+
 -- name: SearchTables :many
 SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", t.seats
 FROM public.tables t

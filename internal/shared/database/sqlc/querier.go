@@ -6,17 +6,28 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
+	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) (pgtype.UUID, error)
 	CreateTableStatus(ctx context.Context, arg CreateTableStatusParams) (int64, error)
 	GetTotalPageQuickSearchTables(ctx context.Context, numberOfPeople int32) (int64, error)
 	GetTotalPageSearchTables(ctx context.Context, arg GetTotalPageSearchTablesParams) (int64, error)
 	Health(ctx context.Context) (int32, error)
+	IsTableAvailableOrReserved(ctx context.Context, id int64) (bool, error)
+	IsTableExists(ctx context.Context, id int64) (bool, error)
 	ListTableStatus(ctx context.Context) ([]*ListTableStatusRow, error)
 	QuickSearchTables(ctx context.Context, arg QuickSearchTablesParams) ([]*QuickSearchTablesRow, error)
 	SearchTables(ctx context.Context, arg SearchTablesParams) ([]*SearchTablesRow, error)
+	UpdateTables(ctx context.Context, arg UpdateTablesParams) error
+	UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error
+	UpdateTablesStatusAvailable(ctx context.Context, dollar_1 pgtype.Int8) error
+	UpdateTablesStatusDisabled(ctx context.Context, dollar_1 pgtype.Int8) error
+	UpdateTablesStatusOccupied(ctx context.Context, id int64) error
+	UpdateTablesStatusReserved(ctx context.Context, dollar_1 pgtype.Int8) error
 }
 
 var _ Querier = (*Queries)(nil)

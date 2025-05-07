@@ -5,8 +5,54 @@
 package database
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
+
+type TableSessionStatus string
+
+const (
+	TableSessionStatusActive  TableSessionStatus = "active"
+	TableSessionStatusClosed  TableSessionStatus = "closed"
+	TableSessionStatusExpired TableSessionStatus = "expired"
+)
+
+func (e *TableSessionStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = TableSessionStatus(s)
+	case string:
+		*e = TableSessionStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for TableSessionStatus: %T", src)
+	}
+	return nil
+}
+
+type NullTableSessionStatus struct {
+	TableSessionStatus TableSessionStatus `json:"table_session_status"`
+	Valid              bool               `json:"valid"` // Valid is true if TableSessionStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullTableSessionStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.TableSessionStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.TableSessionStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullTableSessionStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.TableSessionStatus), nil
+}
 
 type MdCategory struct {
 	ID        int64            `json:"id"`
@@ -82,4 +128,15 @@ type Table struct {
 	Seats       int32            `json:"seats"`
 	CreatedAt   pgtype.Timestamp `json:"created_at"`
 	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+}
+
+type TableSession struct {
+	ID             int64                  `json:"id"`
+	TableID        int64                  `json:"table_id"`
+	SessionID      pgtype.UUID            `json:"session_id"`
+	NumberOfPeople int32                  `json:"number_of_people"`
+	Status         NullTableSessionStatus `json:"status"`
+	StartedAt      pgtype.Timestamp       `json:"started_at"`
+	ExpireAt       pgtype.Timestamp       `json:"expire_at"`
+	EndedAt        pgtype.Timestamp       `json:"ended_at"`
 }

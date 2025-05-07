@@ -1,3 +1,9 @@
+CREATE TYPE "table_session_status" AS ENUM (
+    'active',
+    'closed',
+    'expired'
+    );
+
 CREATE TABLE "md_table_statuses" (
                                      "id" bigint UNIQUE PRIMARY KEY NOT NULL,
                                      "code" varchar(15) UNIQUE NOT NULL,
@@ -33,6 +39,17 @@ CREATE TABLE "tables" (
                           "seats" int NOT NULL DEFAULT 0,
                           "created_at" timestamp NOT NULL DEFAULT 'NOW()',
                           "updated_at" timestamp
+);
+
+CREATE TABLE "table_session" (
+                                 "id" bigint UNIQUE PRIMARY KEY NOT NULL,
+                                 "table_id" bigint NOT NULL,
+                                 "session_id" uuid NOT NULL,
+                                 "number_of_people" int NOT NULL DEFAULT 1,
+                                 "status" table_session_status,
+                                 "started_at" timestamp NOT NULL DEFAULT 'NOW()',
+                                 "expire_at" timestamp NOT NULL,
+                                 "ended_at" timestamp
 );
 
 CREATE TABLE "products" (
@@ -89,6 +106,12 @@ CREATE INDEX ON "tables" ("table_number");
 
 CREATE INDEX ON "tables" ("status_id");
 
+CREATE INDEX ON "table_session" ("id");
+
+CREATE INDEX ON "table_session" ("table_id");
+
+CREATE INDEX ON "table_session" ("session_id");
+
 CREATE INDEX ON "products" ("id");
 
 CREATE INDEX ON "products" ("name");
@@ -114,6 +137,8 @@ CREATE INDEX ON "order_items" ("status_id");
 COMMENT ON COLUMN "order_items"."prepared_at" IS 'เวลาที่ทำอาหารเสร็จ';
 
 ALTER TABLE "tables" ADD FOREIGN KEY ("status_id") REFERENCES "md_table_statuses" ("id");
+
+ALTER TABLE "table_session" ADD FOREIGN KEY ("table_id") REFERENCES "tables" ("id");
 
 ALTER TABLE "products" ADD FOREIGN KEY ("categories") REFERENCES "md_categories" ("id");
 

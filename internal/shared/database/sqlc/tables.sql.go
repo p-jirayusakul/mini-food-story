@@ -70,6 +70,29 @@ func (q *Queries) GetTotalPageSearchTables(ctx context.Context, arg GetTotalPage
 	return count, err
 }
 
+const isTableAvailableOrReserved = `-- name: IsTableAvailableOrReserved :one
+SELECT COUNT(id) > 0 FROM public.tables WHERE id = $1::bigint
+AND (status_id = (select id from public.md_table_statuses WHERE code = 'AVAILABLE') OR status_id = (select id from public.md_table_statuses WHERE code = 'RESERVED'))
+`
+
+func (q *Queries) IsTableAvailableOrReserved(ctx context.Context, id int64) (bool, error) {
+	row := q.db.QueryRow(ctx, isTableAvailableOrReserved, id)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const isTableExists = `-- name: IsTableExists :one
+SELECT COUNT(id) > 0 FROM public.tables WHERE id = $1
+`
+
+func (q *Queries) IsTableExists(ctx context.Context, id int64) (bool, error) {
+	row := q.db.QueryRow(ctx, isTableExists, id)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const quickSearchTables = `-- name: QuickSearchTables :many
 SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", t.seats
 FROM public.tables t
@@ -230,4 +253,81 @@ func (q *Queries) SearchTables(ctx context.Context, arg SearchTablesParams) ([]*
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateTables = `-- name: UpdateTables :exec
+UPDATE public.tables
+SET table_number=$2, seats=$3, updated_at = NOW()
+WHERE id=$1
+`
+
+type UpdateTablesParams struct {
+	ID          int64 `json:"id"`
+	TableNumber int32 `json:"table_number"`
+	Seats       int32 `json:"seats"`
+}
+
+func (q *Queries) UpdateTables(ctx context.Context, arg UpdateTablesParams) error {
+	_, err := q.db.Exec(ctx, updateTables, arg.ID, arg.TableNumber, arg.Seats)
+	return err
+}
+
+const updateTablesStatus = `-- name: UpdateTablesStatus :exec
+UPDATE public.tables
+SET status_id=$2, updated_at = NOW()
+WHERE id=$1
+`
+
+type UpdateTablesStatusParams struct {
+	ID       int64 `json:"id"`
+	StatusID int64 `json:"status_id"`
+}
+
+func (q *Queries) UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error {
+	_, err := q.db.Exec(ctx, updateTablesStatus, arg.ID, arg.StatusID)
+	return err
+}
+
+const updateTablesStatusAvailable = `-- name: UpdateTablesStatusAvailable :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'AVAILABLE'), updated_at = NOW()
+WHERE id=$1
+`
+
+func (q *Queries) UpdateTablesStatusAvailable(ctx context.Context, dollar_1 pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusAvailable, dollar_1)
+	return err
+}
+
+const updateTablesStatusDisabled = `-- name: UpdateTablesStatusDisabled :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'DISABLED'), updated_at = NOW()
+WHERE id=$1
+`
+
+func (q *Queries) UpdateTablesStatusDisabled(ctx context.Context, dollar_1 pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusDisabled, dollar_1)
+	return err
+}
+
+const updateTablesStatusOccupied = `-- name: UpdateTablesStatusOccupied :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'OCCUPIED'), updated_at = NOW()
+WHERE id=$1::bigint
+`
+
+func (q *Queries) UpdateTablesStatusOccupied(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusOccupied, id)
+	return err
+}
+
+const updateTablesStatusReserved = `-- name: UpdateTablesStatusReserved :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'RESERVED'), updated_at = NOW()
+WHERE id=$1
+`
+
+func (q *Queries) UpdateTablesStatusReserved(ctx context.Context, dollar_1 pgtype.Int8) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusReserved, dollar_1)
+	return err
 }

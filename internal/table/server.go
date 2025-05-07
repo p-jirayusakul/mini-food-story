@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"food-story/internal/shared/snowflakeid"
+	"food-story/internal/table/config"
 	"food-story/internal/table/usecase"
 	"food-story/pkg/common"
 	dbcfg "food-story/pkg/config"
@@ -29,7 +30,7 @@ type FiberServer struct {
 }
 
 func New() *FiberServer {
-	configApp := InitConfig(EnvFile)
+	configApp := config.InitConfig(EnvFile)
 	app := fiber.New(fiber.Config{
 		ServerHeader:             "mini-food-story",
 		AppName:                  "mini-food-story",
@@ -110,8 +111,8 @@ func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
 	return dbConn.Ping(ctx) == nil
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp Config) {
-	tableUseCase := usecase.NewUsecase(store, snowflakeNode)
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config) {
+	tableUseCase := usecase.NewUsecase(configApp, store, snowflakeNode)
 	tablehd.NewHTTPHandler(router, tableUseCase, validator)
 }
 
