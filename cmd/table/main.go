@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"food-story/internal/server"
+	"food-story/internal/table"
 	"log"
 	"os"
 	"os/signal"
@@ -14,7 +14,7 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
+func gracefulShutdown(fiberServer *table.FiberServer, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -29,7 +29,11 @@ func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := fiberServer.ShutdownWithContext(ctx); err != nil {
+
+	// close database
+	fiberServer.CloseDB()
+
+	if err := fiberServer.App.ShutdownWithContext(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
 	}
 
@@ -41,16 +45,14 @@ func gracefulShutdown(fiberServer *server.FiberServer, done chan bool) {
 
 func main() {
 
-	server := server.New()
-
-	server.RegisterFiberRoutes()
+	server := table.New()
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
 	go func() {
 		port, _ := strconv.Atoi(os.Getenv("PORT"))
-		err := server.Listen(fmt.Sprintf(":%d", port))
+		err := server.App.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {
 			panic(fmt.Sprintf("http server error: %s", err))
 		}
