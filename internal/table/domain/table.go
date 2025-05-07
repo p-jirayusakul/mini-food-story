@@ -1,7 +1,7 @@
 package domain
 
 type Table struct {
-	ID          int64  `json:"id"`
+	ID          string `json:"id"`
 	TableNumber int32  `json:"tableNumber"`
 	Status      string `json:"status"`
 	StatusEn    string `json:"statusEN"`
@@ -9,8 +9,8 @@ type Table struct {
 }
 
 type TableStatus struct {
-	ID       int64
-	StatusID int64
+	ID       string
+	StatusID string
 }
 
 type SearchTables struct {

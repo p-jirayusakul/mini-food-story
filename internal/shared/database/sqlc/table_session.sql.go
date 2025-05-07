@@ -36,3 +36,66 @@ func (q *Queries) CreateTableSession(ctx context.Context, arg CreateTableSession
 	err := row.Scan(&session_id)
 	return session_id, err
 }
+
+const getTableSession = `-- name: GetTableSession :one
+SELECT ts.session_id::text as "sessionID",
+       t.id::text          AS "tableID",
+       t.table_number      as "tableNumber",
+       ts.status           as "status",
+       ts.started_at       as "startedAt",
+       o.id                AS "orderID"
+FROM public.table_session ts
+         JOIN public.tables t ON t.id = ts.table_id
+         LEFT JOIN public.orders o ON o.session_id = ts.session_id
+WHERE ts.session_id = $1::uuid
+`
+
+type GetTableSessionRow struct {
+	SessionID   string                 `json:"sessionID"`
+	TableID     string                 `json:"tableID"`
+	TableNumber int32                  `json:"tableNumber"`
+	Status      NullTableSessionStatus `json:"status"`
+	StartedAt   pgtype.Timestamp       `json:"startedAt"`
+	OrderID     pgtype.Int8            `json:"orderID"`
+}
+
+func (q *Queries) GetTableSession(ctx context.Context, sessionid pgtype.UUID) (*GetTableSessionRow, error) {
+	row := q.db.QueryRow(ctx, getTableSession, sessionid)
+	var i GetTableSessionRow
+	err := row.Scan(
+		&i.SessionID,
+		&i.TableID,
+		&i.TableNumber,
+		&i.Status,
+		&i.StartedAt,
+		&i.OrderID,
+	)
+	return &i, err
+}
+
+const isTableSessionActive = `-- name: IsTableSessionActive :one
+SELECT COUNT(session_id) > 0
+FROM public.table_session
+WHERE session_id = $1::uuid
+  AND status = 'active'
+`
+
+func (q *Queries) IsTableSessionActive(ctx context.Context, sessionid pgtype.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, isTableSessionActive, sessionid)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const isTableSessionExists = `-- name: IsTableSessionExists :one
+SELECT COUNT(session_id) > 0
+FROM public.table_session
+WHERE session_id = $1::uuid
+`
+
+func (q *Queries) IsTableSessionExists(ctx context.Context, sessionid pgtype.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, isTableSessionExists, sessionid)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}

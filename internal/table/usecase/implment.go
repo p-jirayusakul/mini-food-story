@@ -8,15 +8,16 @@ import (
 	"food-story/internal/table/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const tableName = "tables"
-const tableSessionName = "table_session"
 
 func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Status, customError *exceptions.CustomError) {
 	data, err := i.repository.ListTableStatus(ctx)
@@ -72,13 +73,21 @@ func (i *Implement) CreateTable(ctx context.Context, payload domain.Table) (resu
 }
 
 func (i *Implement) UpdateTable(ctx context.Context, payload domain.Table) (customError *exceptions.CustomError) {
-	customError = i.isTableExists(ctx, payload.ID)
+	id, err := strconv.ParseInt(payload.ID, 10, 64)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: fmt.Errorf("failed to parse table id: %w", err),
+		}
+	}
+
+	customError = i.isTableExists(ctx, id)
 	if customError != nil {
 		return customError
 	}
 
-	err := i.repository.UpdateTables(ctx, database.UpdateTablesParams{
-		ID:          payload.ID,
+	err = i.repository.UpdateTables(ctx, database.UpdateTablesParams{
+		ID:          id,
 		TableNumber: payload.TableNumber,
 		Seats:       payload.Seats,
 	})
@@ -102,14 +111,31 @@ func (i *Implement) UpdateTable(ctx context.Context, payload domain.Table) (cust
 }
 
 func (i *Implement) UpdateTableStatus(ctx context.Context, payload domain.TableStatus) (customError *exceptions.CustomError) {
-	customError = i.isTableExists(ctx, payload.ID)
+
+	id, err := strconv.ParseInt(payload.ID, 10, 64)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: fmt.Errorf("failed to parse table id: %w", err),
+		}
+	}
+
+	statusID, err := strconv.ParseInt(payload.StatusID, 10, 64)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: fmt.Errorf("failed to parse table status id: %w", err),
+		}
+	}
+
+	customError = i.isTableExists(ctx, id)
 	if customError != nil {
 		return customError
 	}
 
-	err := i.repository.UpdateTablesStatus(ctx, database.UpdateTablesStatusParams{
-		ID:       payload.ID,
-		StatusID: payload.StatusID,
+	err = i.repository.UpdateTablesStatus(ctx, database.UpdateTablesStatusParams{
+		ID:       id,
+		StatusID: statusID,
 	})
 	if err != nil {
 		return &exceptions.CustomError{
@@ -190,8 +216,15 @@ func (i *Implement) QuickSearchAvailableTable(ctx context.Context, payload domai
 }
 
 func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession) (string, *exceptions.CustomError) {
+	tableID, err := strconv.ParseInt(payload.TableID, 10, 64)
+	if err != nil {
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: fmt.Errorf("failed to parse table id: %w", err),
+		}
+	}
 
-	isAvailableOrReserved, err := i.repository.IsTableAvailableOrReserved(ctx, payload.TableID)
+	isAvailableOrReserved, err := i.repository.IsTableAvailableOrReserved(ctx, tableID)
 	if err != nil {
 		return "", &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
@@ -210,7 +243,7 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 	expiry := time.Now().Add(1 * time.Hour)
 	sessionID, err := i.repository.CreateTableSession(ctx, database.CreateTableSessionParams{
 		ID:             i.snowflakeID.Generate(),
-		TableID:        payload.TableID,
+		TableID:        tableID,
 		NumberOfPeople: payload.NumberOfPeople,
 		ExpireAt:       pgtype.Timestamp{Time: expiry, Valid: true},
 	})
@@ -221,7 +254,7 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 		}
 	}
 
-	err = i.repository.UpdateTablesStatusOccupied(ctx, payload.TableID)
+	err = i.repository.UpdateTablesStatusOccupied(ctx, tableID)
 	if err != nil {
 		return "", &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
@@ -243,6 +276,53 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 	url := "http://localhost:3000?s=" + sessionIDEncrypt
 
 	return url, nil
+}
+
+func (i *Implement) GettableSession(ctx context.Context, sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError) {
+	var byteArray [16]byte = sessionID
+	id := pgtype.UUID{
+		Bytes: byteArray,
+		Valid: true,
+	}
+
+	isExists, err := i.repository.IsTableSessionExists(ctx, id)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to check table session exists: %w", err),
+		}
+	}
+
+	if !isExists {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: errors.New("table session not found"),
+		}
+	}
+
+	data, err := i.repository.GetTableSession(ctx, id)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get table session: %w", err),
+		}
+	}
+
+	var result domain.CurrentTableSession
+	result = domain.CurrentTableSession{
+		SessionID:   sessionID,
+		TableID:     data.TableID,
+		TableNumber: data.TableNumber,
+		Status:      string(data.Status.TableSessionStatus),
+		StartedAt:   data.StartedAt.Time,
+	}
+
+	if data.OrderID.Valid {
+		orderID := strconv.FormatInt(data.OrderID.Int64, 10)
+		result.OrderID = &orderID
+	}
+
+	return &result, nil
 }
 
 func (i *Implement) isTableExists(ctx context.Context, id int64) *exceptions.CustomError {

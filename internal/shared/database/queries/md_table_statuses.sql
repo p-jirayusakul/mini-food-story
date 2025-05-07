@@ -1,5 +1,5 @@
 -- name: ListTableStatus :many
-SELECT id, code, name, name_en FROM public.md_table_statuses
+SELECT id::text as "id", code, name, name_en FROM public.md_table_statuses
 ORDER BY id;
 
 -- name: CreateTableStatus :one

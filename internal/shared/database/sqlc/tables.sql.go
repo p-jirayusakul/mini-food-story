@@ -94,7 +94,7 @@ func (q *Queries) IsTableExists(ctx context.Context, id int64) (bool, error) {
 }
 
 const quickSearchTables = `-- name: QuickSearchTables :many
-SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", t.seats
+SELECT t.id::text as id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", t.seats
 FROM public.tables t
          INNER JOIN public.md_table_statuses s ON t.status_id = s.id
 WHERE t.seats >= $1::integer AND s.code = 'AVAILABLE'
@@ -130,7 +130,7 @@ type QuickSearchTablesParams struct {
 }
 
 type QuickSearchTablesRow struct {
-	ID          int64  `json:"id"`
+	ID          string `json:"id"`
 	TableNumber int32  `json:"tableNumber"`
 	Status      string `json:"status"`
 	StatusEN    string `json:"statusEN"`
@@ -170,7 +170,7 @@ func (q *Queries) QuickSearchTables(ctx context.Context, arg QuickSearchTablesPa
 }
 
 const searchTables = `-- name: SearchTables :many
-SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", t.seats
+SELECT t.id::text as id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", t.seats
 FROM public.tables t
          INNER JOIN public.md_table_statuses s ON t.status_id = s.id
 WHERE ($1::int IS NULL OR t.table_number = $1::int)
@@ -214,7 +214,7 @@ type SearchTablesParams struct {
 }
 
 type SearchTablesRow struct {
-	ID          int64  `json:"id"`
+	ID          string `json:"id"`
 	TableNumber int32  `json:"tableNumber"`
 	Status      string `json:"status"`
 	StatusEN    string `json:"statusEN"`

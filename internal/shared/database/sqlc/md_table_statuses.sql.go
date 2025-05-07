@@ -36,12 +36,12 @@ func (q *Queries) CreateTableStatus(ctx context.Context, arg CreateTableStatusPa
 }
 
 const listTableStatus = `-- name: ListTableStatus :many
-SELECT id, code, name, name_en FROM public.md_table_statuses
+SELECT id::text as "id", code, name, name_en FROM public.md_table_statuses
 ORDER BY id
 `
 
 type ListTableStatusRow struct {
-	ID     int64  `json:"id"`
+	ID     string `json:"id"`
 	Code   string `json:"code"`
 	Name   string `json:"name"`
 	NameEn string `json:"name_en"`

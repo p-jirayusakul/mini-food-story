@@ -6,12 +6,12 @@ type Table struct {
 }
 
 type updateTableStatus struct {
-	StatusID int64 `json:"statusID" validate:"required"`
+	StatusID string `json:"statusID" validate:"required"`
 }
 
 type TableSession struct {
-	TableID        int64 `json:"tableID" validate:"required"`
-	NumberOfPeople int32 `json:"numberOfPeople" validate:"required,gte=1"`
+	TableID        string `json:"tableID" validate:"required"`
+	NumberOfPeople int32  `json:"numberOfPeople" validate:"required,gte=1"`
 }
 
 type SearchTable struct {

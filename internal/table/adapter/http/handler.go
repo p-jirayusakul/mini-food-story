@@ -6,6 +6,7 @@ import (
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 	"strconv"
 )
 
@@ -42,11 +43,6 @@ func (s *Handler) CreateTable(c *fiber.Ctx) error {
 }
 
 func (s *Handler) UpdateTable(c *fiber.Ctx) error {
-	id, err := utils.StrToInt64(c.Params("id"))
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
 	body := new(Table)
 	if err := c.BodyParser(body); err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
@@ -57,7 +53,7 @@ func (s *Handler) UpdateTable(c *fiber.Ctx) error {
 	}
 
 	customError := s.useCase.UpdateTable(c.Context(), domain.Table{
-		ID:          id,
+		ID:          c.Params("id"),
 		TableNumber: body.TableNumber,
 		Seats:       body.Seats,
 	})
@@ -69,11 +65,6 @@ func (s *Handler) UpdateTable(c *fiber.Ctx) error {
 }
 
 func (s *Handler) UpdateTableStatus(c *fiber.Ctx) error {
-	id, err := utils.StrToInt64(c.Params("id"))
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
 	body := new(updateTableStatus)
 	if err := c.BodyParser(body); err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
@@ -84,7 +75,7 @@ func (s *Handler) UpdateTableStatus(c *fiber.Ctx) error {
 	}
 
 	customError := s.useCase.UpdateTableStatus(c.Context(), domain.TableStatus{
-		ID:       id,
+		ID:       c.Params("id"),
 		StatusID: body.StatusID,
 	})
 	if customError != nil {
@@ -190,4 +181,19 @@ func (s *Handler) CreateTableSession(c *fiber.Ctx) error {
 	return middleware.ResponseCreated(c, "create table success", createSessionResponse{
 		URL: result,
 	})
+}
+
+func (s *Handler) CurrentSession(c *fiber.Ctx) error {
+	sessionIDData := c.Get("X-Session-Id")
+	sessionID, err := uuid.Parse(sessionIDData)
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	result, customError := s.useCase.GettableSession(c.Context(), sessionID)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get current session success", result)
 }

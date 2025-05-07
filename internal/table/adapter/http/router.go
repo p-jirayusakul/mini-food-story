@@ -32,6 +32,8 @@ func (s *Handler) setupRoutes() {
 	group.Get("/status", s.ListTableStatus)
 	group.Post("", s.CreateTable)
 	group.Post("/session", s.CreateTableSession)
+	group.Get("/session/current", s.CurrentSession)
+
 	group.Put("/:id<int>", s.UpdateTable)
 	group.Patch("/:id<int>/status", s.UpdateTableStatus)
 	group.Get("", s.SearchTable)

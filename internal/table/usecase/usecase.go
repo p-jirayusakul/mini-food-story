@@ -7,6 +7,7 @@ import (
 	"food-story/internal/table/config"
 	"food-story/internal/table/domain"
 	"food-story/pkg/exceptions"
+	"github.com/google/uuid"
 )
 
 type Usecase interface {
@@ -17,6 +18,7 @@ type Usecase interface {
 	SearchTableByFilters(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
 	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
 	CreateTableSession(ctx context.Context, payload domain.TableSession) (string, *exceptions.CustomError)
+	GettableSession(ctx context.Context, sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError)
 }
 
 type Implement struct {
