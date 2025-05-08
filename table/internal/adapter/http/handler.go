@@ -6,7 +6,6 @@ import (
 	"food-story/pkg/utils"
 	"food-story/table/internal/domain"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"strconv"
 )
 
@@ -204,12 +203,7 @@ func (s *Handler) CreateTableSession(c *fiber.Ctx) error {
 
 func (s *Handler) CurrentSession(c *fiber.Ctx) error {
 	sessionIDData := c.Get("X-Session-Id")
-	sessionID, err := uuid.Parse(sessionIDData)
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	result, customError := s.useCase.GettableSession(c.Context(), sessionID)
+	result, customError := s.useCase.GetCurrentSession(sessionIDData)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}

@@ -12,8 +12,9 @@ import (
 
 type Querier interface {
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
-	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) (pgtype.UUID, error)
+	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
 	CreateTableStatus(ctx context.Context, arg CreateTableStatusParams) (int64, error)
+	GetTableNumber(ctx context.Context, id int64) (int32, error)
 	GetTableSession(ctx context.Context, sessionid pgtype.UUID) (*GetTableSessionRow, error)
 	GetTotalPageQuickSearchTables(ctx context.Context, numberOfPeople int32) (int64, error)
 	GetTotalPageSearchTables(ctx context.Context, arg GetTotalPageSearchTablesParams) (int64, error)

@@ -11,30 +11,29 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const createTableSession = `-- name: CreateTableSession :one
+const createTableSession = `-- name: CreateTableSession :exec
 INSERT INTO public.table_session
-(id, table_id, number_of_people, status, started_at, expire_at, ended_at)
-VALUES($1, $2, $3, 'active', NOW(), $4, NULL)
-RETURNING session_id
+(id, table_id, number_of_people, session_id, status, started_at, expire_at, ended_at)
+VALUES($1, $2, $3, $4, 'active', NOW(), $5, NULL)
 `
 
 type CreateTableSessionParams struct {
 	ID             int64            `json:"id"`
 	TableID        int64            `json:"table_id"`
 	NumberOfPeople int32            `json:"number_of_people"`
+	SessionID      pgtype.UUID      `json:"session_id"`
 	ExpireAt       pgtype.Timestamp `json:"expire_at"`
 }
 
-func (q *Queries) CreateTableSession(ctx context.Context, arg CreateTableSessionParams) (pgtype.UUID, error) {
-	row := q.db.QueryRow(ctx, createTableSession,
+func (q *Queries) CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error {
+	_, err := q.db.Exec(ctx, createTableSession,
 		arg.ID,
 		arg.TableID,
 		arg.NumberOfPeople,
+		arg.SessionID,
 		arg.ExpireAt,
 	)
-	var session_id pgtype.UUID
-	err := row.Scan(&session_id)
-	return session_id, err
+	return err
 }
 
 const getTableSession = `-- name: GetTableSession :one

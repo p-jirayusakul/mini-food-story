@@ -10,6 +10,7 @@ type Config struct {
 	AppPort     string `mapstructure:"APP_PORT"`
 	AppEnv      string `mapstructure:"APP_ENV"`
 	AppHost     string `mapstructure:"APP_HOST"`
+	FrontendURL string `mapstructure:"FRONTEND_URL"`
 	SecretKey   string `mapstructure:"SECRET_KEY"`
 	JwtSecret   string `mapstructure:"JWT_SECRET"`
 	JwtExpireMs string `mapstructure:"JWT_EXPIRE_MILLISECOND"`
@@ -34,6 +35,7 @@ func InitConfig(envFile string) Config {
 		viper.SetDefault("APP_PORT", os.Getenv("APP_PORT"))
 		viper.SetDefault("APP_ENV", os.Getenv("APP_ENV"))
 		viper.SetDefault("APP_HOST", os.Getenv("APP_HOST"))
+		viper.SetDefault("FRONTEND_URL", os.Getenv("FRONTEND_URL"))
 		viper.SetDefault("SECRET_KEY", os.Getenv("SECRET_KEY"))
 		viper.SetDefault("JWT_SECRET", os.Getenv("JWT_SECRET"))
 		viper.SetDefault("JWT_EXPIRE_MILLISECOND", os.Getenv("JWT_EXPIRE_MILLISECOND"))

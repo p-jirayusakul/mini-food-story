@@ -8,9 +8,12 @@ import (
 	"food-story/pkg/middleware"
 	dbcfg "food-story/shared/config"
 	"food-story/shared/database/sqlc"
+	"food-story/shared/redis"
 	"food-story/shared/snowflakeid"
+	"food-story/table/config"
+	"food-story/table/internal/adapter/cache"
 	tablehd "food-story/table/internal/adapter/http"
-	"food-story/table/internal/config"
+	"food-story/table/internal/adapter/repository"
 	"food-story/table/internal/usecase"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -66,6 +69,9 @@ func New() *FiberServer {
 	}
 	store := database.NewStore(dbConn)
 
+	// connect to redis
+	redisConn := redis.NewRedisClient("localhost:6379", "", 0)
+
 	// Create a new Node with a Node number of 1
 	node := snowflakeid.CreateSnowflakeNode(1)
 	snowflakeNode := snowflakeid.NewSnowflake(node)
@@ -88,7 +94,7 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
 
 	return &FiberServer{
 		App: app,
@@ -110,8 +116,10 @@ func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
 	return dbConn.Ping(ctx) == nil
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config) {
-	tableUseCase := usecase.NewUsecase(configApp, store, snowflakeNode)
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
+	tableCache := cache.NewRedisTableCache(redisConn)
+	tableRepo := repository.NewRepo(configApp, store, snowflakeNode)
+	tableUseCase := usecase.NewUsecase(configApp, *tableRepo, tableCache)
 	tablehd.NewHTTPHandler(router, tableUseCase, validator)
 }
 

@@ -3,11 +3,10 @@ package usecase
 import (
 	"context"
 	"food-story/pkg/exceptions"
-	"food-story/shared/database/sqlc"
-	"food-story/shared/snowflakeid"
-	"food-story/table/internal/config"
+	"food-story/table/config"
+	"food-story/table/internal/adapter/cache"
+	"food-story/table/internal/adapter/repository"
 	"food-story/table/internal/domain"
-	"github.com/google/uuid"
 )
 
 type TableUsecase interface {
@@ -18,20 +17,20 @@ type TableUsecase interface {
 	SearchTableByFilters(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
 	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
 	CreateTableSession(ctx context.Context, payload domain.TableSession) (string, *exceptions.CustomError)
-	GettableSession(ctx context.Context, sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError)
+	GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentTableSession, *exceptions.CustomError)
 }
 
 type TableImplement struct {
-	config      config.Config
-	repository  database.Store
-	snowflakeID snowflakeid.SnowflakeInterface
+	config     config.Config
+	repository repository.TableRepoImplement
+	cache      cache.RedisTableCacheInterface
 }
 
-func NewUsecase(config config.Config, repository database.Store, snowflakeID snowflakeid.SnowflakeInterface) *TableImplement {
+func NewUsecase(config config.Config, repository repository.TableRepoImplement, cache cache.RedisTableCacheInterface) *TableImplement {
 	return &TableImplement{
 		config,
 		repository,
-		snowflakeID,
+		cache,
 	}
 }
 

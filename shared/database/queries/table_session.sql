@@ -1,8 +1,7 @@
--- name: CreateTableSession :one
+-- name: CreateTableSession :exec
 INSERT INTO public.table_session
-(id, table_id, number_of_people, status, started_at, expire_at, ended_at)
-VALUES($1, $2, $3, 'active', NOW(), $4, NULL)
-RETURNING session_id;
+(id, table_id, number_of_people, session_id, status, started_at, expire_at, ended_at)
+VALUES($1, $2, $3, $4, 'active', NOW(), $5, NULL);
 
 -- name: IsTableSessionExists :one
 SELECT COUNT(session_id) > 0

@@ -30,6 +30,17 @@ func (q *Queries) CreateTable(ctx context.Context, arg CreateTableParams) (int64
 	return id, err
 }
 
+const getTableNumber = `-- name: GetTableNumber :one
+SELECT table_number FROM public.tables WHERE id = $1
+`
+
+func (q *Queries) GetTableNumber(ctx context.Context, id int64) (int32, error) {
+	row := q.db.QueryRow(ctx, getTableNumber, id)
+	var table_number int32
+	err := row.Scan(&table_number)
+	return table_number, err
+}
+
 const getTotalPageQuickSearchTables = `-- name: GetTotalPageQuickSearchTables :one
 SELECT COUNT(*)
 FROM public.tables t

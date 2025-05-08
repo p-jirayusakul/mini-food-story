@@ -11,6 +11,7 @@ var ctx = context.Background()
 type RedisInterface interface {
 	Set(key string, value string, expiration int) error
 	Get(key string) (string, error)
+	Del(key string) error
 }
 
 type RedisClient struct {
@@ -40,4 +41,12 @@ func (r *RedisClient) Set(key string, value string, expiration int) error {
 
 func (r *RedisClient) Get(key string) (string, error) {
 	return r.Client.Get(ctx, key).Result()
+}
+
+func (r *RedisClient) Del(key string) error {
+	return r.Client.Del(ctx, key).Err()
+}
+
+func (r *RedisClient) close() {
+	r.Client.Close()
 }

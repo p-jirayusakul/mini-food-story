@@ -3,6 +3,9 @@ INSERT INTO public.tables(id, table_number, status_id, seats)
 VALUES ($1, $2, (SELECT id FROM public.md_table_statuses WHERE code = 'DISABLED'), $3)
 RETURNING id;
 
+-- name: GetTableNumber :one
+SELECT table_number FROM public.tables WHERE id = $1;
+
 -- name: UpdateTables :exec
 UPDATE public.tables
 SET table_number=$2, seats=$3, updated_at = NOW()
