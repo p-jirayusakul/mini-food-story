@@ -20,7 +20,6 @@ func InitConfig(envFile string) Config {
 
 	currentDir, _ := os.Getwd()
 	envFile = currentDir + "/" + envFile
-	fmt.Println("Current Directory:", envFile)
 
 	var cfg Config
 

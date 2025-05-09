@@ -3,7 +3,7 @@ package usecase
 import (
 	"context"
 	"food-story/pkg/exceptions"
-	"food-story/table/config"
+	"food-story/shared/config"
 	"food-story/table/internal/adapter/cache"
 	"food-story/table/internal/adapter/repository"
 	"food-story/table/internal/domain"

@@ -1,9 +1,9 @@
 package repository
 
 import (
+	"food-story/shared/config"
 	database "food-story/shared/database/sqlc"
 	"food-story/shared/snowflakeid"
-	"food-story/table/config"
 )
 
 type TableRepoImplement struct {
