@@ -1,7 +1,9 @@
 package config
 
 import (
+	"context"
 	"fmt"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -37,4 +39,14 @@ func InitDBConfig(envFile string) DBConfig {
 	_ = viper.Unmarshal(&cfg)
 
 	return cfg
+}
+
+func (d *DBConfig) ConnectToDatabase() (*pgxpool.Pool, error) {
+	source := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s search_path=%s sslmode=disable TimeZone=Asia/Bangkok", d.DBUsername, d.DBPassword, d.DBHost, d.DBPort, d.DBDatabase, d.DBSchema)
+	dbConn, err := pgxpool.New(context.Background(), source)
+	if err != nil {
+		return nil, fmt.Errorf("unable to connect to database: %v", err)
+	}
+
+	return dbConn, nil
 }

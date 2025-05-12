@@ -143,7 +143,7 @@ func (i *TableRepoImplement) SearchTables(ctx context.Context, payload domain.Se
 
 	return domain.SearchTablesResult{
 		TotalItems: totalItems,
-		TotalPages: int64(math.Ceil(float64(totalItems) / float64(payload.PageSize))),
+		TotalPages: int64(math.Ceil(float64(totalItems) / float64(searchParams.PageSize))),
 		Data:       data,
 	}, nil
 }
@@ -174,7 +174,7 @@ func (i *TableRepoImplement) QuickSearchTables(ctx context.Context, payload doma
 
 	return domain.SearchTablesResult{
 		TotalItems: totalItems,
-		TotalPages: int64(math.Ceil(float64(totalItems) / float64(payload.PageSize))),
+		TotalPages: int64(math.Ceil(float64(totalItems) / float64(searchParams.PageSize))),
 		Data:       data,
 	}, nil
 }

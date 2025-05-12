@@ -9,6 +9,7 @@ import (
 	"errors"
 	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
+	"github.com/shopspring/decimal"
 	"io"
 	"strconv"
 	"strings"
@@ -168,4 +169,11 @@ func DecryptSession(encrypted string, key []byte) (SessionData, error) {
 
 	err = json.Unmarshal(plaintext, &data)
 	return data, err
+}
+
+func ConvertFloatToIntExp(floatNumber float64) int64 {
+	num := decimal.NewFromFloat(floatNumber)
+	formattedNum := num.StringFixed(2)
+	result, _ := strconv.ParseInt(strings.Replace(formattedNum, ".", "", -1), 10, 64)
+	return result
 }

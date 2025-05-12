@@ -3,23 +3,22 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	menuhd "food-story/menu/internal/adapter/http"
+	"food-story/menu/internal/adapter/repository"
+	"food-story/menu/internal/usecase"
 	"food-story/pkg/common"
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
-	dbcfg "food-story/shared/config"
-	"food-story/shared/database/sqlc"
-	"food-story/shared/redis"
+	database "food-story/shared/database/sqlc"
 	"food-story/shared/snowflakeid"
-	"food-story/table/internal/adapter/cache"
-	tablehd "food-story/table/internal/adapter/http"
-	"food-story/table/internal/adapter/repository"
-	"food-story/table/internal/usecase"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
+
+	dbcfg "food-story/shared/config"
 )
 
 const EnvFile = ".env"
@@ -68,9 +67,6 @@ func New() *FiberServer {
 	}
 	store := database.NewStore(dbConn)
 
-	// connect to redis
-	redisConn := redis.NewRedisClient("localhost:6379", "", 0)
-
 	// Create a new Node with a Node number of 1
 	node := snowflakeid.CreateSnowflakeNode(1)
 	snowflakeNode := snowflakeid.NewSnowflake(node)
@@ -93,7 +89,7 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp)
 
 	return &FiberServer{
 		App: app,
@@ -105,11 +101,10 @@ func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
 	return dbConn.Ping(ctx) == nil
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
-	tableCache := cache.NewRedisTableCache(redisConn)
-	tableRepo := repository.NewRepo(configApp, store, snowflakeNode)
-	tableUseCase := usecase.NewUsecase(configApp, *tableRepo, tableCache)
-	tablehd.NewHTTPHandler(router, tableUseCase, validator)
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config) {
+	menuRepo := repository.NewRepo(configApp, store, snowflakeNode)
+	menuUsecase := usecase.NewUsecase(configApp, *menuRepo)
+	menuhd.NewHTTPHandler(router, menuUsecase, validator)
 }
 
 func (s *FiberServer) CloseDB() {
