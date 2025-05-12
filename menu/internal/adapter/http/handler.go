@@ -6,7 +6,6 @@ import (
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
 	"github.com/gofiber/fiber/v2"
-	"strconv"
 )
 
 func (s *Handler) CategoryList(c *fiber.Ctx) error {
@@ -16,39 +15,6 @@ func (s *Handler) CategoryList(c *fiber.Ctx) error {
 	}
 
 	return middleware.ResponseOK(c, "get list categories success", result)
-}
-
-func (s *Handler) CreateProduct(c *fiber.Ctx) error {
-	body := new(Product)
-	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	categoryID, err := utils.StrToInt64(body.CategoryID)
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	result, customError := s.useCase.CreateProduct(c.Context(), domain.Product{
-		Name:        body.Name,
-		NameEN:      body.NameEN,
-		CategoryID:  categoryID,
-		Price:       body.Price,
-		Description: body.Description,
-		IsAvailable: body.IsAvailable,
-		ImageURL:    body.ImageURL,
-	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
-	}
-
-	return middleware.ResponseCreated(c, "create table success", createResponse{
-		ID: strconv.FormatInt(result, 10),
-	})
 }
 
 func (s *Handler) SearchMenu(c *fiber.Ctx) error {
@@ -79,11 +45,16 @@ func (s *Handler) SearchMenu(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "search menu success", result)
 }
 
-//func (s *Handler) GetMenu(c *fiber.Ctx) error {
-//	id, err := utils.StrToInt64(c.Params("id"))
-//	if err != nil {
-//		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-//	}
-//
-//
-//}
+func (s *Handler) GetMenu(c *fiber.Ctx) error {
+	id, err := utils.StrToInt64(c.Params("id"))
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	result, customError := s.useCase.GetProductByID(c.Context(), id)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get menu success", result)
+}

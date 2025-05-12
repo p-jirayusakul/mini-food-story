@@ -1,14 +1,16 @@
 package domain
 
 type Product struct {
-	ID          int64   `json:"id,string"`
-	Name        string  `json:"name"`
-	NameEN      string  `json:"nameEN"`
-	CategoryID  int64   `json:"categoryID,string"`
-	Price       float64 `json:"price"`
-	Description *string `json:"description"`
-	IsAvailable bool    `json:"isAvailable"`
-	ImageURL    *string `json:"imageURL"`
+	ID             int64   `json:"id,string"`
+	Name           string  `json:"name"`
+	NameEN         string  `json:"nameEN"`
+	CategoryName   string  `json:"categoryName"`
+	CategoryNameEN string  `json:"categoryNameEN"`
+	CategoryID     int64   `json:"categoryID,string"`
+	Price          float64 `json:"price"`
+	Description    *string `json:"description"`
+	IsAvailable    bool    `json:"isAvailable"`
+	ImageURL       *string `json:"imageURL"`
 }
 
 type SearchProduct struct {

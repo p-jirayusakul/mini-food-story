@@ -45,15 +45,63 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (i
 	return id, err
 }
 
+const getProductByID = `-- name: GetProductByID :one
+SELECT p.id,
+       p."name",
+       p.name_en,
+       p.categories,
+       c.name as "categoryName",
+       c.name_en as "categoryNameEN",
+       p.description,
+       p.price,
+       p.is_available,
+       p.image_url
+FROM public.products as p
+         INNER JOIN public.md_categories as c ON c.id = p.categories
+WHERE p.id = $1::bigint LIMIT 1
+`
+
+type GetProductByIDRow struct {
+	ID             int64          `json:"id"`
+	Name           string         `json:"name"`
+	NameEn         string         `json:"name_en"`
+	Categories     int64          `json:"categories"`
+	CategoryName   string         `json:"categoryName"`
+	CategoryNameEN string         `json:"categoryNameEN"`
+	Description    pgtype.Text    `json:"description"`
+	Price          pgtype.Numeric `json:"price"`
+	IsAvailable    bool           `json:"is_available"`
+	ImageUrl       pgtype.Text    `json:"image_url"`
+}
+
+func (q *Queries) GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error) {
+	row := q.db.QueryRow(ctx, getProductByID, id)
+	var i GetProductByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.NameEn,
+		&i.Categories,
+		&i.CategoryName,
+		&i.CategoryNameEN,
+		&i.Description,
+		&i.Price,
+		&i.IsAvailable,
+		&i.ImageUrl,
+	)
+	return &i, err
+}
+
 const getTotalPageSearchProducts = `-- name: GetTotalPageSearchProducts :one
 SELECT COUNT(*)
-FROM public.products
-WHERE (($1::varchar IS NULL OR "name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR name_en ILIKE '%' || $1::varchar || '%'))
-  AND ($2::boolean IS NULL OR is_available = $2::boolean)
+FROM public.products as p
+         INNER JOIN public.md_categories as c ON c.id = p.categories
+WHERE (($1::varchar IS NULL OR p."name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR p.name_en ILIKE '%' || $1::varchar || '%'))
+  AND ($2::boolean IS NULL OR p.is_available = $2::boolean)
   AND (
     $3::bigint[] IS NULL
         OR array_length($3::bigint[], 1) = 0
-        OR categories = ANY ($3::bigint[])
+        OR p.categories = ANY ($3::bigint[])
     )
 `
 
@@ -82,38 +130,41 @@ func (q *Queries) IsProductExists(ctx context.Context, id int64) (bool, error) {
 }
 
 const searchProducts = `-- name: SearchProducts :many
-SELECT id,
-       "name",
-       name_en,
-       categories,
-       description,
-       price,
-       is_available,
-       image_url
-FROM public.products
-WHERE (($1::varchar IS NULL OR "name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR name_en ILIKE '%' || $1::varchar || '%'))
-  AND ($2::boolean IS NULL OR is_available = $2::boolean)
+SELECT p.id,
+       p."name",
+       p.name_en,
+       p.categories,
+       c.name as "categoryName",
+       c.name_en as "categoryNameEN",
+       p.description,
+       p.price,
+       p.is_available,
+       p.image_url
+FROM public.products as p
+         INNER JOIN public.md_categories as c ON c.id = p.categories
+WHERE (($1::varchar IS NULL OR p."name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR p.name_en ILIKE '%' || $1::varchar || '%'))
+  AND ($2::boolean IS NULL OR p.is_available = $2::boolean)
   AND (
     $3::bigint[] IS NULL
         OR array_length($3::bigint[], 1) = 0
-        OR categories = ANY ($3::bigint[])
+        OR p.categories = ANY ($3::bigint[])
     )
 ORDER BY CASE
              WHEN $4::text = 'asc' THEN
                  CASE
-                     WHEN $5::text = 'id' THEN id::text
-                     WHEN $5::text = 'name' THEN "name"
-                     WHEN $5::text = 'price' THEN price::text
-                     ELSE id::text
+                     WHEN $5::text = 'id' THEN p.id::text
+                     WHEN $5::text = 'name' THEN p."name"
+                     WHEN $5::text = 'price' THEN p.price::text
+                     ELSE p.id::text
                      END
              END,
          CASE
              WHEN $4::text = 'desc' THEN
                  CASE
-                     WHEN $5::text = 'id' THEN id::text
-                     WHEN $5::text = 'name' THEN "name"
-                     WHEN $5::text = 'price' THEN price::text
-                     ELSE id::text
+                     WHEN $5::text = 'id' THEN p.id::text
+                     WHEN $5::text = 'name' THEN p."name"
+                     WHEN $5::text = 'price' THEN p.price::text
+                     ELSE p.id::text
                      END
              END DESC
 OFFSET $6 LIMIT $7
@@ -130,14 +181,16 @@ type SearchProductsParams struct {
 }
 
 type SearchProductsRow struct {
-	ID          int64          `json:"id"`
-	Name        string         `json:"name"`
-	NameEn      string         `json:"name_en"`
-	Categories  int64          `json:"categories"`
-	Description pgtype.Text    `json:"description"`
-	Price       pgtype.Numeric `json:"price"`
-	IsAvailable bool           `json:"is_available"`
-	ImageUrl    pgtype.Text    `json:"image_url"`
+	ID             int64          `json:"id"`
+	Name           string         `json:"name"`
+	NameEn         string         `json:"name_en"`
+	Categories     int64          `json:"categories"`
+	CategoryName   string         `json:"categoryName"`
+	CategoryNameEN string         `json:"categoryNameEN"`
+	Description    pgtype.Text    `json:"description"`
+	Price          pgtype.Numeric `json:"price"`
+	IsAvailable    bool           `json:"is_available"`
+	ImageUrl       pgtype.Text    `json:"image_url"`
 }
 
 func (q *Queries) SearchProducts(ctx context.Context, arg SearchProductsParams) ([]*SearchProductsRow, error) {
@@ -162,6 +215,8 @@ func (q *Queries) SearchProducts(ctx context.Context, arg SearchProductsParams) 
 			&i.Name,
 			&i.NameEn,
 			&i.Categories,
+			&i.CategoryName,
+			&i.CategoryNameEN,
 			&i.Description,
 			&i.Price,
 			&i.IsAvailable,

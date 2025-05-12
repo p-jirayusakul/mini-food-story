@@ -9,8 +9,10 @@ import (
 	"errors"
 	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/shopspring/decimal"
 	"io"
+	"math/big"
 	"strconv"
 	"strings"
 	"time"
@@ -176,4 +178,39 @@ func ConvertFloatToIntExp(floatNumber float64) int64 {
 	formattedNum := num.StringFixed(2)
 	result, _ := strconv.ParseInt(strings.Replace(formattedNum, ".", "", -1), 10, 64)
 	return result
+}
+
+func PgNumericToFloat64(floatNumber pgtype.Numeric) float64 {
+	if !floatNumber.Valid {
+		return 0
+	}
+
+	floatValue, _ := floatNumber.Float64Value()
+	return floatValue.Float64
+}
+
+func PgTextToStringPtr(text pgtype.Text) *string {
+	if !text.Valid {
+		return nil
+	}
+
+	return &text.String
+}
+
+func Float64ToPgNumeric(value float64) pgtype.Numeric {
+	return pgtype.Numeric{
+		Int:   big.NewInt(ConvertFloatToIntExp(value)),
+		Exp:   -2,
+		Valid: true,
+	}
+}
+
+func StringPtrToPgText(value *string) pgtype.Text {
+	if value == nil {
+		return pgtype.Text{Valid: false}
+	}
+	return pgtype.Text{
+		String: *value,
+		Valid:  true,
+	}
 }

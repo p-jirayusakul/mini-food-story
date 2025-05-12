@@ -8,125 +8,9 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"math"
-	"math/big"
 )
-
-func (i *ProductRepoImplement) IsProductExists(ctx context.Context, id int64) *exceptions.CustomError {
-	isProductExists, err := i.repository.IsProductExists(ctx, id)
-	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check product exists: %w", err),
-		}
-	}
-
-	if !isProductExists {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: errors.New("product not found"),
-		}
-	}
-
-	return nil
-}
-
-func (i *ProductRepoImplement) CreateProduct(ctx context.Context, payload domain.Product) (int64, *exceptions.CustomError) {
-	var description pgtype.Text
-	var imageURL pgtype.Text
-	var price pgtype.Numeric
-
-	if payload.Description != nil {
-		description.String = *payload.Description
-		description.Valid = true
-	}
-
-	if payload.ImageURL != nil {
-		imageURL.String = *payload.ImageURL
-		imageURL.Valid = true
-	}
-
-	price = pgtype.Numeric{Int: big.NewInt(utils.ConvertFloatToIntExp(payload.Price)), Exp: -2, Valid: true}
-
-	params := database.CreateProductParams{
-		ID:          i.snowflakeID.Generate(),
-		Name:        payload.Name,
-		NameEn:      payload.NameEN,
-		Categories:  payload.CategoryID,
-		Description: description,
-		Price:       price,
-		IsAvailable: payload.IsAvailable,
-		ImageUrl:    imageURL,
-	}
-
-	id, err := i.repository.CreateProduct(ctx, params)
-	if err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == exceptions.SqlstateUniqueViolation {
-			msg := fmt.Sprintf("%s already exists", utils.IndexToFieldName(pgErr.ConstraintName, "products"))
-			return 0, &exceptions.CustomError{
-				Status: exceptions.ERRDATACONFLICT,
-				Errors: errors.New(msg),
-			}
-		}
-
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to create table: %w", err),
-		}
-	}
-
-	return id, nil
-}
-
-func (i *ProductRepoImplement) UpdateProduct(ctx context.Context, payload domain.Product) *exceptions.CustomError {
-	var description pgtype.Text
-	var imageURL pgtype.Text
-	var price pgtype.Numeric
-
-	if payload.Description != nil {
-		description.String = *payload.Description
-		description.Valid = true
-	}
-
-	if payload.ImageURL != nil {
-		imageURL.String = *payload.ImageURL
-		imageURL.Valid = true
-	}
-
-	price = pgtype.Numeric{Int: big.NewInt(utils.ConvertFloatToIntExp(payload.Price)), Exp: -2, Valid: true}
-
-	params := database.UpdateProductParams{
-		ID:          payload.ID,
-		Name:        payload.Name,
-		NameEn:      payload.NameEN,
-		Categories:  payload.CategoryID,
-		Description: description,
-		Price:       price,
-		IsAvailable: payload.IsAvailable,
-		ImageUrl:    imageURL,
-	}
-
-	if err := i.repository.UpdateProduct(ctx, params); err != nil {
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == exceptions.SqlstateUniqueViolation {
-			msg := fmt.Sprintf("%s already exists", utils.IndexToFieldName(pgErr.ConstraintName, "products"))
-			return &exceptions.CustomError{
-				Status: exceptions.ERRDATACONFLICT,
-				Errors: errors.New(msg),
-			}
-		}
-
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to create table: %w", err),
-		}
-	}
-
-	return nil
-}
 
 func (i *ProductRepoImplement) SearchProduct(ctx context.Context, payload domain.SearchProduct) (domain.SearchProductResult, *exceptions.CustomError) {
 	searchParams := buildSearchProductParams(payload)
@@ -172,14 +56,16 @@ func (i *ProductRepoImplement) SearchProduct(ctx context.Context, payload domain
 		}
 
 		data[index] = &domain.Product{
-			ID:          row.ID,
-			Name:        row.Name,
-			NameEN:      row.NameEn,
-			CategoryID:  row.Categories,
-			Price:       floatPrice,
-			Description: description,
-			IsAvailable: row.IsAvailable,
-			ImageURL:    imageURL,
+			ID:             row.ID,
+			Name:           row.Name,
+			NameEN:         row.NameEn,
+			CategoryName:   row.CategoryName,
+			CategoryNameEN: row.CategoryNameEN,
+			CategoryID:     row.Categories,
+			Price:          floatPrice,
+			Description:    description,
+			IsAvailable:    row.IsAvailable,
+			ImageURL:       imageURL,
 		}
 	}
 
@@ -188,6 +74,50 @@ func (i *ProductRepoImplement) SearchProduct(ctx context.Context, payload domain
 		TotalPages: int64(math.Ceil(float64(totalItems) / float64(searchParams.PageSize))),
 		Data:       data,
 	}, nil
+}
+
+func (i *ProductRepoImplement) GetProductByID(ctx context.Context, id int64) (result *domain.Product, customError *exceptions.CustomError) {
+	data, err := i.repository.GetProductByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: errors.New("product not found"),
+			}
+		}
+
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get product exists: %w", err),
+		}
+	}
+
+	return &domain.Product{
+		ID:             data.ID,
+		Name:           data.Name,
+		NameEN:         data.NameEn,
+		CategoryName:   data.CategoryName,
+		CategoryNameEN: data.CategoryNameEN,
+		CategoryID:     data.Categories,
+		Price:          utils.PgNumericToFloat64(data.Price),
+		Description:    utils.PgTextToStringPtr(data.Description),
+		IsAvailable:    data.IsAvailable,
+		ImageURL:       utils.PgTextToStringPtr(data.ImageUrl),
+	}, nil
+}
+
+func (i *ProductRepoImplement) UpdateProductAvailability(ctx context.Context, id int64, isAvailable bool) *exceptions.CustomError {
+	if err := i.repository.UpdateProductAvailability(ctx, database.UpdateProductAvailabilityParams{
+		ID:          id,
+		IsAvailable: isAvailable,
+	}); err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to update product availability: %w", err),
+		}
+	}
+
+	return nil
 }
 
 func buildSearchProductParams(payload domain.SearchProduct) database.SearchProductsParams {
@@ -204,18 +134,4 @@ func buildSearchProductParams(payload domain.SearchProduct) database.SearchProdu
 	params.PageSize, params.PageNumber = utils.CalculatePageSizeAndNumber(payload.PageSize, payload.PageNumber)
 
 	return params
-}
-
-func (i *ProductRepoImplement) UpdateProductAvailability(ctx context.Context, id int64, isAvailable bool) *exceptions.CustomError {
-	if err := i.repository.UpdateProductAvailability(ctx, database.UpdateProductAvailabilityParams{
-		ID:          id,
-		IsAvailable: isAvailable,
-	}); err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to update product availability: %w", err),
-		}
-	}
-
-	return nil
 }
