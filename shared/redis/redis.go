@@ -3,7 +3,7 @@ package redis
 import (
 	"context"
 	"errors"
-	"fmt"
+	"food-story/pkg/exceptions"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"log/slog"
@@ -46,7 +46,7 @@ func (r *RedisClient) Get(key string) (string, error) {
 	data, err := r.Client.Get(ctx, key).Result()
 	if errors.Is(err, redis.Nil) {
 		slog.Error("Key not found", "key", key)
-		return "", fmt.Errorf("key not found: key %s", key)
+		return "", exceptions.ErrRedisKeyNotFound
 	} else if err != nil {
 		return "", err
 	} else {

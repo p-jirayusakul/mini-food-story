@@ -1,10 +1,10 @@
 package domain
 
 type OrderItems struct {
-	ID            int64   `json:"ID"`
-	OrderID       int64   `json:"orderID"`
-	ProductID     int64   `json:"productID"`
-	StatusID      int64   `json:"statusID"`
+	ID            int64   `json:"id,string"`
+	OrderID       int64   `json:"orderID,string"`
+	ProductID     int64   `json:"productID,string"`
+	StatusID      int64   `json:"statusID,string"`
 	StatusName    string  `json:"statusName"`
 	StatusNameEN  string  `json:"statusNameEn"`
 	ProductName   string  `json:"productName"`

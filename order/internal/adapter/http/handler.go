@@ -201,5 +201,5 @@ func (s *Handler) UpdateOrderItemsStatus(c *fiber.Ctx) error {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseCreated(c, "create order item success", nil)
+	return middleware.ResponseOK(c, "update order item status success", nil)
 }

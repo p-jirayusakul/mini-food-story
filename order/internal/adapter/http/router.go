@@ -35,7 +35,7 @@ func (s *Handler) setupRoutes() {
 
 	group.Post("/:id<int>/items", s.CreateOrderItems)
 	group.Get("/:id<int>/items", s.GetOrderItems)
-	group.Get("/:id<int>/items/orderItemsID:<int>", s.GetOrderItemsByID)
-	group.Patch("/:id<int>/items/orderItemsID:<int>/status", s.UpdateOrderItemsStatus)
+	group.Get("/:id<int>/items/:orderItemsID<int>", s.GetOrderItemsByID)
+	group.Patch("/:id<int>/items/:orderItemsID<int>/status", s.UpdateOrderItemsStatus)
 
 }

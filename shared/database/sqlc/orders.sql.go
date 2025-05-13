@@ -14,7 +14,7 @@ import (
 const createOrder = `-- name: CreateOrder :one
 INSERT INTO public.orders
 (id, session_id, table_id, status_id)
-VALUES($1::bigint, $2::uuid, $3::bigint, (SELECT id FROM public.md_order_statuses WHERE code = 'PREPARING' LIMIT 1))
+VALUES($1::bigint, $2::uuid, $3::bigint, (SELECT id FROM public.md_order_statuses WHERE code = 'WAITING_PAYMENT' LIMIT 1))
 RETURNING id
 `
 

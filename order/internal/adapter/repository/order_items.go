@@ -17,6 +17,12 @@ func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderIt
 
 		product, err := i.repository.GetProductByID(ctx, item.ProductID)
 		if err != nil {
+			if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+				return &exceptions.CustomError{
+					Status: exceptions.ERRNOTFOUND,
+					Errors: fmt.Errorf("product %d not found", item.ProductID),
+				}
+			}
 			return &exceptions.CustomError{
 				Status: exceptions.ERRREPOSITORY,
 				Errors: fmt.Errorf("failed to get product: %w", err),

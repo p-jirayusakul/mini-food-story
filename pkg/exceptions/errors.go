@@ -11,6 +11,8 @@ var (
 	ErrInternalServerError = errors.New("something went wrong please try again")
 	ErrPermissionDenied    = errors.New("permission denied")
 	ErrRowDatabaseNotFound = pgx.ErrNoRows
+	ErrRedisKeyNotFound    = errors.New("key not found")
+	ErrSessionNotFound     = errors.New("session not found")
 )
 
 const (
