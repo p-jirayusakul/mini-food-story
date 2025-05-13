@@ -8,22 +8,22 @@ import (
 	"food-story/shared/config"
 )
 
-type ProductUsecase interface {
+type MenuUsecase interface {
 	ListCategory(ctx context.Context) (result []*domain.Category, customError *exceptions.CustomError)
 	SearchProductByFilters(ctx context.Context, payload domain.SearchProduct) (result domain.SearchProductResult, customError *exceptions.CustomError)
 	GetProductByID(ctx context.Context, id int64) (result *domain.Product, customError *exceptions.CustomError)
 }
 
-type ProductImplement struct {
+type MenuImplement struct {
 	config     config.Config
 	repository repository.ProductRepoImplement
 }
 
-func NewUsecase(config config.Config, repository repository.ProductRepoImplement) *ProductImplement {
-	return &ProductImplement{
+func NewUsecase(config config.Config, repository repository.ProductRepoImplement) *MenuImplement {
+	return &MenuImplement{
 		config,
 		repository,
 	}
 }
 
-var _ ProductUsecase = (*ProductImplement)(nil)
+var _ MenuUsecase = (*MenuImplement)(nil)

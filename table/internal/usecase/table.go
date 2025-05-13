@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
+	"food-story/shared/redis"
 	"food-story/table/internal/domain"
 	"github.com/google/uuid"
 	"time"
@@ -76,7 +77,7 @@ func (i *TableImplement) CreateTableSession(ctx context.Context, payload domain.
 		return "", customError
 	}
 
-	key := "table:" + sessionID.String()
+	key := redis.KeyTable + sessionID.String()
 	err = i.cache.SetCachedTable(key, &domain.CurrentTableSession{
 		SessionID:   sessionID,
 		TableID:     payload.TableID,

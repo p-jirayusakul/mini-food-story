@@ -24,7 +24,7 @@ func NewRedisTableCache(client *redis.RedisClient) *RedisTableCache {
 }
 
 func (r *RedisTableCache) GetCachedTable(key string) (*domain.CurrentTableSession, error) {
-	data, err := r.client.Get(key) // Redis Logic
+	data, err := r.client.Get(key)
 	if err != nil {
 		return nil, err
 	}

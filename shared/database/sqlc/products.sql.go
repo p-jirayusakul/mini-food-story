@@ -45,6 +45,53 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (i
 	return id, err
 }
 
+const getProductAvailableByID = `-- name: GetProductAvailableByID :one
+SELECT p.id,
+       p."name",
+       p.name_en,
+       p.categories,
+       c.name as "categoryName",
+       c.name_en as "categoryNameEN",
+       p.description,
+       p.price,
+       p.is_available,
+       p.image_url
+FROM public.products as p
+         INNER JOIN public.md_categories as c ON c.id = p.categories
+WHERE p.id = $1::bigint AND p.is_available IS TRUE LIMIT 1
+`
+
+type GetProductAvailableByIDRow struct {
+	ID             int64          `json:"id"`
+	Name           string         `json:"name"`
+	NameEn         string         `json:"name_en"`
+	Categories     int64          `json:"categories"`
+	CategoryName   string         `json:"categoryName"`
+	CategoryNameEN string         `json:"categoryNameEN"`
+	Description    pgtype.Text    `json:"description"`
+	Price          pgtype.Numeric `json:"price"`
+	IsAvailable    bool           `json:"is_available"`
+	ImageUrl       pgtype.Text    `json:"image_url"`
+}
+
+func (q *Queries) GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error) {
+	row := q.db.QueryRow(ctx, getProductAvailableByID, id)
+	var i GetProductAvailableByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.NameEn,
+		&i.Categories,
+		&i.CategoryName,
+		&i.CategoryNameEN,
+		&i.Description,
+		&i.Price,
+		&i.IsAvailable,
+		&i.ImageUrl,
+	)
+	return &i, err
+}
+
 const getProductByID = `-- name: GetProductByID :one
 SELECT p.id,
        p."name",

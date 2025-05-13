@@ -2,8 +2,11 @@ package redis
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/redis/go-redis/v9"
 	"log"
+	"log/slog"
 )
 
 var ctx = context.Background()
@@ -40,7 +43,15 @@ func (r *RedisClient) Set(key string, value string, expiration int) error {
 }
 
 func (r *RedisClient) Get(key string) (string, error) {
-	return r.Client.Get(ctx, key).Result()
+	data, err := r.Client.Get(ctx, key).Result()
+	if errors.Is(err, redis.Nil) {
+		slog.Error("Key not found", "key", key)
+		return "", fmt.Errorf("key not found: key %s", key)
+	} else if err != nil {
+		return "", err
+	} else {
+		return data, nil
+	}
 }
 
 func (r *RedisClient) Del(key string) error {

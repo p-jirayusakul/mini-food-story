@@ -77,7 +77,7 @@ func (i *ProductRepoImplement) SearchProduct(ctx context.Context, payload domain
 }
 
 func (i *ProductRepoImplement) GetProductByID(ctx context.Context, id int64) (result *domain.Product, customError *exceptions.CustomError) {
-	data, err := i.repository.GetProductByID(ctx, id)
+	data, err := i.repository.GetProductAvailableByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
 			return nil, &exceptions.CustomError{

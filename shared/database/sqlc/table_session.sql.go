@@ -98,3 +98,14 @@ func (q *Queries) IsTableSessionExists(ctx context.Context, sessionid pgtype.UUI
 	err := row.Scan(&column_1)
 	return column_1, err
 }
+
+const updateStatusCloseTableSession = `-- name: UpdateStatusCloseTableSession :exec
+UPDATE public.table_session
+SET ended_at=NOW(), status='closed'
+WHERE session_id=$1::uuid
+`
+
+func (q *Queries) UpdateStatusCloseTableSession(ctx context.Context, sessionid pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, updateStatusCloseTableSession, sessionid)
+	return err
+}

@@ -11,10 +11,18 @@ import (
 )
 
 type Querier interface {
+	CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error)
+	CreateOrderItems(ctx context.Context, arg []CreateOrderItemsParams) (int64, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (int64, error)
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
 	CreateTableStatus(ctx context.Context, arg CreateTableStatusParams) (int64, error)
+	GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error)
+	GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderItemsByIDRow, error)
+	GetOrderStatusPreparing(ctx context.Context) (int64, error)
+	GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetOrderWithItemsRow, error)
+	GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error)
+	GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error)
 	GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error)
 	GetTableNumber(ctx context.Context, id int64) (int32, error)
 	GetTableSession(ctx context.Context, sessionid pgtype.UUID) (*GetTableSessionRow, error)
@@ -22,18 +30,26 @@ type Querier interface {
 	GetTotalPageSearchProducts(ctx context.Context, arg GetTotalPageSearchProductsParams) (int64, error)
 	GetTotalPageSearchTables(ctx context.Context, arg GetTotalPageSearchTablesParams) (int64, error)
 	Health(ctx context.Context) (int32, error)
+	IsOrderExist(ctx context.Context, id int64) (bool, error)
+	IsOrderItemsExist(ctx context.Context, id int64) (bool, error)
+	IsOrderStatusExist(ctx context.Context, code string) (bool, error)
+	IsOrderStatusFinal(ctx context.Context, code string) (bool, error)
 	IsProductExists(ctx context.Context, id int64) (bool, error)
 	IsTableAvailableOrReserved(ctx context.Context, id int64) (bool, error)
 	IsTableExists(ctx context.Context, id int64) (bool, error)
 	IsTableSessionActive(ctx context.Context, sessionid pgtype.UUID) (bool, error)
 	IsTableSessionExists(ctx context.Context, sessionid pgtype.UUID) (bool, error)
 	ListCategory(ctx context.Context) ([]*ListCategoryRow, error)
+	ListOrderStatus(ctx context.Context) ([]*ListOrderStatusRow, error)
 	ListTableStatus(ctx context.Context) ([]*ListTableStatusRow, error)
 	QuickSearchTables(ctx context.Context, arg QuickSearchTablesParams) ([]*QuickSearchTablesRow, error)
 	SearchProducts(ctx context.Context, arg SearchProductsParams) ([]*SearchProductsRow, error)
 	SearchTables(ctx context.Context, arg SearchTablesParams) ([]*SearchTablesRow, error)
+	UpdateOrderItemsStatus(ctx context.Context, arg UpdateOrderItemsStatusParams) error
+	UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) error
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
 	UpdateProductAvailability(ctx context.Context, arg UpdateProductAvailabilityParams) error
+	UpdateStatusCloseTableSession(ctx context.Context, sessionid pgtype.UUID) error
 	UpdateTables(ctx context.Context, arg UpdateTablesParams) error
 	UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error
 	UpdateTablesStatusAvailable(ctx context.Context, dollar_1 pgtype.Int8) error

@@ -89,5 +89,20 @@ FROM public.products as p
          INNER JOIN public.md_categories as c ON c.id = p.categories
 WHERE p.id = sqlc.arg(id)::bigint LIMIT 1;
 
+-- name: GetProductAvailableByID :one
+SELECT p.id,
+       p."name",
+       p.name_en,
+       p.categories,
+       c.name as "categoryName",
+       c.name_en as "categoryNameEN",
+       p.description,
+       p.price,
+       p.is_available,
+       p.image_url
+FROM public.products as p
+         INNER JOIN public.md_categories as c ON c.id = p.categories
+WHERE p.id = sqlc.arg(id)::bigint AND p.is_available IS TRUE LIMIT 1;
+
 -- name: IsProductExists :one
 SELECT count(*) > 0 FROM public.products WHERE id = $1;

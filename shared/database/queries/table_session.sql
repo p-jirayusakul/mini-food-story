@@ -25,3 +25,8 @@ FROM public.table_session ts
          JOIN public.tables t ON t.id = ts.table_id
          LEFT JOIN public.orders o ON o.session_id = ts.session_id
 WHERE ts.session_id = sqlc.arg(sessionID)::uuid;
+
+-- name: UpdateStatusCloseTableSession :exec
+UPDATE public.table_session
+SET ended_at=NOW(), status='closed'
+WHERE session_id=sqlc.arg(sessionID)::uuid;
