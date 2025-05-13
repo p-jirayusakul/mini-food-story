@@ -33,12 +33,16 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 }
 
 func (s *Handler) GetOrderByID(c *fiber.Ctx) error {
-	id, err := utils.StrToInt64(c.Params("id"))
+	sessionIDData := c.Get("X-Session-Id")
+	if sessionIDData == "" {
+		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
+	}
+	sessionID, err := uuid.Parse(sessionIDData)
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.GetOrderByID(c.Context(), id)
+	result, customError := s.useCase.GetOrderByID(c.Context(), sessionID)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -58,11 +62,6 @@ func (s *Handler) UpdateOrderStatus(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	id, err := utils.StrToInt64(c.Params("id"))
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
 	body := new(Status)
 	if err := c.BodyParser(body); err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
@@ -73,7 +72,7 @@ func (s *Handler) UpdateOrderStatus(c *fiber.Ctx) error {
 	}
 
 	customError := s.useCase.UpdateOrderStatus(c.Context(), sessionID, domain.OrderStatus{
-		ID:         id,
+		SessionID:  sessionID,
 		StatusCode: body.StatusCode,
 	})
 	if customError != nil {
@@ -94,11 +93,6 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	id, err := utils.StrToInt64(c.Params("id"))
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
 	body := new(OrderItems)
 	if err := c.BodyParser(body); err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
@@ -115,7 +109,6 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 		}
 		items = append(items, domain.OrderItems{
-			OrderID:   id,
 			ProductID: productID,
 			Quantity:  item.Quantity,
 			Note:      item.Note,
@@ -130,12 +123,16 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 }
 
 func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
-	id, err := utils.StrToInt64(c.Params("id"))
+	sessionIDData := c.Get("X-Session-Id")
+	if sessionIDData == "" {
+		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
+	}
+	sessionID, err := uuid.Parse(sessionIDData)
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.GetOrderItems(c.Context(), id)
+	result, customError := s.useCase.GetOrderItems(c.Context(), sessionID)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -144,7 +141,11 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 }
 
 func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
-	orderID, err := utils.StrToInt64(c.Params("id"))
+	sessionIDData := c.Get("X-Session-Id")
+	if sessionIDData == "" {
+		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
+	}
+	sessionID, err := uuid.Parse(sessionIDData)
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -154,7 +155,7 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.GetOderItemsByID(c.Context(), orderID, orderItemsID)
+	result, customError := s.useCase.GetOderItemsByID(c.Context(), sessionID, orderItemsID)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -169,11 +170,6 @@ func (s *Handler) UpdateOrderItemsStatus(c *fiber.Ctx) error {
 	}
 
 	sessionID, err := uuid.Parse(sessionIDData)
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	id, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -193,7 +189,6 @@ func (s *Handler) UpdateOrderItemsStatus(c *fiber.Ctx) error {
 	}
 
 	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), sessionID, domain.OrderItemsStatus{
-		OrderID:    id,
 		ID:         orderItemsID,
 		StatusCode: body.StatusCode,
 	})

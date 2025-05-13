@@ -2,7 +2,9 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"food-story/pkg/exceptions"
+	"food-story/pkg/utils"
 	"github.com/google/uuid"
 )
 
@@ -30,4 +32,38 @@ func (i *Implement) UpdateOrderStatusClosed(ctx context.Context, sessionID uuid.
 	}
 
 	return nil
+}
+
+func (i *Implement) GetOrderIDFromSession(sessionID uuid.UUID) (result int64, customError *exceptions.CustomError) {
+	session, err := i.cache.GetCachedTable(sessionID)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
+			return 0, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: exceptions.ErrSessionNotFound,
+			}
+		}
+
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: err,
+		}
+	}
+
+	if session.OrderID == nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: errors.New("order not found"),
+		}
+	}
+
+	orderID, err := utils.StrToInt64(*session.OrderID)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: err,
+		}
+	}
+
+	return orderID, nil
 }

@@ -85,7 +85,7 @@ func (i *TableImplement) CreateTableSession(ctx context.Context, payload domain.
 		Status:      "active",
 		StartedAt:   time.Now(),
 		OrderID:     nil,
-	}, time.Until(expiry))
+	}, 1*time.Hour)
 	if err != nil {
 		return "", &exceptions.CustomError{
 			Status: exceptions.ERRUNKNOWN,

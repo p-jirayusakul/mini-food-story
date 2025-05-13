@@ -3,18 +3,21 @@ package redis
 import (
 	"context"
 	"errors"
+	"fmt"
 	"food-story/pkg/exceptions"
 	"github.com/redis/go-redis/v9"
 	"log"
 	"log/slog"
+	"time"
 )
 
 var ctx = context.Background()
 
 type RedisInterface interface {
-	Set(key string, value string, expiration int) error
+	Set(key string, value string, expiration time.Duration) error
 	Get(key string) (string, error)
 	Del(key string) error
+	TTL(key string) (time.Duration, error)
 }
 
 type RedisClient struct {
@@ -38,8 +41,8 @@ func NewRedisClient(addr string, password string, db int) *RedisClient {
 
 var _ RedisInterface = (*RedisClient)(nil)
 
-func (r *RedisClient) Set(key string, value string, expiration int) error {
-	return r.Client.Set(ctx, key, value, 0).Err()
+func (r *RedisClient) Set(key string, value string, expiration time.Duration) error {
+	return r.Client.Set(ctx, key, value, expiration).Err()
 }
 
 func (r *RedisClient) Get(key string) (string, error) {
@@ -56,6 +59,19 @@ func (r *RedisClient) Get(key string) (string, error) {
 
 func (r *RedisClient) Del(key string) error {
 	return r.Client.Del(ctx, key).Err()
+}
+
+func (r *RedisClient) TTL(key string) (time.Duration, error) {
+	data, err := r.Client.TTL(ctx, key).Result()
+	fmt.Println("data", data)
+	if errors.Is(err, redis.Nil) {
+		slog.Error("Key not found", "key", key)
+		return 0, exceptions.ErrRedisKeyNotFound
+	} else if err != nil {
+		return 0, err
+	} else {
+		return data, nil
+	}
 }
 
 func (r *RedisClient) close() {

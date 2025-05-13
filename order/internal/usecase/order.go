@@ -29,29 +29,38 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID) (resul
 		TableID:   sessionDetail.TableID,
 	}
 
-	return i.repository.CreateOrder(ctx, order)
-}
+	orderID, customError := i.repository.CreateOrder(ctx, order)
+	if customError != nil {
+		return 0, customError
+	}
 
-func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.Order, customError *exceptions.CustomError) {
-	return i.repository.GetOrderByID(ctx, id)
-}
-
-func (i *Implement) UpdateOrderStatus(ctx context.Context, sessionID uuid.UUID, payload domain.OrderStatus) (customError *exceptions.CustomError) {
-	err := i.cache.IsCachedTableExist(sessionID)
+	err = i.cache.UpdateOrderID(sessionID, orderID)
 	if err != nil {
-
-		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
-			return &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: exceptions.ErrSessionNotFound,
-			}
-		}
-
-		return &exceptions.CustomError{
+		return 0, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
 			Errors: err,
 		}
 	}
+
+	return orderID, nil
+}
+
+func (i *Implement) GetOrderByID(ctx context.Context, sessionID uuid.UUID) (result *domain.Order, customError *exceptions.CustomError) {
+	orderID, customError := i.GetOrderIDFromSession(sessionID)
+	if customError != nil {
+		return
+	}
+
+	return i.repository.GetOrderByID(ctx, orderID)
+}
+
+func (i *Implement) UpdateOrderStatus(ctx context.Context, sessionID uuid.UUID, payload domain.OrderStatus) (customError *exceptions.CustomError) {
+	orderID, customError := i.GetOrderIDFromSession(sessionID)
+	if customError != nil {
+		return
+	}
+
+	payload.ID = orderID
 
 	customError = i.repository.UpdateOrderStatus(ctx, payload)
 	if customError != nil {

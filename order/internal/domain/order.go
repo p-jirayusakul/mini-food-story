@@ -13,5 +13,6 @@ type Order struct {
 
 type OrderStatus struct {
 	ID         int64
+	SessionID  uuid.UUID
 	StatusCode string
 }

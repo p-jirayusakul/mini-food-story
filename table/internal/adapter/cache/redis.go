@@ -44,7 +44,7 @@ func (r *RedisTableCache) SetCachedTable(key string, table *domain.CurrentTableS
 		return err
 	}
 
-	return r.client.Set(key, string(data), int(ttl.Seconds()))
+	return r.client.Set(key, string(data), ttl)
 }
 
 func (r *RedisTableCache) DeleteCachedTable(key string) error {
