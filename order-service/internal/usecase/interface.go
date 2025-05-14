@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"food-story/order-service/internal/adapter/cache"
+	"food-story/order-service/internal/adapter/queue/producer"
 	"food-story/pkg/exceptions"
 	"food-story/shared/config"
 	"github.com/google/uuid"
@@ -26,13 +27,15 @@ type Implement struct {
 	config     config.Config
 	repository repository.Implement
 	cache      cache.RedisTableCacheInterface
+	queue      producer.OrderProducer
 }
 
-func NewUsecase(config config.Config, repository repository.Implement, cache cache.RedisTableCacheInterface) *Implement {
+func NewUsecase(config config.Config, repository repository.Implement, cache cache.RedisTableCacheInterface, queue producer.OrderProducer) *Implement {
 	return &Implement{
 		config,
 		repository,
 		cache,
+		queue,
 	}
 }
 

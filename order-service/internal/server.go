@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"food-story/order-service/internal/adapter/cache"
 	orderhd "food-story/order-service/internal/adapter/http"
+	"food-story/order-service/internal/adapter/queue/producer"
 	"food-story/order-service/internal/adapter/repository"
 	"food-story/order-service/internal/usecase"
 	"food-story/pkg/common"
@@ -71,6 +72,12 @@ func New() *FiberServer {
 	// connect to redis
 	redisConn := redis.NewRedisClient("localhost:6379", "", 0)
 
+	// connect to kafka
+	kafkaConn, err := producer.NewOrderProducer([]string{"localhost:9092"})
+	if err != nil {
+		panic(err)
+	}
+
 	// Create a new Node with a Node number of 1
 	node := snowflakeid.CreateSnowflakeNode(1)
 	snowflakeNode := snowflakeid.NewSnowflake(node)
@@ -93,7 +100,7 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, kafkaConn)
 
 	return &FiberServer{
 		App: app,
@@ -105,10 +112,10 @@ func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
 	return dbConn.Ping(ctx) == nil
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, kafkaConn *producer.OrderProducer) {
 	orderCache := cache.NewRedisTableCache(redisConn)
 	orderRepo := repository.NewRepo(configApp, store, snowflakeNode)
-	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache)
+	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache, *kafkaConn)
 	orderhd.NewHTTPHandler(router, orderUseCase, validator, configApp)
 }
 

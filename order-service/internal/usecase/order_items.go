@@ -18,7 +18,30 @@ func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, i
 		items[index].OrderID = orderID
 	}
 
-	return i.repository.CreateOrderItems(ctx, items)
+	customError = i.repository.CreateOrderItems(ctx, items)
+	if customError != nil {
+		return
+	}
+
+	orderItems, customError := i.GetOrderItems(ctx, sessionID)
+	if customError != nil {
+		return
+	}
+
+	// public message to kafka
+	if len(orderItems) > 0 {
+		for _, item := range orderItems {
+			err := i.queue.PublishOrder(*item)
+			if err != nil {
+				return &exceptions.CustomError{
+					Status: exceptions.ERRREPOSITORY,
+					Errors: err,
+				}
+			}
+		}
+	}
+
+	return
 }
 
 func (i *Implement) GetOrderItems(ctx context.Context, sessionID uuid.UUID) (result []*domain.OrderItems, customError *exceptions.CustomError) {
