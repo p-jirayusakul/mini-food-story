@@ -9,9 +9,11 @@ import (
 	"errors"
 	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/shopspring/decimal"
 	"io"
+	"log/slog"
 	"math/big"
 	"strconv"
 	"strings"
@@ -171,6 +173,26 @@ func DecryptSession(encrypted string, key []byte) (SessionData, error) {
 
 	err = json.Unmarshal(plaintext, &data)
 	return data, err
+}
+
+func DecryptSessionToUUID(encrypted string, key []byte) (result uuid.UUID, err error) {
+	decrypt, err := DecryptSession(encrypted, key)
+	if err != nil {
+		slog.Error("DecryptSessionToUUID", "err", err)
+		return result, errors.New("invalid session id, please login again")
+	}
+
+	if decrypt.SessionID == "" {
+		return result, errors.New("session id is empty")
+	}
+
+	result, err = uuid.Parse(decrypt.SessionID)
+	if err != nil {
+		slog.Error("DecryptSessionToUUID", "err", err)
+		return result, errors.New("invalid session id, please login again")
+	}
+
+	return
 }
 
 func ConvertFloatToIntExp(floatNumber float64) int64 {

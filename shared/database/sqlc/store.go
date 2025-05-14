@@ -9,6 +9,7 @@ import (
 type Store interface {
 	Querier
 	TXCreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
+	TXCreateOrder(ctx context.Context, arg TXCreateOrderParams) (int64, error)
 }
 
 // SQLStore provides all functions to execute SQL queries and transactions

@@ -12,18 +12,36 @@ import (
 
 func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderItems) (customError *exceptions.CustomError) {
 
+	orderItems, customError := i.BuildPayloadOrderItems(ctx, items)
+	if customError != nil {
+		return
+	}
+
+	if len(orderItems) > 0 {
+		_, err := i.repository.CreateOrderItems(ctx, orderItems)
+		if err != nil {
+			return &exceptions.CustomError{
+				Status: exceptions.ERRREPOSITORY,
+				Errors: fmt.Errorf("failed to create order items: %w", err),
+			}
+		}
+	}
+
+	return nil
+}
+
+func (i *Implement) BuildPayloadOrderItems(ctx context.Context, items []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
 	var orderItems []database.CreateOrderItemsParams
 	for _, item := range items {
-
 		product, err := i.repository.GetProductByID(ctx, item.ProductID)
 		if err != nil {
 			if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-				return &exceptions.CustomError{
+				return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
 					Status: exceptions.ERRNOTFOUND,
 					Errors: fmt.Errorf("product %d not found", item.ProductID),
 				}
 			}
-			return &exceptions.CustomError{
+			return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
 				Status: exceptions.ERRREPOSITORY,
 				Errors: fmt.Errorf("failed to get product: %w", err),
 			}
@@ -31,7 +49,7 @@ func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderIt
 
 		statusPreparingID, customError := i.GetOrderStatusPreparing(ctx)
 		if customError != nil {
-			return customError
+			return []database.CreateOrderItemsParams{}, customError
 		}
 
 		orderItems = append(orderItems, database.CreateOrderItemsParams{
@@ -47,17 +65,7 @@ func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderIt
 		})
 	}
 
-	if len(orderItems) > 0 {
-		_, err := i.repository.CreateOrderItems(ctx, orderItems)
-		if err != nil {
-			return &exceptions.CustomError{
-				Status: exceptions.ERRREPOSITORY,
-				Errors: fmt.Errorf("failed to create order items: %w", err),
-			}
-		}
-	}
-
-	return nil
+	return orderItems, nil
 }
 
 func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*domain.OrderItems, customError *exceptions.CustomError) {

@@ -109,7 +109,7 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 	orderCache := cache.NewRedisTableCache(redisConn)
 	orderRepo := repository.NewRepo(configApp, store, snowflakeNode)
 	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache)
-	orderhd.NewHTTPHandler(router, orderUseCase, validator)
+	orderhd.NewHTTPHandler(router, orderUseCase, validator, configApp)
 }
 
 func (s *FiberServer) CloseDB() {

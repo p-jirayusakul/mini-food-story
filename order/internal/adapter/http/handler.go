@@ -6,7 +6,6 @@ import (
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
 	"github.com/gofiber/fiber/v2"
-	"github.com/google/uuid"
 	"strconv"
 )
 
@@ -17,12 +16,34 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
 	}
 
-	sessionID, err := uuid.Parse(sessionIDData)
+	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.CreateOrder(c.Context(), sessionID)
+	body := new(OrderItems)
+	if err := c.BodyParser(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	var items []domain.OrderItems
+	for _, item := range body.Items {
+		productID, err := utils.StrToInt64(item.ProductID)
+		if err != nil {
+			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		}
+		items = append(items, domain.OrderItems{
+			ProductID: productID,
+			Quantity:  item.Quantity,
+			Note:      item.Note,
+		})
+	}
+
+	result, customError := s.useCase.CreateOrder(c.Context(), sessionID, items)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -37,7 +58,7 @@ func (s *Handler) GetOrderByID(c *fiber.Ctx) error {
 	if sessionIDData == "" {
 		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
 	}
-	sessionID, err := uuid.Parse(sessionIDData)
+	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -57,12 +78,12 @@ func (s *Handler) UpdateOrderStatus(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
 	}
 
-	sessionID, err := uuid.Parse(sessionIDData)
+	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	body := new(Status)
+	body := new(StatusOrder)
 	if err := c.BodyParser(body); err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -88,7 +109,7 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
 	}
 
-	sessionID, err := uuid.Parse(sessionIDData)
+	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -127,7 +148,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 	if sessionIDData == "" {
 		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
 	}
-	sessionID, err := uuid.Parse(sessionIDData)
+	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -145,7 +166,7 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 	if sessionIDData == "" {
 		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
 	}
-	sessionID, err := uuid.Parse(sessionIDData)
+	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -169,7 +190,7 @@ func (s *Handler) UpdateOrderItemsStatus(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
 	}
 
-	sessionID, err := uuid.Parse(sessionIDData)
+	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -179,7 +200,7 @@ func (s *Handler) UpdateOrderItemsStatus(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	body := new(Status)
+	body := new(StatusOrderItems)
 	if err := c.BodyParser(body); err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}

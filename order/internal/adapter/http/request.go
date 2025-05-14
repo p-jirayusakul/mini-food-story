@@ -10,6 +10,10 @@ type OrderItemsData struct {
 	Note      *string `json:"note"`
 }
 
-type Status struct {
-	StatusCode string `json:"statusCode" validate:"required,oneof=PENDING CONFIRMED PREPARING SERVED WAITING_PAYMENT COMPLETED CANCELLED"`
+type StatusOrder struct {
+	StatusCode string `json:"statusCode" validate:"required,oneof=WAITING_PAYMENT COMPLETED CANCELLED"`
+}
+
+type StatusOrderItems struct {
+	StatusCode string `json:"statusCode" validate:"required,oneof=PENDING CONFIRMED PREPARING SERVED COMPLETED CANCELLED"`
 }

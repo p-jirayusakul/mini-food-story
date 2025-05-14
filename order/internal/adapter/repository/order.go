@@ -7,17 +7,24 @@ import (
 	"food-story/order/internal/domain"
 	"food-story/pkg/exceptions"
 	database "food-story/shared/database/sqlc"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (i *Implement) CreateOrder(ctx context.Context, order domain.Order) (result int64, customError *exceptions.CustomError) {
+func (i *Implement) CreateOrder(ctx context.Context, payload domain.CreateOrder) (result int64, customError *exceptions.CustomError) {
 
-	var sessionByte [16]byte = order.SessionID
-	id, err := i.repository.CreateOrder(ctx, database.CreateOrderParams{
-		ID:        i.snowflakeID.Generate(),
-		SessionID: pgtype.UUID{Bytes: sessionByte, Valid: true},
-		TableID:   order.TableID,
+	orderItemsPayload, customError := i.BuildPayloadOrderItems(ctx, payload.OrderItems)
+	if customError != nil {
+		return
+	}
+
+	var sessionByte [16]byte = payload.SessionID
+	id, err := i.repository.TXCreateOrder(ctx, database.TXCreateOrderParams{
+		CreateOrderItems: orderItemsPayload,
+		CreateOrder: database.CreateOrderParams{
+			ID:        i.snowflakeID.Generate(),
+			SessionID: pgtype.UUID{Bytes: sessionByte, Valid: true},
+			TableID:   payload.TableID,
+		},
 	})
 	if err != nil {
 		return 0, &exceptions.CustomError{
@@ -44,17 +51,8 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 		}
 	}
 
-	sessionID, err := uuid.Parse(data.SessionID.String())
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
-			Errors: fmt.Errorf("failed to get order: %w", err),
-		}
-	}
-
 	return &domain.Order{
 		ID:           data.ID,
-		SessionID:    sessionID,
 		TableID:      data.TableID,
 		StatusID:     data.StatusID,
 		StatusName:   data.StatusName,

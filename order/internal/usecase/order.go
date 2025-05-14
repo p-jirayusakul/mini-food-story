@@ -5,10 +5,11 @@ import (
 	"errors"
 	"food-story/order/internal/domain"
 	"food-story/pkg/exceptions"
+	"food-story/pkg/utils"
 	"github.com/google/uuid"
 )
 
-func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID) (result int64, customError *exceptions.CustomError) {
+func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, items []domain.OrderItems) (result int64, customError *exceptions.CustomError) {
 	sessionDetail, err := i.cache.GetCachedTable(sessionID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
@@ -24,12 +25,32 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID) (resul
 		}
 	}
 
-	order := domain.Order{
-		SessionID: sessionID,
-		TableID:   sessionDetail.TableID,
+	if sessionDetail.OrderID != nil {
+		orderID, err := utils.StrToInt64(*sessionDetail.OrderID)
+		if err != nil {
+			return 0, &exceptions.CustomError{
+				Status: exceptions.ERRUNKNOWN,
+				Errors: err,
+			}
+		}
+
+		if len(items) > 0 {
+			customError := i.CreateOrderItems(ctx, sessionID, items)
+			if customError != nil {
+				return 0, customError
+			}
+		}
+
+		return orderID, nil
 	}
 
-	orderID, customError := i.repository.CreateOrder(ctx, order)
+	payloadCreateOrder := domain.CreateOrder{
+		SessionID:  sessionID,
+		TableID:    sessionDetail.TableID,
+		OrderItems: items,
+	}
+
+	orderID, customError := i.repository.CreateOrder(ctx, payloadCreateOrder)
 	if customError != nil {
 		return 0, customError
 	}
