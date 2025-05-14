@@ -4,6 +4,13 @@ CREATE TYPE "table_session_status" AS ENUM (
     'expired'
     );
 
+CREATE TYPE "payment_status" AS ENUM (
+    'pending',
+    'paid',
+    'failed',
+    'refunded'
+    );
+
 CREATE TABLE "md_table_statuses" (
                                      "id" bigint UNIQUE PRIMARY KEY NOT NULL,
                                      "code" varchar(15) UNIQUE NOT NULL,
@@ -44,7 +51,7 @@ CREATE TABLE "tables" (
 CREATE TABLE "table_session" (
                                  "id" bigint UNIQUE PRIMARY KEY NOT NULL,
                                  "table_id" bigint NOT NULL,
-                                 "session_id" uuid NOT NULL,
+                                 "session_id" uuid UNIQUE NOT NULL DEFAULT 'gen_random_uuid()',
                                  "number_of_people" int NOT NULL DEFAULT 1,
                                  "status" table_session_status,
                                  "started_at" timestamp NOT NULL DEFAULT 'NOW()',
@@ -88,6 +95,29 @@ CREATE TABLE "order_items" (
                                "prepared_at" timestamp,
                                "created_at" timestamp NOT NULL DEFAULT 'NOW()',
                                "updated_at" timestamp
+);
+
+CREATE TABLE "payments" (
+                            "id" bigint UNIQUE PRIMARY KEY NOT NULL,
+                            "order_id" bigint NOT NULL,
+                            "amount" numeric(10,2) NOT NULL DEFAULT 0,
+                            "method" bigint NOT NULL,
+                            "status" payment_status DEFAULT 'pending',
+                            "paid_at" timestamp,
+                            "transaction_id" text,
+                            "created_at" timestamp NOT NULL DEFAULT 'NOW()',
+                            "updated_at" timestamp,
+                            "note" text
+);
+
+CREATE TABLE "payment_methods" (
+                                   "id" bigint UNIQUE PRIMARY KEY NOT NULL,
+                                   "code" varchar(15) UNIQUE NOT NULL,
+                                   "name" varchar(100) UNIQUE NOT NULL,
+                                   "name_en" varchar(100) UNIQUE NOT NULL,
+                                   "enable" bool NOT NULL DEFAULT false,
+                                   "created_at" timestamp NOT NULL DEFAULT 'NOW()',
+                                   "updated_at" timestamp
 );
 
 CREATE INDEX ON "md_table_statuses" ("id");
@@ -134,6 +164,14 @@ CREATE INDEX ON "order_items" ("order_id");
 
 CREATE INDEX ON "order_items" ("status_id");
 
+CREATE INDEX ON "payments" ("id");
+
+CREATE INDEX ON "payments" ("order_id");
+
+CREATE INDEX ON "payment_methods" ("id");
+
+CREATE INDEX ON "payment_methods" ("code");
+
 COMMENT ON COLUMN "order_items"."prepared_at" IS 'เวลาที่ทำอาหารเสร็จ';
 
 ALTER TABLE "tables" ADD FOREIGN KEY ("status_id") REFERENCES "md_table_statuses" ("id");
@@ -151,3 +189,7 @@ ALTER TABLE "order_items" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id"
 ALTER TABLE "order_items" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
 
 ALTER TABLE "order_items" ADD FOREIGN KEY ("status_id") REFERENCES "md_order_statuses" ("id");
+
+ALTER TABLE "payments" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id");
+
+ALTER TABLE "payments" ADD FOREIGN KEY ("method") REFERENCES "payment_methods" ("id");
