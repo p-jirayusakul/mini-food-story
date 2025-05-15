@@ -23,6 +23,11 @@ UPDATE public.tables
 SET status_id=$2, updated_at = NOW()
 WHERE id=$1;
 
+-- name: UpdateTablesStatusOrdered :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'ORDERED'), updated_at = NOW()
+WHERE id=sqlc.arg(id)::bigint;
+
 -- name: UpdateTablesStatusAvailable :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'AVAILABLE'), updated_at = NOW()

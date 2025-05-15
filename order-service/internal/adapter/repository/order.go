@@ -54,6 +54,7 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 	return &domain.Order{
 		ID:           data.ID,
 		TableID:      data.TableID,
+		TableNumber:  data.TableNumber,
 		StatusID:     data.StatusID,
 		StatusName:   data.StatusName,
 		StatusNameEN: data.StatusNameEN,
@@ -62,11 +63,6 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 
 func (i *Implement) UpdateOrderStatus(ctx context.Context, payload domain.OrderStatus) (customError *exceptions.CustomError) {
 	customError = i.IsOrderExist(ctx, payload.ID)
-	if customError != nil {
-		return
-	}
-
-	customError = i.IsOrderStatus(ctx, payload.StatusCode)
 	if customError != nil {
 		return
 	}
@@ -98,6 +94,28 @@ func (i *Implement) IsOrderExist(ctx context.Context, id int64) (customError *ex
 		return &exceptions.CustomError{
 			Status: exceptions.ERRNOTFOUND,
 			Errors: fmt.Errorf("order not found"),
+		}
+	}
+
+	return nil
+}
+
+func (i *Implement) IsOrderWithItemsExists(ctx context.Context, orderID, orderItemsID int64) (customError *exceptions.CustomError) {
+	isExist, err := i.repository.IsOrderWithItemsExists(ctx, database.IsOrderWithItemsExistsParams{
+		OrderID:      orderID,
+		OrderItemsID: orderItemsID,
+	})
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to check order item exists: %w", err),
+		}
+	}
+
+	if !isExist {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: fmt.Errorf("order item not found"),
 		}
 	}
 

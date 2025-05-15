@@ -32,7 +32,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 }
 
 const getOrderByID = `-- name: GetOrderByID :one
-SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN"
+SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN"
 FROM public.orders as o
 JOIN public.md_order_statuses as mos ON o.status_id = mos.id
 JOIN public.tables as t ON o.table_id = t.id
@@ -40,13 +40,14 @@ WHERE o.id = $1::bigint
 `
 
 type GetOrderByIDRow struct {
-	ID           int64       `json:"id"`
-	SessionID    pgtype.UUID `json:"sessionID"`
-	TableID      int64       `json:"tableID"`
-	TableNumber  int32       `json:"tableNumber"`
-	StatusID     int64       `json:"statusID"`
-	StatusName   string      `json:"statusName"`
-	StatusNameEN string      `json:"statusNameEN"`
+	ID            int64       `json:"id"`
+	SessionID     pgtype.UUID `json:"sessionID"`
+	TableID       int64       `json:"tableID"`
+	TableNumber   int32       `json:"tableNumber"`
+	TableNumber_2 int32       `json:"tableNumber_2"`
+	StatusID      int64       `json:"statusID"`
+	StatusName    string      `json:"statusName"`
+	StatusNameEN  string      `json:"statusNameEN"`
 }
 
 func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error) {
@@ -57,6 +58,7 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow,
 		&i.SessionID,
 		&i.TableID,
 		&i.TableNumber,
+		&i.TableNumber_2,
 		&i.StatusID,
 		&i.StatusName,
 		&i.StatusNameEN,
@@ -81,6 +83,7 @@ FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
 WHERE o.id = $1::bigint
+order by oi.created_at DESC
 `
 
 type GetOrderWithItemsRow struct {
@@ -197,6 +200,25 @@ FROM public.orders WHERE id = $1
 
 func (q *Queries) IsOrderExist(ctx context.Context, id int64) (bool, error) {
 	row := q.db.QueryRow(ctx, isOrderExist, id)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const isOrderWithItemsExists = `-- name: IsOrderWithItemsExists :one
+SELECT COUNT(*) > 0
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+WHERE o.id = $1::bigint AND oi.id = $2::bigint LIMIT 1
+`
+
+type IsOrderWithItemsExistsParams struct {
+	OrderID      int64 `json:"order_id"`
+	OrderItemsID int64 `json:"order_items_id"`
+}
+
+func (q *Queries) IsOrderWithItemsExists(ctx context.Context, arg IsOrderWithItemsExistsParams) (bool, error) {
+	row := q.db.QueryRow(ctx, isOrderWithItemsExists, arg.OrderID, arg.OrderItemsID)
 	var column_1 bool
 	err := row.Scan(&column_1)
 	return column_1, err

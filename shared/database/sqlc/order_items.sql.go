@@ -12,15 +12,16 @@ import (
 )
 
 type CreateOrderItemsParams struct {
-	ID            int64          `json:"id"`
-	OrderID       int64          `json:"order_id"`
-	ProductID     int64          `json:"product_id"`
-	StatusID      int64          `json:"status_id"`
-	ProductName   string         `json:"product_name"`
-	ProductNameEn string         `json:"product_name_en"`
-	Price         pgtype.Numeric `json:"price"`
-	Quantity      int32          `json:"quantity"`
-	Note          pgtype.Text    `json:"note"`
+	ID            int64            `json:"id"`
+	OrderID       int64            `json:"order_id"`
+	ProductID     int64            `json:"product_id"`
+	StatusID      int64            `json:"status_id"`
+	ProductName   string           `json:"product_name"`
+	ProductNameEn string           `json:"product_name_en"`
+	Price         pgtype.Numeric   `json:"price"`
+	Quantity      int32            `json:"quantity"`
+	Note          pgtype.Text      `json:"note"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
 }
 
 const getOrderItemsByID = `-- name: GetOrderItemsByID :one
@@ -71,7 +72,7 @@ func (q *Queries) IsOrderItemsExist(ctx context.Context, id int64) (bool, error)
 
 const updateOrderItemsStatus = `-- name: UpdateOrderItemsStatus :exec
 UPDATE public.order_items
-SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = $1::text LIMIT 1)
+SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = $1::text LIMIT 1), updated_at = NOW()
 WHERE id = $2::bigint
 `
 

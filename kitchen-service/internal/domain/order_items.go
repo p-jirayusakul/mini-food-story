@@ -13,7 +13,7 @@ type OrderItems struct {
 	ProductNameEN string  `json:"productNameEN"`
 	Price         float64 `json:"price"`
 	Quantity      int32   `json:"quantity"`
-	Note          *string `json:"note,omitempty"`
+	Note          *string `json:"note"`
 }
 
 type OrderItemsStatus struct {

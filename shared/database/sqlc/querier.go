@@ -34,6 +34,7 @@ type Querier interface {
 	IsOrderItemsExist(ctx context.Context, id int64) (bool, error)
 	IsOrderStatusExist(ctx context.Context, code string) (bool, error)
 	IsOrderStatusFinal(ctx context.Context, code string) (bool, error)
+	IsOrderWithItemsExists(ctx context.Context, arg IsOrderWithItemsExistsParams) (bool, error)
 	IsProductExists(ctx context.Context, id int64) (bool, error)
 	IsTableAvailableOrReserved(ctx context.Context, id int64) (bool, error)
 	IsTableExists(ctx context.Context, id int64) (bool, error)
@@ -55,6 +56,7 @@ type Querier interface {
 	UpdateTablesStatusAvailable(ctx context.Context, dollar_1 pgtype.Int8) error
 	UpdateTablesStatusDisabled(ctx context.Context, dollar_1 pgtype.Int8) error
 	UpdateTablesStatusOccupied(ctx context.Context, id int64) error
+	UpdateTablesStatusOrdered(ctx context.Context, id int64) error
 	UpdateTablesStatusReserved(ctx context.Context, dollar_1 pgtype.Int8) error
 }
 

@@ -30,6 +30,11 @@ func (store *SQLStore) TXCreateOrder(ctx context.Context, arg TXCreateOrderParam
 			}
 		}
 
+		err := q.UpdateTablesStatusOrdered(ctx, arg.CreateOrder.TableID)
+		if err != nil {
+			return err
+		}
+
 		return nil
 	})
 

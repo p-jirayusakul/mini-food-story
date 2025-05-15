@@ -35,11 +35,10 @@ func (s *Handler) setupRoutes() {
 
 	group.Post("", s.CreateOrder)
 	group.Get("/current", s.GetOrderByID)
-	group.Patch("/current/status", s.UpdateOrderStatus)
 
 	group.Post("/current/items", s.CreateOrderItems)
 	group.Get("/current/items", s.GetOrderItems)
 	group.Get("/current/items/:orderItemsID<int>", s.GetOrderItemsByID)
-	group.Patch("/current/items/:orderItemsID<int>/status", s.UpdateOrderItemsStatus)
+	group.Patch("/current/items/:orderItemsID<int>/status/cancelled", s.UpdateOrderItemsStatusCancelled)
 
 }

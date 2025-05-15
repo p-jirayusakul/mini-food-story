@@ -6,7 +6,7 @@ import (
 	"food-story/pkg/exceptions"
 )
 
-func (i *Implement) IsOrderStatus(ctx context.Context, statusCode string) (customError *exceptions.CustomError) {
+func (i *Implement) IsOrderStatusExist(ctx context.Context, statusCode string) (customError *exceptions.CustomError) {
 	isStatusExist, err := i.repository.IsOrderStatusExist(ctx, statusCode)
 	if err != nil {
 		return &exceptions.CustomError{

@@ -9,12 +9,7 @@ import (
 )
 
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
-	customError = i.IsOrderExist(ctx, payload.OrderID)
-	if customError != nil {
-		return
-	}
-
-	customError = i.IsOrderStatus(ctx, payload.StatusCode)
+	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
 	if customError != nil {
 		return
 	}

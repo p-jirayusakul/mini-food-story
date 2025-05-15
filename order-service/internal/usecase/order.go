@@ -91,19 +91,3 @@ func (i *Implement) GetOrderByID(ctx context.Context, sessionID uuid.UUID) (resu
 
 	return i.repository.GetOrderByID(ctx, orderID)
 }
-
-func (i *Implement) UpdateOrderStatus(ctx context.Context, sessionID uuid.UUID, payload domain.OrderStatus) (customError *exceptions.CustomError) {
-	orderID, customError := i.GetOrderIDFromSession(sessionID)
-	if customError != nil {
-		return
-	}
-
-	payload.ID = orderID
-
-	customError = i.repository.UpdateOrderStatus(ctx, payload)
-	if customError != nil {
-		return
-	}
-
-	return i.UpdateOrderStatusClosed(ctx, sessionID, payload.StatusCode)
-}

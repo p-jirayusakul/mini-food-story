@@ -8,6 +8,8 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
+	"github.com/jackc/pgx/v5/pgtype"
+	"time"
 )
 
 func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderItems) (customError *exceptions.CustomError) {
@@ -62,6 +64,7 @@ func (i *Implement) BuildPayloadOrderItems(ctx context.Context, items []domain.O
 			Price:         product.Price,
 			Quantity:      item.Quantity,
 			Note:          utils.StringPtrToPgText(item.Note),
+			CreatedAt:     pgtype.Timestamp{Time: time.Now(), Valid: true},
 		})
 	}
 
@@ -106,7 +109,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 
 func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *domain.OrderItems, customError *exceptions.CustomError) {
 
-	customError = i.IsOrderExist(ctx, orderID)
+	customError = i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
 	if customError != nil {
 		return
 	}
@@ -148,12 +151,7 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 }
 
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
-	customError = i.IsOrderExist(ctx, payload.OrderID)
-	if customError != nil {
-		return
-	}
-
-	customError = i.IsOrderStatus(ctx, payload.StatusCode)
+	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
 	if customError != nil {
 		return
 	}

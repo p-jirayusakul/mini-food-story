@@ -71,38 +71,6 @@ func (s *Handler) GetOrderByID(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get order success", result)
 }
 
-func (s *Handler) UpdateOrderStatus(c *fiber.Ctx) error {
-
-	sessionIDData := c.Get("X-Session-Id")
-	if sessionIDData == "" {
-		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
-	}
-
-	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	body := new(StatusOrder)
-	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	customError := s.useCase.UpdateOrderStatus(c.Context(), sessionID, domain.OrderStatus{
-		SessionID:  sessionID,
-		StatusCode: body.StatusCode,
-	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
-	}
-
-	return middleware.ResponseOK(c, "update order status success", nil)
-}
-
 func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 	sessionIDData := c.Get("X-Session-Id")
 	if sessionIDData == "" {
@@ -184,7 +152,7 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get order item success", result)
 }
 
-func (s *Handler) UpdateOrderItemsStatus(c *fiber.Ctx) error {
+func (s *Handler) UpdateOrderItemsStatusCancelled(c *fiber.Ctx) error {
 	sessionIDData := c.Get("X-Session-Id")
 	if sessionIDData == "" {
 		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
@@ -200,18 +168,9 @@ func (s *Handler) UpdateOrderItemsStatus(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	body := new(StatusOrderItems)
-	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
 	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), sessionID, domain.OrderItemsStatus{
 		ID:         orderItemsID,
-		StatusCode: body.StatusCode,
+		StatusCode: "CANCELLED",
 	})
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())

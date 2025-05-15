@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
@@ -86,8 +85,6 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.U
 	}
 
 	payload.OrderID = orderID
-
-	fmt.Println(payload.OrderID)
 
 	return i.repository.UpdateOrderItemsStatus(ctx, payload)
 }

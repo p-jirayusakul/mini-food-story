@@ -38,6 +38,7 @@ func (r iteratorForCreateOrderItems) Values() ([]interface{}, error) {
 		r.rows[0].Price,
 		r.rows[0].Quantity,
 		r.rows[0].Note,
+		r.rows[0].CreatedAt,
 	}, nil
 }
 
@@ -46,5 +47,5 @@ func (r iteratorForCreateOrderItems) Err() error {
 }
 
 func (q *Queries) CreateOrderItems(ctx context.Context, arg []CreateOrderItemsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"public", "order_items"}, []string{"id", "order_id", "product_id", "status_id", "product_name", "product_name_en", "price", "quantity", "note"}, &iteratorForCreateOrderItems{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"public", "order_items"}, []string{"id", "order_id", "product_id", "status_id", "product_name", "product_name_en", "price", "quantity", "note", "created_at"}, &iteratorForCreateOrderItems{rows: arg})
 }

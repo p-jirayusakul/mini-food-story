@@ -9,7 +9,7 @@ SELECT COUNT(id) > 0
 FROM public.orders WHERE id = $1;
 
 -- name: GetOrderByID :one
-SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN"
+SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN"
 FROM public.orders as o
 JOIN public.md_order_statuses as mos ON o.status_id = mos.id
 JOIN public.tables as t ON o.table_id = t.id
@@ -36,7 +36,8 @@ SELECT o.id  AS "orderID",
 FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
-WHERE o.id = sqlc.arg(order_id)::bigint;
+WHERE o.id = sqlc.arg(order_id)::bigint
+order by oi.created_at DESC;
 
 -- name: GetOrderWithItemsByID :one
 SELECT o.id  AS "orderID",
@@ -54,6 +55,12 @@ SELECT o.id  AS "orderID",
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+WHERE o.id = sqlc.arg(order_id)::bigint AND oi.id = sqlc.arg(order_items_id)::bigint LIMIT 1;
+
+-- name: IsOrderWithItemsExists :one
+SELECT COUNT(*) > 0
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
 WHERE o.id = sqlc.arg(order_id)::bigint AND oi.id = sqlc.arg(order_items_id)::bigint LIMIT 1;
 
 
