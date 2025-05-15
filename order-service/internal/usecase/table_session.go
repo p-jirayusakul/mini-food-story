@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	"github.com/google/uuid"
@@ -66,4 +67,37 @@ func (i *Implement) GetOrderIDFromSession(sessionID uuid.UUID) (result int64, cu
 	}
 
 	return orderID, nil
+}
+
+func (i *Implement) GetCurrentTableSession(sessionID uuid.UUID) (result domain.CurrentTableSession, customError *exceptions.CustomError) {
+	session, err := i.cache.GetCachedTable(sessionID)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
+			return domain.CurrentTableSession{}, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: exceptions.ErrSessionNotFound,
+			}
+		}
+
+		return domain.CurrentTableSession{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: err,
+		}
+	}
+
+	if session == nil {
+		return domain.CurrentTableSession{}, &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: errors.New("session not found"),
+		}
+	}
+
+	if session.OrderID == nil {
+		return domain.CurrentTableSession{}, &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: errors.New("order not found"),
+		}
+	}
+
+	return *session, nil
 }

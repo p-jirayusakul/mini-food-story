@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
+	"food-story/pkg/utils"
 	"github.com/google/uuid"
 )
 
@@ -45,21 +46,37 @@ func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, i
 }
 
 func (i *Implement) GetOrderItems(ctx context.Context, sessionID uuid.UUID) (result []*domain.OrderItems, customError *exceptions.CustomError) {
-	orderID, customError := i.GetOrderIDFromSession(sessionID)
+	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
 		return
 	}
 
-	return i.repository.GetOrderItems(ctx, orderID)
+	orderID, err := utils.StrToInt64(*tableSession.OrderID)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: err,
+		}
+	}
+
+	return i.repository.GetOrderItems(ctx, orderID, tableSession.TableNumber)
 }
 
 func (i *Implement) GetOderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.OrderItems, customError *exceptions.CustomError) {
-	orderID, customError := i.GetOrderIDFromSession(sessionID)
+	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
 		return
 	}
 
-	return i.repository.GetOderItemsByID(ctx, orderID, orderItemsID)
+	orderID, err := utils.StrToInt64(*tableSession.OrderID)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: err,
+		}
+	}
+
+	return i.repository.GetOderItemsByID(ctx, orderID, orderItemsID, tableSession.TableNumber)
 }
 
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {

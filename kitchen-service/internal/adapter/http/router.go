@@ -32,6 +32,7 @@ func NewHTTPHandler(
 
 func (s *Handler) setupRoutes() {
 	group := s.router.Group("/orders")
-	group.Patch("/:id<int>/items/:orderItemsID<int>/status", s.UpdateOrderItemsStatus)
+	group.Patch("/:id<int>/items/:orderItemsID<int>/status/served", s.UpdateOrderItemsStatusServed)
+	group.Patch("/:id<int>/items/:orderItemsID<int>/status/cancelled", s.UpdateOrderItemsStatusCancelled)
 
 }

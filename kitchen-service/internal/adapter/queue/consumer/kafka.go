@@ -61,5 +61,5 @@ func StartConsumer(ctx context.Context, topics []string, client sarama.ConsumerG
 }
 
 func processOrder(order domain.OrderItems) {
-	log.Printf("  - Menu: %d %s x %d\n", order.OrderID, order.ProductName, order.Quantity)
+	log.Printf("  - Menu: %d %s x %d, Table: %d \n", order.OrderID, order.ProductName, order.Quantity, order.TableNumber)
 }

@@ -68,7 +68,7 @@ func (i *Implement) BuildPayloadOrderItems(ctx context.Context, items []domain.O
 	return orderItems, nil
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
 	customError = i.IsOrderExist(ctx, orderID)
 	if customError != nil {
 		return
@@ -89,6 +89,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []
 			OrderID:       v.OrderID,
 			ProductID:     v.ProductID,
 			StatusID:      v.StatusID,
+			TableNumber:   tableNumber,
 			StatusName:    v.StatusName,
 			StatusNameEN:  v.StatusNameEN,
 			StatusCode:    v.StatusCode,
@@ -103,7 +104,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []
 	return
 }
 
-func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *domain.OrderItems, customError *exceptions.CustomError) {
 
 	customError = i.IsOrderExist(ctx, orderID)
 	if customError != nil {
@@ -134,6 +135,7 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 		OrderID:       items.OrderID,
 		ProductID:     items.ProductID,
 		StatusID:      items.StatusID,
+		TableNumber:   tableNumber,
 		StatusName:    items.StatusName,
 		StatusNameEN:  items.StatusNameEN,
 		StatusCode:    items.StatusCode,

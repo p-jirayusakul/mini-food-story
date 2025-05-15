@@ -5,11 +5,12 @@ type OrderItems struct {
 	OrderID       int64   `json:"orderID,string"`
 	ProductID     int64   `json:"productID,string"`
 	StatusID      int64   `json:"statusID,string"`
+	TableNumber   int32   `json:"tableNumber"`
 	StatusName    string  `json:"statusName"`
-	StatusNameEN  string  `json:"statusNameEn"`
+	StatusNameEN  string  `json:"statusNameEN"`
 	StatusCode    string  `json:"statusCode"`
 	ProductName   string  `json:"productName"`
-	ProductNameEN string  `json:"productNameEn"`
+	ProductNameEN string  `json:"productNameEN"`
 	Price         float64 `json:"price"`
 	Quantity      int32   `json:"quantity"`
 	Note          *string `json:"note,omitempty"`

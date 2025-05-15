@@ -11,9 +11,9 @@ type OrderItemsData struct {
 }
 
 type StatusOrder struct {
-	StatusCode string `json:"statusCode" validate:"required,oneof=WAITING_PAYMENT COMPLETED CANCELLED"`
+	StatusCode string `json:"statusCode" validate:"required,oneof=COMPLETED CANCELLED"`
 }
 
 type StatusOrderItems struct {
-	StatusCode string `json:"statusCode" validate:"required,oneof=PENDING CONFIRMED PREPARING SERVED COMPLETED CANCELLED"`
+	StatusCode string `json:"statusCode" validate:"required,oneof=CANCELLED"`
 }

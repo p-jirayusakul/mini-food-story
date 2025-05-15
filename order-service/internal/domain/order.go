@@ -5,6 +5,7 @@ import "github.com/google/uuid"
 type Order struct {
 	ID           int64  `json:"id,string"`
 	TableID      int64  `json:"tableID,string"`
+	TableNumber  int32  `json:"tableNumber"`
 	StatusID     int64  `json:"statusID,string"`
 	StatusName   string `json:"statusName"`
 	StatusNameEN string `json:"statusNameEN"`

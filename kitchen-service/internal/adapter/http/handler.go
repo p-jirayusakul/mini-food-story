@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"food-story/kitchen-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
@@ -8,34 +9,61 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
-func (s *Handler) UpdateOrderItemsStatus(c *fiber.Ctx) error {
-	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))
+func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
+	orderItemsID, orderID, err := handleParams(c)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return err
 	}
 
-	orderID, err := utils.StrToInt64(c.Params("id"))
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	body := new(StatusOrderItems)
-	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), domain.OrderItemsStatus{
+	err = s.HandleStatusOrderItems(c.Context(), domain.OrderItemsStatus{
 		ID:         orderItemsID,
 		OrderID:    orderID,
-		StatusCode: body.StatusCode,
+		StatusCode: "SERVED",
 	})
+	if err != nil {
+		return err
+	}
+
+	return middleware.ResponseOK(c, "update order item status served success", nil)
+}
+
+func (s *Handler) UpdateOrderItemsStatusCancelled(c *fiber.Ctx) error {
+	orderItemsID, orderID, err := handleParams(c)
+	if err != nil {
+		return err
+	}
+
+	err = s.HandleStatusOrderItems(c.Context(), domain.OrderItemsStatus{
+		ID:         orderItemsID,
+		OrderID:    orderID,
+		StatusCode: "CANCELLED",
+	})
+	if err != nil {
+		return err
+	}
+
+	return middleware.ResponseOK(c, "update order item status cancelled success", nil)
+}
+
+func (s *Handler) HandleStatusOrderItems(ctx context.Context, payload domain.OrderItemsStatus) error {
+	customError := s.useCase.UpdateOrderItemsStatus(ctx, payload)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseOK(c, "update order item status success", nil)
+	return nil
+}
+
+func handleParams(c *fiber.Ctx) (orderItemsID, orderID int64, err error) {
+	orderItemsID, err = utils.StrToInt64(c.Params("orderItemsID"))
+	if err != nil {
+		return 0, 0, middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	orderID, err = utils.StrToInt64(c.Params("id"))
+	if err != nil {
+		return 0, 0, middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	return orderItemsID, orderID, nil
 }
