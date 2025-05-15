@@ -8,7 +8,6 @@ import (
 	"food-story/shared/config"
 	"github.com/google/uuid"
 
-	//"food-story/order-service/internal/adapter/cache"
 	"food-story/order-service/internal/adapter/repository"
 	"food-story/order-service/internal/domain"
 )

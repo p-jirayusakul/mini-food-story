@@ -3,6 +3,7 @@ package producer
 import (
 	"encoding/json"
 	"food-story/order-service/internal/domain"
+	"food-story/shared/kafka"
 	"github.com/IBM/sarama"
 )
 
@@ -28,7 +29,7 @@ func (p *OrderProducer) PublishOrder(item domain.OrderItems) error {
 	}
 
 	msg := &sarama.ProducerMessage{
-		Topic: "order.items.placed",
+		Topic: kafka.OrderItemsCreatedTopic,
 		Value: sarama.ByteEncoder(message),
 	}
 	_, _, err = p.Producer.SendMessage(msg)

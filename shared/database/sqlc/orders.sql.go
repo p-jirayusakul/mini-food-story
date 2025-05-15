@@ -75,6 +75,7 @@ SELECT o.id  AS "orderID",
        oi.status_id as "statusID",
        mos.name as "statusName",
        mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
        oi.note as "note"
 FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
@@ -93,6 +94,7 @@ type GetOrderWithItemsRow struct {
 	StatusID      int64          `json:"statusID"`
 	StatusName    string         `json:"statusName"`
 	StatusNameEN  string         `json:"statusNameEN"`
+	StatusCode    string         `json:"statusCode"`
 	Note          pgtype.Text    `json:"note"`
 }
 
@@ -116,6 +118,7 @@ func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetO
 			&i.StatusID,
 			&i.StatusName,
 			&i.StatusNameEN,
+			&i.StatusCode,
 			&i.Note,
 		); err != nil {
 			return nil, err
@@ -139,6 +142,7 @@ SELECT o.id  AS "orderID",
        oi.status_id as "statusID",
        mos.name as "statusName",
        mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
        oi.note as "note"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
@@ -162,6 +166,7 @@ type GetOrderWithItemsByIDRow struct {
 	StatusID      int64          `json:"statusID"`
 	StatusName    string         `json:"statusName"`
 	StatusNameEN  string         `json:"statusNameEN"`
+	StatusCode    string         `json:"statusCode"`
 	Note          pgtype.Text    `json:"note"`
 }
 
@@ -179,6 +184,7 @@ func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithIte
 		&i.StatusID,
 		&i.StatusName,
 		&i.StatusNameEN,
+		&i.StatusCode,
 		&i.Note,
 	)
 	return &i, err

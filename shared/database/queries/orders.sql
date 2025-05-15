@@ -31,6 +31,7 @@ SELECT o.id  AS "orderID",
        oi.status_id as "statusID",
        mos.name as "statusName",
        mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
        oi.note as "note"
 FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
@@ -48,6 +49,7 @@ SELECT o.id  AS "orderID",
        oi.status_id as "statusID",
        mos.name as "statusName",
        mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
        oi.note as "note"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
