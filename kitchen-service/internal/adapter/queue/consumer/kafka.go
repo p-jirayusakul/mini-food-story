@@ -4,13 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"food-story/kitchen-service/internal/adapter/websocket"
 	"food-story/kitchen-service/internal/domain"
 	"github.com/IBM/sarama"
 	"log"
 )
 
 type Consumer struct {
-	Ready chan bool
+	Ready        chan bool
+	WebSocketHub *websocket.Hub
 }
 
 func (c *Consumer) Setup(sarama.ConsumerGroupSession) error {
@@ -28,7 +30,7 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 		}
 
 		// ประมวลผลคำสั่งอาหาร
-		processOrder(orderItems)
+		c.WebSocketHub.Broadcast <- msg.Value
 
 		// แจ้งว่า message นี้ถูก consume แล้ว
 		session.MarkMessage(msg, "")
@@ -37,9 +39,10 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 	return nil
 }
 
-func StartConsumer(ctx context.Context, topics []string, client sarama.ConsumerGroup) {
+func StartConsumer(ctx context.Context, topics []string, client sarama.ConsumerGroup, websocketHub *websocket.Hub) {
 	consumer := Consumer{
-		Ready: make(chan bool),
+		Ready:        make(chan bool),
+		WebSocketHub: websocketHub,
 	}
 
 	go func() {

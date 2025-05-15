@@ -7,13 +7,14 @@ import (
 )
 
 type Config struct {
-	AppPort     string `mapstructure:"APP_PORT"`
-	AppEnv      string `mapstructure:"APP_ENV"`
-	AppHost     string `mapstructure:"APP_HOST"`
-	FrontendURL string `mapstructure:"FRONTEND_URL"`
-	SecretKey   string `mapstructure:"SECRET_KEY"`
-	JwtSecret   string `mapstructure:"JWT_SECRET"`
-	JwtExpireMs string `mapstructure:"JWT_EXPIRE_MILLISECOND"`
+	AppPort      string `mapstructure:"APP_PORT"`
+	AppEnv       string `mapstructure:"APP_ENV"`
+	AppHost      string `mapstructure:"APP_HOST"`
+	FrontendURL  string `mapstructure:"FRONTEND_URL"`
+	SecretKey    string `mapstructure:"SECRET_KEY"`
+	JwtSecret    string `mapstructure:"JWT_SECRET"`
+	JwtExpireMs  string `mapstructure:"JWT_EXPIRE_MILLISECOND"`
+	KafkaBrokers string `mapstructure:"KAFKA_BROKERS"`
 }
 
 func InitConfig(envFile string) Config {
@@ -38,6 +39,7 @@ func InitConfig(envFile string) Config {
 		viper.SetDefault("SECRET_KEY", os.Getenv("SECRET_KEY"))
 		viper.SetDefault("JWT_SECRET", os.Getenv("JWT_SECRET"))
 		viper.SetDefault("JWT_EXPIRE_MILLISECOND", os.Getenv("JWT_EXPIRE_MILLISECOND"))
+		viper.SetDefault("KAFKA_BROKERS", os.Getenv("KAFKA_BROKERS"))
 	}
 
 	_ = viper.Unmarshal(&cfg)

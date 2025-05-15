@@ -6,7 +6,6 @@ import (
 	"food-story/kitchen-service/internal"
 	"food-story/kitchen-service/internal/adapter/queue/consumer"
 	"food-story/shared/kafka"
-	"github.com/IBM/sarama"
 	"log"
 	"os"
 	"os/signal"
@@ -17,16 +16,16 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-func initKafka(ctx context.Context) sarama.ConsumerGroup {
-	topics := []string{kafka.OrderItemsCreatedTopic}
-	brokers := []string{"localhost:9092"}
-	client := kafka.InitConsumer("kitchen-group", brokers)
-	consumer.StartConsumer(ctx, topics, client)
+//func initKafka(ctx context.Context, websocketHub *websocket.Hub) sarama.ConsumerGroup {
+//	topics := []string{kafka.OrderItemsCreatedTopic}
+//	brokers := []string{"localhost:9092"}
+//	client := kafka.InitConsumer("kitchen-group", brokers)
+//	consumer.StartConsumer(ctx, topics, client, websocketHub)
+//
+//	return client
+//}
 
-	return client
-}
-
-func gracefulShutdown(fiberServer *internal.FiberServer, clientConsumer sarama.ConsumerGroup, cancelConsumer context.CancelFunc, done chan bool) {
+func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.CancelFunc, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -47,11 +46,15 @@ func gracefulShutdown(fiberServer *internal.FiberServer, clientConsumer sarama.C
 	log.Println("Database closed")
 
 	// close consumer
-	if err := clientConsumer.Close(); err != nil {
+	if err := fiberServer.KafkaClient.Close(); err != nil {
 		log.Printf("close consumer error: %v", err)
 	}
 	cancelConsumer()
 	log.Println("Kafka Consumer closed")
+
+	// websocket hub
+	fiberServer.CloseWebsocketHub()
+	log.Println("Websocket Hub closed")
 
 	if err := fiberServer.App.ShutdownWithContext(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
@@ -65,11 +68,14 @@ func gracefulShutdown(fiberServer *internal.FiberServer, clientConsumer sarama.C
 
 func main() {
 
+	server := internal.New()
+
+	// start websocket hub
+	go server.WebsocketHub.Run()
+
 	// เริ่มต้น Kafka Consumer
 	ctxConsumer, cancelConsumer := context.WithCancel(context.Background())
-	clientConsumer := initKafka(ctxConsumer)
-
-	server := internal.New()
+	go consumer.StartConsumer(ctxConsumer, []string{kafka.OrderItemsCreatedTopic}, server.KafkaClient, server.WebsocketHub)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
@@ -83,7 +89,7 @@ func main() {
 	}()
 
 	// Run graceful shutdown in a separate goroutine
-	go gracefulShutdown(server, clientConsumer, cancelConsumer, done)
+	go gracefulShutdown(server, cancelConsumer, done)
 
 	<-done
 	log.Println("Graceful shutdown complete.")

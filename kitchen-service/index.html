@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Kitchen Dashboard</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+            background: #f8f8f8;
+        }
+        h2 {
+            color: #333;
+        }
+        .order {
+            background: #fff;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 5px solid green;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .order pre {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<h2>🧾 Incoming Orders</h2>
+<div id="orders"></div>
+
+<script>
+    const ws = new WebSocket("ws://localhost:8083/api/v1/ws/kitchen");
+    const ordersDiv = document.getElementById("orders");
+
+    ws.onmessage = function (event) {
+        try {
+            const data = JSON.parse(event.data);
+            const orderHTML = `
+          <div class="order">
+            <strong>Order ID:</strong> ${data.orderId || "N/A"}<br>
+            <strong>Table:</strong> ${data.table || "N/A"}<br>
+            <strong>Items:</strong>
+            <ul>
+              ${(data.items || []).map(item => `<li>${item.name} x${item.qty}</li>`).join("")}
+            </ul>
+            <em>Time: ${new Date().toLocaleTimeString()}</em>
+          </div>
+        `;
+            ordersDiv.insertAdjacentHTML("afterbegin", orderHTML);
+        } catch (err) {
+            console.error("Invalid message format:", event.data);
+        }
+    };
+
+    ws.onclose = () => {
+        console.warn("WebSocket connection closed");
+    };
+    ws.onerror = (err) => {
+        console.error("WebSocket error", err);
+    };
+</script>
+</body>
+</html>

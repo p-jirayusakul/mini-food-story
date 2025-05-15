@@ -1,7 +1,7 @@
 -- name: CreateOrder :one
 INSERT INTO public.orders
 (id, session_id, table_id, status_id)
-VALUES(sqlc.arg(id)::bigint, sqlc.arg(session_id)::uuid, sqlc.arg(table_id)::bigint, (SELECT id FROM public.md_order_statuses WHERE code = 'WAITING_PAYMENT' LIMIT 1))
+VALUES(sqlc.arg(id)::bigint, sqlc.arg(session_id)::uuid, sqlc.arg(table_id)::bigint, (SELECT id FROM public.md_order_statuses WHERE code = 'CONFIRMED' LIMIT 1))
 RETURNING id;
 
 -- name: IsOrderExist :one

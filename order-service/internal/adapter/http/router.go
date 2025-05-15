@@ -33,7 +33,7 @@ func NewHTTPHandler(
 func (s *Handler) setupRoutes() {
 	group := s.router.Group("/orders")
 
-	group.Post("", s.CreateOrder)
+	group.Post("/current", s.CreateOrder)
 	group.Get("/current", s.GetOrderByID)
 
 	group.Post("/current/items", s.CreateOrderItems)

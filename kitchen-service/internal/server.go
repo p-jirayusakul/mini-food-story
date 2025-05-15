@@ -5,17 +5,21 @@ import (
 	"encoding/json"
 	kitchenhd "food-story/kitchen-service/internal/adapter/http"
 	"food-story/kitchen-service/internal/adapter/repository"
+	websockethub "food-story/kitchen-service/internal/adapter/websocket"
 	"food-story/kitchen-service/internal/usecase"
 	"food-story/pkg/common"
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
 	database "food-story/shared/database/sqlc"
+	"food-story/shared/kafka"
 	"food-story/shared/snowflakeid"
+	"github.com/IBM/sarama"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"strings"
 	"time"
 
 	dbcfg "food-story/shared/config"
@@ -24,9 +28,10 @@ import (
 const EnvFile = ".env"
 
 type FiberServer struct {
-	App *fiber.App
-
-	db *pgxpool.Pool
+	App          *fiber.App
+	db           *pgxpool.Pool
+	WebsocketHub *websockethub.Hub
+	KafkaClient  sarama.ConsumerGroup
 }
 
 func New() *FiberServer {
@@ -67,6 +72,12 @@ func New() *FiberServer {
 	}
 	store := database.NewStore(dbConn)
 
+	// สร้าง WebSocket Hub และเริ่มให้ทำงาน
+	hub := websockethub.NewHub()
+
+	// init kafka
+	kafkaClient := initKafka(configApp)
+
 	// Create a new Node with a Node number of 1
 	node := snowflakeid.CreateSnowflakeNode(1)
 	snowflakeNode := snowflakeid.NewSnowflake(node)
@@ -89,11 +100,13 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, hub)
 
 	return &FiberServer{
-		App: app,
-		db:  dbConn,
+		App:          app,
+		db:           dbConn,
+		WebsocketHub: hub,
+		KafkaClient:  kafkaClient,
 	}
 }
 
@@ -101,13 +114,25 @@ func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
 	return dbConn.Ping(ctx) == nil
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, hub *websockethub.Hub) {
 
 	kitchenRepo := repository.NewRepo(configApp, store, snowflakeNode)
 	kitchenUseCase := usecase.NewUsecase(configApp, *kitchenRepo)
 	kitchenhd.NewHTTPHandler(router, kitchenUseCase, validator, configApp)
+
+	websockethub.NewWSHandler(router, configApp, hub)
 }
 
 func (s *FiberServer) CloseDB() {
 	s.db.Close()
+}
+
+func (s *FiberServer) CloseWebsocketHub() {
+	s.WebsocketHub.Shutdown()
+}
+
+func initKafka(configApp config.Config) sarama.ConsumerGroup {
+	brokers := strings.Split(configApp.KafkaBrokers, ",")
+	client := kafka.InitConsumer("kitchen-group", brokers)
+	return client
 }
