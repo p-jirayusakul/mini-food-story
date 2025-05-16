@@ -193,3 +193,29 @@ ALTER TABLE "order_items" ADD FOREIGN KEY ("status_id") REFERENCES "md_order_sta
 ALTER TABLE "payments" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id");
 
 ALTER TABLE "payments" ADD FOREIGN KEY ("method") REFERENCES "payment_methods" ("id");
+
+
+
+-- Insert Master Data
+
+INSERT INTO public.md_categories (id,name,name_en,created_at,updated_at) VALUES
+                                                                             (1921143886227443712,'อาหาร','Food','2025-05-07 10:55:02.255781',NULL),
+                                                                             (1921144050476388352,'เครื่องดื่ม','Drink','2025-05-07 10:55:02.255781',NULL),
+                                                                             (1921144250070732800,'ขนม','Dessert','2025-05-07 10:55:02.255781',NULL);
+
+INSERT INTO public.md_order_statuses (id,code,name,name_en,sort_order,is_final,created_at,updated_at) VALUES
+                                                                                                          (1921868485739155456,'PENDING','รอยืนยันออเดอร์','Pending',1,false,'2025-05-07 10:55:02.255781',NULL),
+                                                                                                          (1921868485739155457,'CONFIRMED','ยืนยันออเดอร์','Confirmed',2,false,'2025-05-07 10:55:02.255781',NULL),
+                                                                                                          (1921868485739155458,'PREPARING','กำลังเตรียมอาหาร','Preparing',3,false,'2025-05-07 10:55:02.255781',NULL),
+                                                                                                          (1921868485739155459,'SERVED','เสิร์ฟอาหารแล้ว','Served',4,false,'2025-05-07 10:55:02.255781',NULL),
+                                                                                                          (1921868485739155460,'WAITING_PAYMENT','รอชำระเงิน','Waiting for Payment',5,false,'2025-05-07 10:55:02.255781',NULL),
+                                                                                                          (1921868485739155461,'COMPLETED','เสร็จสิ้น','Completed',6,true,'2025-05-07 10:55:02.255781',NULL),
+                                                                                                          (1921868485739155462,'CANCELLED','ยกเลิก','Cancelled',7,true,'2025-05-07 10:55:02.255781',NULL);
+INSERT INTO public.md_table_statuses (id,code,name,name_en,created_at,updated_at) VALUES
+                                                                                      (1919968486671519744,'AVAILABLE','ว่าง','Available','2025-05-07 10:55:02.255781',NULL),
+                                                                                      (1919968486843486208,'RESERVED','ถูกจองล่วงหน้า','Reserved','2025-05-07 10:55:02.255781',NULL),
+                                                                                      (1919968486847680512,'OCCUPIED','มีลูกค้า','Occupied','2025-05-07 10:55:02.255781',NULL),
+                                                                                      (1919968486847680513,'ORDERED','สั่งอาหารแล้ว','Ordered','2025-05-07 10:55:02.255781',NULL),
+                                                                                      (1919968486847680514,'WAITING_PAYMENT','รอชำระเงิน','Waiting for Payment','2025-05-07 10:55:02.255781',NULL),
+                                                                                      (1919968486847680515,'CLEANING','รอทำความสะอาด','Cleaning','2025-05-07 10:55:02.255781',NULL),
+                                                                                      (1919968486847680516,'DISABLED','ปิดการใช้งานชั่วคราว','Disabled','2025-05-07 10:55:02.255781',NULL);
