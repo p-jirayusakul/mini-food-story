@@ -7,6 +7,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
 	"github.com/google/uuid"
@@ -235,4 +236,19 @@ func StringPtrToPgText(value *string) pgtype.Text {
 		String: *value,
 		Valid:  true,
 	}
+}
+
+func PgTimestampToThaiISO8601(ts pgtype.Timestamp) (string, error) {
+	if !ts.Valid {
+		return "", fmt.Errorf("timestamp is null")
+	}
+
+	t := ts.Time
+
+	loc, err := time.LoadLocation("Asia/Bangkok")
+	if err != nil {
+		return "", err
+	}
+
+	return t.In(loc).Format(time.RFC3339), nil
 }

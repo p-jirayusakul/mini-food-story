@@ -87,6 +87,14 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 
 	result = make([]*domain.OrderItems, len(items))
 	for index, v := range items {
+		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
+		if err != nil {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRUNKNOWN,
+				Errors: err,
+			}
+		}
+
 		result[index] = &domain.OrderItems{
 			ID:            v.ID,
 			OrderID:       v.OrderID,
@@ -101,6 +109,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 			Price:         utils.PgNumericToFloat64(v.Price),
 			Quantity:      v.Quantity,
 			Note:          utils.PgTextToStringPtr(v.Note),
+			CreatedAt:     createdAt,
 		}
 	}
 
@@ -133,6 +142,14 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 		}
 	}
 
+	createdAt, err := utils.PgTimestampToThaiISO8601(items.CreatedAt)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: err,
+		}
+	}
+
 	return &domain.OrderItems{
 		ID:            items.ID,
 		OrderID:       items.OrderID,
@@ -147,6 +164,7 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 		Price:         utils.PgNumericToFloat64(items.Price),
 		Quantity:      items.Quantity,
 		Note:          utils.PgTextToStringPtr(items.Note),
+		CreatedAt:     createdAt,
 	}, nil
 }
 

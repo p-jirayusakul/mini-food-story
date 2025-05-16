@@ -14,6 +14,7 @@ type OrderItems struct {
 	Price         float64 `json:"price"`
 	Quantity      int32   `json:"quantity"`
 	Note          *string `json:"note"`
+	CreatedAt     string  `json:"createdAt"`
 }
 
 type OrderItemsStatus struct {

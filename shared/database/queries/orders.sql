@@ -32,7 +32,8 @@ SELECT o.id  AS "orderID",
        mos.name as "statusName",
        mos.name_en as "statusNameEN",
        mos.code as "statusCode",
-       oi.note as "note"
+       oi.note as "note",
+       oi.created_at
 FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
@@ -51,7 +52,8 @@ SELECT o.id  AS "orderID",
        mos.name as "statusName",
        mos.name_en as "statusNameEN",
        mos.code as "statusCode",
-       oi.note as "note"
+       oi.note as "note",
+       oi.created_at
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id

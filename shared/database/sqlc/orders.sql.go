@@ -78,7 +78,8 @@ SELECT o.id  AS "orderID",
        mos.name as "statusName",
        mos.name_en as "statusNameEN",
        mos.code as "statusCode",
-       oi.note as "note"
+       oi.note as "note",
+       oi.created_at
 FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
@@ -87,18 +88,19 @@ order by oi.created_at DESC
 `
 
 type GetOrderWithItemsRow struct {
-	OrderID       int64          `json:"orderID"`
-	ID            int64          `json:"id"`
-	ProductID     int64          `json:"productID"`
-	ProductName   string         `json:"productName"`
-	ProductNameEN string         `json:"productNameEN"`
-	Quantity      int32          `json:"quantity"`
-	Price         pgtype.Numeric `json:"price"`
-	StatusID      int64          `json:"statusID"`
-	StatusName    string         `json:"statusName"`
-	StatusNameEN  string         `json:"statusNameEN"`
-	StatusCode    string         `json:"statusCode"`
-	Note          pgtype.Text    `json:"note"`
+	OrderID       int64            `json:"orderID"`
+	ID            int64            `json:"id"`
+	ProductID     int64            `json:"productID"`
+	ProductName   string           `json:"productName"`
+	ProductNameEN string           `json:"productNameEN"`
+	Quantity      int32            `json:"quantity"`
+	Price         pgtype.Numeric   `json:"price"`
+	StatusID      int64            `json:"statusID"`
+	StatusName    string           `json:"statusName"`
+	StatusNameEN  string           `json:"statusNameEN"`
+	StatusCode    string           `json:"statusCode"`
+	Note          pgtype.Text      `json:"note"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
 }
 
 func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetOrderWithItemsRow, error) {
@@ -123,6 +125,7 @@ func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetO
 			&i.StatusNameEN,
 			&i.StatusCode,
 			&i.Note,
+			&i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -146,7 +149,8 @@ SELECT o.id  AS "orderID",
        mos.name as "statusName",
        mos.name_en as "statusNameEN",
        mos.code as "statusCode",
-       oi.note as "note"
+       oi.note as "note",
+       oi.created_at
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
@@ -159,18 +163,19 @@ type GetOrderWithItemsByIDParams struct {
 }
 
 type GetOrderWithItemsByIDRow struct {
-	OrderID       int64          `json:"orderID"`
-	ID            int64          `json:"id"`
-	ProductID     int64          `json:"productID"`
-	ProductName   string         `json:"productName"`
-	ProductNameEN string         `json:"productNameEN"`
-	Quantity      int32          `json:"quantity"`
-	Price         pgtype.Numeric `json:"price"`
-	StatusID      int64          `json:"statusID"`
-	StatusName    string         `json:"statusName"`
-	StatusNameEN  string         `json:"statusNameEN"`
-	StatusCode    string         `json:"statusCode"`
-	Note          pgtype.Text    `json:"note"`
+	OrderID       int64            `json:"orderID"`
+	ID            int64            `json:"id"`
+	ProductID     int64            `json:"productID"`
+	ProductName   string           `json:"productName"`
+	ProductNameEN string           `json:"productNameEN"`
+	Quantity      int32            `json:"quantity"`
+	Price         pgtype.Numeric   `json:"price"`
+	StatusID      int64            `json:"statusID"`
+	StatusName    string           `json:"statusName"`
+	StatusNameEN  string           `json:"statusNameEN"`
+	StatusCode    string           `json:"statusCode"`
+	Note          pgtype.Text      `json:"note"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
 }
 
 func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error) {
@@ -189,6 +194,7 @@ func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithIte
 		&i.StatusNameEN,
 		&i.StatusCode,
 		&i.Note,
+		&i.CreatedAt,
 	)
 	return &i, err
 }

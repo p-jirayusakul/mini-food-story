@@ -52,7 +52,7 @@ func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.
 	cancelConsumer()
 	log.Println("Kafka Consumer closed")
 
-	// websocket hub
+	// close websocket hub
 	fiberServer.CloseWebsocketHub()
 	log.Println("Websocket Hub closed")
 

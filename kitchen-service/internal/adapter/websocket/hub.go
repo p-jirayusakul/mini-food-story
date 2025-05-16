@@ -25,21 +25,25 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case conn := <-h.Register:
-			h.Clients[conn] = true // เก็บ connection ใหม่
+			if conn != nil {
+				h.Clients[conn] = true
+			}
 		case conn := <-h.Unregister:
-			delete(h.Clients, conn) // ลบตอน disconnect
-			err := conn.Close()
-			if err != nil {
-				log.Fatal(err)
-				return
+			if conn != nil {
+				if _, ok := h.Clients[conn]; ok {
+					delete(h.Clients, conn)
+					_ = conn.Close() // ปิด connection
+				}
 			}
 		case message := <-h.Broadcast:
 			for conn := range h.Clients {
+				if conn == nil {
+					continue
+				}
 				err := conn.WriteMessage(websocket.TextMessage, message)
 				if err != nil {
-					log.Println("Error sending message:", err)
-					return
-				} // ส่งข้อความให้ทุกคน
+					h.Unregister <- conn // ถ้าเขียนไม่ได้ แสดงว่า connection ตายแล้ว
+				}
 			}
 		}
 	}
