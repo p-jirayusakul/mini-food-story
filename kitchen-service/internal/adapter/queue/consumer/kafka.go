@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"food-story/kitchen-service/internal/adapter/websocket"
 	"food-story/kitchen-service/internal/domain"
@@ -24,12 +23,7 @@ func (c *Consumer) Cleanup(sarama.ConsumerGroupSession) error { return nil }
 func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
 	for msg := range claim.Messages() {
 
-		var orderItems domain.OrderItems
-		if err := json.Unmarshal(msg.Value, &orderItems); err != nil {
-			continue
-		}
-
-		// ประมวลผลคำสั่งอาหาร
+		// แจ้งแตือนข้อความ
 		c.WebSocketHub.Broadcast <- msg.Value
 
 		// แจ้งว่า message นี้ถูก consume แล้ว

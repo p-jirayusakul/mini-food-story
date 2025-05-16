@@ -15,11 +15,13 @@ import (
 	database "food-story/shared/database/sqlc"
 	"food-story/shared/redis"
 	"food-story/shared/snowflakeid"
+	"github.com/IBM/sarama"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
 	"strings"
 	"time"
 )
@@ -29,15 +31,16 @@ const EnvFile = ".env"
 type FiberServer struct {
 	App *fiber.App
 
-	db    *pgxpool.Pool
-	redis *redis.RedisClient
+	db            *pgxpool.Pool
+	redis         *redis.RedisClient
+	kafkaProducer sarama.SyncProducer
 }
 
 func New() *FiberServer {
 	configApp := config.InitConfig(EnvFile)
 	app := fiber.New(fiber.Config{
-		ServerHeader:             "mini-food-story",
-		AppName:                  "mini-food-story",
+		ServerHeader:             "order-service",
+		AppName:                  "order-service",
 		ErrorHandler:             middleware.HandleError,
 		EnableSplittingOnParsers: true,
 		JSONEncoder:              json.Marshal,
@@ -76,7 +79,7 @@ func New() *FiberServer {
 
 	// connect to kafka
 	brokers := strings.Split(configApp.KafkaBrokers, ",")
-	kafkaConn, err := producer.NewOrderProducer(brokers)
+	kafkaClient, err := producer.NewOrderProducer(brokers)
 	if err != nil {
 		panic(err)
 	}
@@ -103,12 +106,13 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, kafkaConn)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, kafkaClient)
 
 	return &FiberServer{
-		App:   app,
-		db:    dbConn,
-		redis: redisConn,
+		App:           app,
+		db:            dbConn,
+		redis:         redisConn,
+		kafkaProducer: kafkaClient.Producer,
 	}
 }
 
@@ -116,10 +120,10 @@ func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
 	return dbConn.Ping(ctx) == nil
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, kafkaConn *producer.OrderProducer) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, kafkaClient *producer.OrderProducer) {
 	orderCache := cache.NewRedisTableCache(redisConn)
 	orderRepo := repository.NewRepo(configApp, store, snowflakeNode)
-	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache, *kafkaConn)
+	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache, *kafkaClient)
 	orderhd.NewHTTPHandler(router, orderUseCase, validator, configApp)
 }
 
@@ -129,4 +133,12 @@ func (s *FiberServer) CloseDB() {
 
 func (s *FiberServer) CloseRedis() {
 	s.redis.Close()
+}
+
+func (s *FiberServer) CloseProducer() {
+	err := s.kafkaProducer.Close()
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 }

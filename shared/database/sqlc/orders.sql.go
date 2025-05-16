@@ -84,7 +84,7 @@ FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
 WHERE o.id = $1::bigint
-order by oi.created_at DESC
+order by oi.id DESC
 `
 
 type GetOrderWithItemsRow struct {
@@ -197,6 +197,77 @@ func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithIte
 		&i.CreatedAt,
 	)
 	return &i, err
+}
+
+const getOrderWithItemsGroupID = `-- name: GetOrderWithItemsGroupID :many
+SELECT o.id  AS "orderID",
+       oi.id AS "id",
+       oi.product_id as "productID",
+       oi.product_name as "productName",
+       oi.product_name_en as "productNameEN",
+       oi.quantity,
+       (oi.price * oi.quantity) as "price",
+       oi.status_id as "statusID",
+       mos.name as "statusName",
+       mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
+       oi.note as "note",
+       oi.created_at
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+WHERE oi.id = ANY($1::bigint[])
+order by oi.id DESC
+`
+
+type GetOrderWithItemsGroupIDRow struct {
+	OrderID       int64            `json:"orderID"`
+	ID            int64            `json:"id"`
+	ProductID     int64            `json:"productID"`
+	ProductName   string           `json:"productName"`
+	ProductNameEN string           `json:"productNameEN"`
+	Quantity      int32            `json:"quantity"`
+	Price         pgtype.Numeric   `json:"price"`
+	StatusID      int64            `json:"statusID"`
+	StatusName    string           `json:"statusName"`
+	StatusNameEN  string           `json:"statusNameEN"`
+	StatusCode    string           `json:"statusCode"`
+	Note          pgtype.Text      `json:"note"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []int64) ([]*GetOrderWithItemsGroupIDRow, error) {
+	rows, err := q.db.Query(ctx, getOrderWithItemsGroupID, orderItemsID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*GetOrderWithItemsGroupIDRow{}
+	for rows.Next() {
+		var i GetOrderWithItemsGroupIDRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.ID,
+			&i.ProductID,
+			&i.ProductName,
+			&i.ProductNameEN,
+			&i.Quantity,
+			&i.Price,
+			&i.StatusID,
+			&i.StatusName,
+			&i.StatusNameEN,
+			&i.StatusCode,
+			&i.Note,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const isOrderExist = `-- name: IsOrderExist :one

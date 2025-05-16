@@ -32,8 +32,8 @@ type FiberServer struct {
 func New() *FiberServer {
 	configApp := config.InitConfig(EnvFile)
 	app := fiber.New(fiber.Config{
-		ServerHeader:             "mini-food-story",
-		AppName:                  "mini-food-story",
+		ServerHeader:             "menu-service",
+		AppName:                  "menu-service",
 		ErrorHandler:             middleware.HandleError,
 		EnableSplittingOnParsers: true,
 		JSONEncoder:              json.Marshal,

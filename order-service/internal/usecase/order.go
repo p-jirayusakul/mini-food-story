@@ -64,20 +64,14 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, items 
 	}
 
 	// public message to kafka
-	orderItems, customError := i.GetOrderItems(ctx, sessionID)
+	orderItems, customError := i.repository.GetOrderItems(ctx, orderID, sessionDetail.TableNumber)
 	if customError != nil {
 		return 0, customError
 	}
-	if len(orderItems) > 0 {
-		for _, item := range orderItems {
-			err := i.queue.PublishOrder(*item)
-			if err != nil {
-				return 0, &exceptions.CustomError{
-					Status: exceptions.ERRREPOSITORY,
-					Errors: err,
-				}
-			}
-		}
+
+	customError = i.PublishOrderToQueue(orderItems)
+	if customError != nil {
+		return 0, customError
 	}
 
 	return orderID, nil

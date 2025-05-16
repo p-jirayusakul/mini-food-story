@@ -9,36 +9,31 @@ import (
 )
 
 func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, items []domain.OrderItems) (customError *exceptions.CustomError) {
-	orderID, customError := i.GetOrderIDFromSession(sessionID)
+	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
 		return
 	}
 
-	for index, _ := range items {
+	orderID, err := utils.StrToInt64(*tableSession.OrderID)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: err,
+		}
+	}
+
+	for index := range items {
 		items[index].OrderID = orderID
 	}
 
-	customError = i.repository.CreateOrderItems(ctx, items)
+	orderItems, customError := i.repository.CreateOrderItems(ctx, items, tableSession.TableNumber)
 	if customError != nil {
 		return
 	}
 
-	orderItems, customError := i.GetOrderItems(ctx, sessionID)
+	customError = i.PublishOrderToQueue(orderItems)
 	if customError != nil {
-		return
-	}
-
-	// public message to kafka
-	if len(orderItems) > 0 {
-		for _, item := range orderItems {
-			err := i.queue.PublishOrder(*item)
-			if err != nil {
-				return &exceptions.CustomError{
-					Status: exceptions.ERRREPOSITORY,
-					Errors: err,
-				}
-			}
-		}
+		return customError
 	}
 
 	return

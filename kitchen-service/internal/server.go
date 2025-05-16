@@ -37,8 +37,8 @@ type FiberServer struct {
 func New() *FiberServer {
 	configApp := config.InitConfig(EnvFile)
 	app := fiber.New(fiber.Config{
-		ServerHeader:             "mini-food-story",
-		AppName:                  "mini-food-story",
+		ServerHeader:             "kitchen-service",
+		AppName:                  "kitchen-service",
 		ErrorHandler:             middleware.HandleError,
 		EnableSplittingOnParsers: true,
 		JSONEncoder:              json.Marshal,
@@ -133,6 +133,6 @@ func (s *FiberServer) CloseWebsocketHub() {
 
 func initKafka(configApp config.Config) sarama.ConsumerGroup {
 	brokers := strings.Split(configApp.KafkaBrokers, ",")
-	client := kafka.InitConsumer("kitchen-group", brokers)
+	client := kafka.InitConsumer(kafka.Group, brokers)
 	return client
 }

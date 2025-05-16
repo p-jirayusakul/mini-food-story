@@ -22,6 +22,7 @@ type Querier interface {
 	GetOrderStatusPreparing(ctx context.Context) (int64, error)
 	GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetOrderWithItemsRow, error)
 	GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error)
+	GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []int64) ([]*GetOrderWithItemsGroupIDRow, error)
 	GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error)
 	GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error)
 	GetTableNumber(ctx context.Context, id int64) (int32, error)

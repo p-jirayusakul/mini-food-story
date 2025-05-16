@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderItems) (customError *exceptions.CustomError) {
+func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderItems, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
 
 	orderItems, customError := i.BuildPayloadOrderItems(ctx, items)
 	if customError != nil {
@@ -22,14 +22,24 @@ func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderIt
 	if len(orderItems) > 0 {
 		_, err := i.repository.CreateOrderItems(ctx, orderItems)
 		if err != nil {
-			return &exceptions.CustomError{
+			return nil, &exceptions.CustomError{
 				Status: exceptions.ERRREPOSITORY,
 				Errors: fmt.Errorf("failed to create order items: %w", err),
 			}
 		}
-	}
 
-	return nil
+		var orderItemsID []int64
+		for _, item := range orderItems {
+			orderItemsID = append(orderItemsID, item.ID)
+		}
+
+		result, customError = i.GetOderItemsGroupID(ctx, orderItemsID, tableNumber)
+		if customError != nil {
+			return nil, customError
+		}
+
+	}
+	return
 }
 
 func (i *Implement) BuildPayloadOrderItems(ctx context.Context, items []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
@@ -111,6 +121,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 			Note:          utils.PgTextToStringPtr(v.Note),
 			CreatedAt:     createdAt,
 		}
+
 	}
 
 	return
@@ -166,6 +177,46 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 		Note:          utils.PgTextToStringPtr(items.Note),
 		CreatedAt:     createdAt,
 	}, nil
+}
+
+func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+
+	items, err := i.repository.GetOrderWithItemsGroupID(ctx, orderItemsID)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", err),
+		}
+	}
+
+	result = make([]*domain.OrderItems, len(items))
+	for index, v := range items {
+		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
+		if err != nil {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRUNKNOWN,
+				Errors: err,
+			}
+		}
+
+		result[index] = &domain.OrderItems{
+			ID:            v.ID,
+			OrderID:       v.OrderID,
+			ProductID:     v.ProductID,
+			StatusID:      v.StatusID,
+			TableNumber:   tableNumber,
+			StatusName:    v.StatusName,
+			StatusNameEN:  v.StatusNameEN,
+			StatusCode:    v.StatusCode,
+			ProductName:   v.ProductName,
+			ProductNameEN: v.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(v.Price),
+			Quantity:      v.Quantity,
+			Note:          utils.PgTextToStringPtr(v.Note),
+			CreatedAt:     createdAt,
+		}
+	}
+	return
 }
 
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
