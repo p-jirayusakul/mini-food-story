@@ -20,6 +20,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"strings"
 	"time"
 )
 
@@ -28,7 +29,8 @@ const EnvFile = ".env"
 type FiberServer struct {
 	App *fiber.App
 
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	redis *redis.RedisClient
 }
 
 func New() *FiberServer {
@@ -70,10 +72,11 @@ func New() *FiberServer {
 	store := database.NewStore(dbConn)
 
 	// connect to redis
-	redisConn := redis.NewRedisClient("localhost:6379", "", 0)
+	redisConn := redis.NewRedisClient(configApp.RedisAddress, configApp.RedisPassword, 0)
 
 	// connect to kafka
-	kafkaConn, err := producer.NewOrderProducer([]string{"localhost:9092"})
+	brokers := strings.Split(configApp.KafkaBrokers, ",")
+	kafkaConn, err := producer.NewOrderProducer(brokers)
 	if err != nil {
 		panic(err)
 	}
@@ -103,8 +106,9 @@ func New() *FiberServer {
 	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, kafkaConn)
 
 	return &FiberServer{
-		App: app,
-		db:  dbConn,
+		App:   app,
+		db:    dbConn,
+		redis: redisConn,
 	}
 }
 
@@ -121,4 +125,8 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 
 func (s *FiberServer) CloseDB() {
 	s.db.Close()
+}
+
+func (s *FiberServer) CloseRedis() {
+	s.redis.Close()
 }

@@ -27,7 +27,8 @@ const EnvFile = ".env"
 type FiberServer struct {
 	App *fiber.App
 
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	redis *redis.RedisClient
 }
 
 func New() *FiberServer {
@@ -69,7 +70,7 @@ func New() *FiberServer {
 	store := database.NewStore(dbConn)
 
 	// connect to redis
-	redisConn := redis.NewRedisClient("localhost:6379", "", 0)
+	redisConn := redis.NewRedisClient(configApp.RedisAddress, configApp.RedisPassword, 0)
 
 	// Create a new Node with a Node number of 1
 	node := snowflakeid.CreateSnowflakeNode(1)
@@ -96,8 +97,9 @@ func New() *FiberServer {
 	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
 
 	return &FiberServer{
-		App: app,
-		db:  dbConn,
+		App:   app,
+		db:    dbConn,
+		redis: redisConn,
 	}
 }
 
@@ -114,4 +116,8 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 
 func (s *FiberServer) CloseDB() {
 	s.db.Close()
+}
+
+func (s *FiberServer) CloseRedis() {
+	s.redis.Close()
 }

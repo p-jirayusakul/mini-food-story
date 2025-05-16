@@ -17,6 +17,7 @@ type RedisInterface interface {
 	Get(key string) (string, error)
 	Del(key string) error
 	TTL(key string) (time.Duration, error)
+	Close()
 }
 
 type RedisClient struct {
@@ -72,6 +73,13 @@ func (r *RedisClient) TTL(key string) (time.Duration, error) {
 	}
 }
 
-func (r *RedisClient) close() {
-	r.Client.Close()
+func (r *RedisClient) Close() {
+	if r.Client == nil {
+		log.Printf("RedisClient is nil. Skipping Close.")
+		return
+	}
+	err := r.Client.Close()
+	if err != nil {
+		log.Printf("Unable to close Redis: %v", err)
+	}
 }

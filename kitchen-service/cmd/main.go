@@ -16,15 +16,6 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 )
 
-//func initKafka(ctx context.Context, websocketHub *websocket.Hub) sarama.ConsumerGroup {
-//	topics := []string{kafka.OrderItemsCreatedTopic}
-//	brokers := []string{"localhost:9092"}
-//	client := kafka.InitConsumer("kitchen-group", brokers)
-//	consumer.StartConsumer(ctx, topics, client, websocketHub)
-//
-//	return client
-//}
-
 func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.CancelFunc, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
