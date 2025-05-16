@@ -2,9 +2,11 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"food-story/kitchen-service/internal/domain"
 	"food-story/pkg/exceptions"
+	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 )
 
@@ -26,4 +28,144 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.O
 	}
 
 	return
+}
+
+func (i *Implement) SearchOrderItems(ctx context.Context) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+
+	items, err := i.repository.GetAllOrderWithItems(ctx)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", err),
+		}
+	}
+
+	result = make([]*domain.OrderItems, len(items))
+	for index, v := range items {
+		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
+		if err != nil {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRUNKNOWN,
+				Errors: err,
+			}
+		}
+
+		result[index] = &domain.OrderItems{
+			ID:            v.ID,
+			OrderID:       v.OrderID,
+			ProductID:     v.ProductID,
+			StatusID:      v.StatusID,
+			TableNumber:   v.TableNumber,
+			StatusName:    v.StatusName,
+			StatusNameEN:  v.StatusNameEN,
+			StatusCode:    v.StatusCode,
+			ProductName:   v.ProductName,
+			ProductNameEN: v.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(v.Price),
+			Quantity:      v.Quantity,
+			Note:          utils.PgTextToStringPtr(v.Note),
+			CreatedAt:     createdAt,
+		}
+
+	}
+
+	return
+}
+
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+	customError = i.IsOrderExist(ctx, orderID)
+	if customError != nil {
+		return
+	}
+
+	items, err := i.repository.GetOrderWithItems(ctx, orderID)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", err),
+		}
+	}
+
+	result = make([]*domain.OrderItems, len(items))
+	for index, v := range items {
+		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
+		if err != nil {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRUNKNOWN,
+				Errors: err,
+			}
+		}
+
+		result[index] = &domain.OrderItems{
+			ID:            v.ID,
+			OrderID:       v.OrderID,
+			ProductID:     v.ProductID,
+			StatusID:      v.StatusID,
+			TableNumber:   tableNumber,
+			StatusName:    v.StatusName,
+			StatusNameEN:  v.StatusNameEN,
+			StatusCode:    v.StatusCode,
+			ProductName:   v.ProductName,
+			ProductNameEN: v.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(v.Price),
+			Quantity:      v.Quantity,
+			Note:          utils.PgTextToStringPtr(v.Note),
+			CreatedAt:     createdAt,
+		}
+
+	}
+
+	return
+}
+
+func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *domain.OrderItems, customError *exceptions.CustomError) {
+
+	customError = i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
+	if customError != nil {
+		return
+	}
+
+	items, err := i.repository.GetOrderWithItemsByID(ctx, database.GetOrderWithItemsByIDParams{
+		OrderID:      orderID,
+		OrderItemsID: orderItemsID,
+	})
+	if err != nil {
+
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: fmt.Errorf("order items not found"),
+			}
+		}
+
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", err),
+		}
+	}
+
+	createdAt, err := utils.PgTimestampToThaiISO8601(items.CreatedAt)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: err,
+		}
+	}
+
+	return &domain.OrderItems{
+		ID:            items.ID,
+		OrderID:       items.OrderID,
+		ProductID:     items.ProductID,
+		StatusID:      items.StatusID,
+		TableNumber:   tableNumber,
+		StatusName:    items.StatusName,
+		StatusNameEN:  items.StatusNameEN,
+		StatusCode:    items.StatusCode,
+		ProductName:   items.ProductName,
+		ProductNameEN: items.ProductNameEN,
+		Price:         utils.PgNumericToFloat64(items.Price),
+		Quantity:      items.Quantity,
+		Note:          utils.PgTextToStringPtr(items.Note),
+		CreatedAt:     createdAt,
+	}, nil
 }

@@ -31,6 +31,80 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 	return id, err
 }
 
+const getAllOrderWithItems = `-- name: GetAllOrderWithItems :many
+SELECT o.id  AS "orderID",
+       oi.id AS "id",
+       oi.product_id as "productID",
+       oi.product_name as "productName",
+       oi.product_name_en as "productNameEN",
+       t.table_number as "tableNumber",
+       oi.quantity,
+       (oi.price * oi.quantity) as "price",
+       oi.status_id as "statusID",
+       mos.name as "statusName",
+       mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
+       oi.note as "note",
+       oi.created_at
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+order by oi.id DESC
+`
+
+type GetAllOrderWithItemsRow struct {
+	OrderID       int64            `json:"orderID"`
+	ID            int64            `json:"id"`
+	ProductID     int64            `json:"productID"`
+	ProductName   string           `json:"productName"`
+	ProductNameEN string           `json:"productNameEN"`
+	TableNumber   int32            `json:"tableNumber"`
+	Quantity      int32            `json:"quantity"`
+	Price         pgtype.Numeric   `json:"price"`
+	StatusID      int64            `json:"statusID"`
+	StatusName    string           `json:"statusName"`
+	StatusNameEN  string           `json:"statusNameEN"`
+	StatusCode    string           `json:"statusCode"`
+	Note          pgtype.Text      `json:"note"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) GetAllOrderWithItems(ctx context.Context) ([]*GetAllOrderWithItemsRow, error) {
+	rows, err := q.db.Query(ctx, getAllOrderWithItems)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*GetAllOrderWithItemsRow{}
+	for rows.Next() {
+		var i GetAllOrderWithItemsRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.ID,
+			&i.ProductID,
+			&i.ProductName,
+			&i.ProductNameEN,
+			&i.TableNumber,
+			&i.Quantity,
+			&i.Price,
+			&i.StatusID,
+			&i.StatusName,
+			&i.StatusNameEN,
+			&i.StatusCode,
+			&i.Note,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOrderByID = `-- name: GetOrderByID :one
 SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN"
 FROM public.orders as o
@@ -268,6 +342,20 @@ func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []i
 		return nil, err
 	}
 	return items, nil
+}
+
+const getTableNumberOrderByID = `-- name: GetTableNumberOrderByID :one
+SELECT t.table_number
+FROM public.orders o
+         JOIN public.tables t ON o.table_id = t.id
+WHERE o.id = $1::bigint LIMIT 1
+`
+
+func (q *Queries) GetTableNumberOrderByID(ctx context.Context, orderID int64) (int32, error) {
+	row := q.db.QueryRow(ctx, getTableNumberOrderByID, orderID)
+	var table_number int32
+	err := row.Scan(&table_number)
+	return table_number, err
 }
 
 const isOrderExist = `-- name: IsOrderExist :one

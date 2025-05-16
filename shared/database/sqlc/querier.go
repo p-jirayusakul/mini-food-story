@@ -17,6 +17,7 @@ type Querier interface {
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
 	CreateTableStatus(ctx context.Context, arg CreateTableStatusParams) (int64, error)
+	GetAllOrderWithItems(ctx context.Context) ([]*GetAllOrderWithItemsRow, error)
 	GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error)
 	GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderItemsByIDRow, error)
 	GetOrderStatusPreparing(ctx context.Context) (int64, error)
@@ -26,6 +27,7 @@ type Querier interface {
 	GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error)
 	GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error)
 	GetTableNumber(ctx context.Context, id int64) (int32, error)
+	GetTableNumberOrderByID(ctx context.Context, orderID int64) (int32, error)
 	GetTableSession(ctx context.Context, sessionid pgtype.UUID) (*GetTableSessionRow, error)
 	GetTotalPageQuickSearchTables(ctx context.Context, numberOfPeople int32) (int64, error)
 	GetTotalPageSearchProducts(ctx context.Context, arg GetTotalPageSearchProductsParams) (int64, error)

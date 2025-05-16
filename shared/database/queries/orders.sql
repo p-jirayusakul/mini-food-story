@@ -20,6 +20,33 @@ UPDATE public.orders
 SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = sqlc.arg(status_code)::text LIMIT 1)
 WHERE id = sqlc.arg(id)::bigint;
 
+-- name: GetAllOrderWithItems :many
+SELECT o.id  AS "orderID",
+       oi.id AS "id",
+       oi.product_id as "productID",
+       oi.product_name as "productName",
+       oi.product_name_en as "productNameEN",
+       t.table_number as "tableNumber",
+       oi.quantity,
+       (oi.price * oi.quantity) as "price",
+       oi.status_id as "statusID",
+       mos.name as "statusName",
+       mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
+       oi.note as "note",
+       oi.created_at
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+order by oi.id DESC;
+
+-- name: GetTableNumberOrderByID :one
+SELECT t.table_number
+FROM public.orders o
+         JOIN public.tables t ON o.table_id = t.id
+WHERE o.id = sqlc.arg(order_id)::bigint LIMIT 1;
+
 -- name: GetOrderWithItems :many
 SELECT o.id  AS "orderID",
        oi.id AS "id",

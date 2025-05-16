@@ -10,6 +10,9 @@ import (
 
 type Usecase interface {
 	UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError)
+	SearchOrderItems(ctx context.Context) (result []*domain.OrderItems, customError *exceptions.CustomError)
+	GetOrderItems(ctx context.Context, orderID int64) (result []*domain.OrderItems, customError *exceptions.CustomError)
+	GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *domain.OrderItems, customError *exceptions.CustomError)
 }
 
 type Implement struct {

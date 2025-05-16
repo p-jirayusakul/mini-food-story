@@ -32,6 +32,10 @@ func NewHTTPHandler(
 
 func (s *Handler) setupRoutes() {
 	group := s.router.Group("/orders")
+	group.Get("/search/items", s.SearchOrderItems)
+	group.Get("/:id<int>/items", s.GetOrderItems)
+	group.Get("/:id<int>/items/:orderItemsID<int>", s.GetOrderItemsByID)
+
 	group.Patch("/:id<int>/items/:orderItemsID<int>/status/served", s.UpdateOrderItemsStatusServed)
 	group.Patch("/:id<int>/items/:orderItemsID<int>/status/cancelled", s.UpdateOrderItemsStatusCancelled)
 

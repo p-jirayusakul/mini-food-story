@@ -9,6 +9,43 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+func (s *Handler) SearchOrderItems(c *fiber.Ctx) error {
+	result, customError := s.useCase.SearchOrderItems(c.Context())
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get order items success", result)
+}
+
+func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
+	orderID, err := utils.StrToInt64(c.Params("id"))
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	result, customError := s.useCase.GetOrderItems(c.Context(), orderID)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get order items success", result)
+}
+
+func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
+	orderItemsID, orderID, err := handleParams(c)
+	if err != nil {
+		return err
+	}
+
+	result, customError := s.useCase.GetOrderItemsByID(c.Context(), orderID, orderItemsID)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get order items success", result)
+}
+
 func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
 	orderItemsID, orderID, err := handleParams(c)
 	if err != nil {
