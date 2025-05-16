@@ -10,8 +10,8 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.O
 	return i.repository.UpdateOrderItemsStatus(ctx, payload)
 }
 
-func (i *Implement) SearchOrderItems(ctx context.Context) (result []*domain.OrderItems, customError *exceptions.CustomError) {
-	return i.repository.SearchOrderItems(ctx)
+func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+	return i.repository.SearchOrderItems(ctx, payload)
 }
 
 func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*domain.OrderItems, customError *exceptions.CustomError) {

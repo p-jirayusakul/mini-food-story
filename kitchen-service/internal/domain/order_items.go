@@ -22,3 +22,19 @@ type OrderItemsStatus struct {
 	OrderID    int64
 	StatusCode string
 }
+
+type SearchOrderItems struct {
+	Name        string
+	TableNumber []int32
+	StatusCode  []string
+	OrderByType string
+	OrderBy     string
+	PageSize    int64
+	PageNumber  int64
+}
+
+type SearchOrderItemsResult struct {
+	TotalItems int64         `json:"totalItems"`
+	TotalPages int64         `json:"totalPages"`
+	Data       []*OrderItems `json:"data"`
+}

@@ -89,6 +89,16 @@ func FilterOutZero(slice []int64) []int64 {
 	return result
 }
 
+func FilterOutZeroInt(slice []int32) []int32 {
+	var result []int32
+	for _, v := range slice {
+		if v != 0 {
+			result = append(result, v)
+		}
+	}
+	return result
+}
+
 func FilterOutEmptyStr(slice []string) []string {
 	var result []string
 	for _, v := range slice {

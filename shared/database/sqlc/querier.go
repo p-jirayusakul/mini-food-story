@@ -17,7 +17,6 @@ type Querier interface {
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
 	CreateTableStatus(ctx context.Context, arg CreateTableStatusParams) (int64, error)
-	GetAllOrderWithItems(ctx context.Context) ([]*GetAllOrderWithItemsRow, error)
 	GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error)
 	GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderItemsByIDRow, error)
 	GetOrderStatusPreparing(ctx context.Context) (int64, error)
@@ -32,6 +31,7 @@ type Querier interface {
 	GetTotalPageQuickSearchTables(ctx context.Context, numberOfPeople int32) (int64, error)
 	GetTotalPageSearchProducts(ctx context.Context, arg GetTotalPageSearchProductsParams) (int64, error)
 	GetTotalPageSearchTables(ctx context.Context, arg GetTotalPageSearchTablesParams) (int64, error)
+	GetTotalSearchOrderItems(ctx context.Context, arg GetTotalSearchOrderItemsParams) (int64, error)
 	Health(ctx context.Context) (int32, error)
 	IsOrderExist(ctx context.Context, id int64) (bool, error)
 	IsOrderItemsExist(ctx context.Context, id int64) (bool, error)
@@ -47,6 +47,7 @@ type Querier interface {
 	ListOrderStatus(ctx context.Context) ([]*ListOrderStatusRow, error)
 	ListTableStatus(ctx context.Context) ([]*ListTableStatusRow, error)
 	QuickSearchTables(ctx context.Context, arg QuickSearchTablesParams) ([]*QuickSearchTablesRow, error)
+	SearchOrderItems(ctx context.Context, arg SearchOrderItemsParams) ([]*SearchOrderItemsRow, error)
 	SearchProducts(ctx context.Context, arg SearchProductsParams) ([]*SearchProductsRow, error)
 	SearchTables(ctx context.Context, arg SearchTablesParams) ([]*SearchTablesRow, error)
 	UpdateOrderItemsStatus(ctx context.Context, arg UpdateOrderItemsStatusParams) error

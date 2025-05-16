@@ -31,80 +31,6 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 	return id, err
 }
 
-const getAllOrderWithItems = `-- name: GetAllOrderWithItems :many
-SELECT o.id  AS "orderID",
-       oi.id AS "id",
-       oi.product_id as "productID",
-       oi.product_name as "productName",
-       oi.product_name_en as "productNameEN",
-       t.table_number as "tableNumber",
-       oi.quantity,
-       (oi.price * oi.quantity) as "price",
-       oi.status_id as "statusID",
-       mos.name as "statusName",
-       mos.name_en as "statusNameEN",
-       mos.code as "statusCode",
-       oi.note as "note",
-       oi.created_at
-FROM public.orders o
-         JOIN public.order_items oi ON oi.order_id = o.id
-         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
-         JOIN public.tables t ON o.table_id = t.id
-order by oi.id DESC
-`
-
-type GetAllOrderWithItemsRow struct {
-	OrderID       int64            `json:"orderID"`
-	ID            int64            `json:"id"`
-	ProductID     int64            `json:"productID"`
-	ProductName   string           `json:"productName"`
-	ProductNameEN string           `json:"productNameEN"`
-	TableNumber   int32            `json:"tableNumber"`
-	Quantity      int32            `json:"quantity"`
-	Price         pgtype.Numeric   `json:"price"`
-	StatusID      int64            `json:"statusID"`
-	StatusName    string           `json:"statusName"`
-	StatusNameEN  string           `json:"statusNameEN"`
-	StatusCode    string           `json:"statusCode"`
-	Note          pgtype.Text      `json:"note"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
-}
-
-func (q *Queries) GetAllOrderWithItems(ctx context.Context) ([]*GetAllOrderWithItemsRow, error) {
-	rows, err := q.db.Query(ctx, getAllOrderWithItems)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []*GetAllOrderWithItemsRow{}
-	for rows.Next() {
-		var i GetAllOrderWithItemsRow
-		if err := rows.Scan(
-			&i.OrderID,
-			&i.ID,
-			&i.ProductID,
-			&i.ProductName,
-			&i.ProductNameEN,
-			&i.TableNumber,
-			&i.Quantity,
-			&i.Price,
-			&i.StatusID,
-			&i.StatusName,
-			&i.StatusNameEN,
-			&i.StatusCode,
-			&i.Note,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, &i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getOrderByID = `-- name: GetOrderByID :one
 SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN"
 FROM public.orders as o
@@ -358,6 +284,38 @@ func (q *Queries) GetTableNumberOrderByID(ctx context.Context, orderID int64) (i
 	return table_number, err
 }
 
+const getTotalSearchOrderItems = `-- name: GetTotalSearchOrderItems :one
+SELECT COUNT(*)
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE (($1::varchar IS NULL OR oi."product_name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR oi.product_name_en ILIKE '%' || $1::varchar || '%'))
+  AND (
+    $2::int[] IS NULL
+        OR array_length($2::int[], 1) = 0
+        OR t.table_number = ANY ($2::int[])
+    )
+  AND (
+    $3::varchar[] IS NULL
+        OR array_length($3::varchar[], 1) = 0
+        OR mos.code = ANY ($3::varchar[])
+    )
+`
+
+type GetTotalSearchOrderItemsParams struct {
+	ProductName pgtype.Text `json:"product_name"`
+	TableNumber []int32     `json:"table_number"`
+	StatusCode  []string    `json:"status_code"`
+}
+
+func (q *Queries) GetTotalSearchOrderItems(ctx context.Context, arg GetTotalSearchOrderItemsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getTotalSearchOrderItems, arg.ProductName, arg.TableNumber, arg.StatusCode)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const isOrderExist = `-- name: IsOrderExist :one
 SELECT COUNT(id) > 0
 FROM public.orders WHERE id = $1
@@ -387,6 +345,131 @@ func (q *Queries) IsOrderWithItemsExists(ctx context.Context, arg IsOrderWithIte
 	var column_1 bool
 	err := row.Scan(&column_1)
 	return column_1, err
+}
+
+const searchOrderItems = `-- name: SearchOrderItems :many
+SELECT o.id  AS "orderID",
+       oi.id AS "id",
+       oi.product_id as "productID",
+       oi.product_name as "productName",
+       oi.product_name_en as "productNameEN",
+       t.table_number as "tableNumber",
+       oi.quantity,
+       (oi.price * oi.quantity) as "price",
+       oi.status_id as "statusID",
+       mos.name as "statusName",
+       mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
+       oi.note as "note",
+       oi.created_at
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE (($1::varchar IS NULL OR oi."product_name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR oi.product_name_en ILIKE '%' || $1::varchar || '%'))
+  AND (
+    $2::int[] IS NULL
+        OR array_length($2::int[], 1) = 0
+        OR t.table_number = ANY ($2::int[])
+    )
+  AND (
+    $3::varchar[] IS NULL
+        OR array_length($3::varchar[], 1) = 0
+        OR mos.code = ANY ($3::varchar[])
+    )
+ORDER BY CASE
+             WHEN $4::text = 'asc' THEN
+                 CASE
+                     WHEN $5::text = 'id' THEN oi.id::text
+                     WHEN $5::text = 'tableNumber' THEN t."table_number"::text
+                     WHEN $5::text = 'statusCode' THEN mos."code"::text
+                     WHEN $5::text = 'productName' THEN oi."product_name"::text
+                     WHEN $5::text = 'quantity' THEN oi."quantity"::text
+                     ELSE oi.id::text
+                     END
+             END,
+         CASE
+             WHEN $4::text = 'desc' THEN
+                 CASE
+                     WHEN $5::text = 'id' THEN oi.id::text
+                     WHEN $5::text = 'tableNumber' THEN t."table_number"::text
+                     WHEN $5::text = 'statusCode' THEN mos."code"::text
+                     WHEN $5::text = 'productName' THEN oi."product_name"::text
+                     WHEN $5::text = 'quantity' THEN oi."quantity"::text
+                     ELSE oi.id::text
+                     END
+             END DESC
+OFFSET $6 LIMIT $7
+`
+
+type SearchOrderItemsParams struct {
+	ProductName pgtype.Text `json:"product_name"`
+	TableNumber []int32     `json:"table_number"`
+	StatusCode  []string    `json:"status_code"`
+	OrderByType string      `json:"order_by_type"`
+	OrderBy     string      `json:"order_by"`
+	PageNumber  int64       `json:"page_number"`
+	PageSize    int64       `json:"page_size"`
+}
+
+type SearchOrderItemsRow struct {
+	OrderID       int64            `json:"orderID"`
+	ID            int64            `json:"id"`
+	ProductID     int64            `json:"productID"`
+	ProductName   string           `json:"productName"`
+	ProductNameEN string           `json:"productNameEN"`
+	TableNumber   int32            `json:"tableNumber"`
+	Quantity      int32            `json:"quantity"`
+	Price         pgtype.Numeric   `json:"price"`
+	StatusID      int64            `json:"statusID"`
+	StatusName    string           `json:"statusName"`
+	StatusNameEN  string           `json:"statusNameEN"`
+	StatusCode    string           `json:"statusCode"`
+	Note          pgtype.Text      `json:"note"`
+	CreatedAt     pgtype.Timestamp `json:"created_at"`
+}
+
+func (q *Queries) SearchOrderItems(ctx context.Context, arg SearchOrderItemsParams) ([]*SearchOrderItemsRow, error) {
+	rows, err := q.db.Query(ctx, searchOrderItems,
+		arg.ProductName,
+		arg.TableNumber,
+		arg.StatusCode,
+		arg.OrderByType,
+		arg.OrderBy,
+		arg.PageNumber,
+		arg.PageSize,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*SearchOrderItemsRow{}
+	for rows.Next() {
+		var i SearchOrderItemsRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.ID,
+			&i.ProductID,
+			&i.ProductName,
+			&i.ProductNameEN,
+			&i.TableNumber,
+			&i.Quantity,
+			&i.Price,
+			&i.StatusID,
+			&i.StatusName,
+			&i.StatusNameEN,
+			&i.StatusCode,
+			&i.Note,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const updateOrderStatus = `-- name: UpdateOrderStatus :exec

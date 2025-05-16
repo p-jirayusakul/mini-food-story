@@ -10,7 +10,31 @@ import (
 )
 
 func (s *Handler) SearchOrderItems(c *fiber.Ctx) error {
-	result, customError := s.useCase.SearchOrderItems(c.Context())
+	body := new(SearchOrderItems)
+	if err := c.QueryParser(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	orderByType := "desc"
+	if body.OrderByType != "" {
+		orderByType = body.OrderByType
+	}
+
+	payload := domain.SearchOrderItems{
+		Name:        body.Search,
+		TableNumber: utils.FilterOutZeroInt(body.TableNumber),
+		StatusCode:  utils.FilterOutEmptyStr(body.StatusCode),
+		OrderByType: orderByType,
+		OrderBy:     body.OrderBy,
+		PageSize:    body.PageSize,
+		PageNumber:  body.PageNumber,
+	}
+
+	result, customError := s.useCase.SearchOrderItems(c.Context(), payload)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}

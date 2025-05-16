@@ -20,7 +20,7 @@ UPDATE public.orders
 SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = sqlc.arg(status_code)::text LIMIT 1)
 WHERE id = sqlc.arg(id)::bigint;
 
--- name: GetAllOrderWithItems :many
+-- name: SearchOrderItems :many
 SELECT o.id  AS "orderID",
        oi.id AS "id",
        oi.product_id as "productID",
@@ -39,7 +39,58 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-order by oi.id DESC;
+WHERE ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
+  AND (
+    sqlc.narg(table_number)::int[] IS NULL
+        OR array_length(sqlc.narg(table_number)::int[], 1) = 0
+        OR t.table_number = ANY (sqlc.narg(table_number)::int[])
+    )
+  AND (
+    sqlc.narg(status_code)::varchar[] IS NULL
+        OR array_length(sqlc.narg(status_code)::varchar[], 1) = 0
+        OR mos.code = ANY (sqlc.narg(status_code)::varchar[])
+    )
+ORDER BY CASE
+             WHEN sqlc.arg(order_by_type)::text = 'asc' THEN
+                 CASE
+                     WHEN sqlc.arg(order_by)::text = 'id' THEN oi.id::text
+                     WHEN sqlc.arg(order_by)::text = 'tableNumber' THEN t."table_number"::text
+                     WHEN sqlc.arg(order_by)::text = 'statusCode' THEN mos."code"::text
+                     WHEN sqlc.arg(order_by)::text = 'productName' THEN oi."product_name"::text
+                     WHEN sqlc.arg(order_by)::text = 'quantity' THEN oi."quantity"::text
+                     ELSE oi.id::text
+                     END
+             END,
+         CASE
+             WHEN sqlc.arg(order_by_type)::text = 'desc' THEN
+                 CASE
+                     WHEN sqlc.arg(order_by)::text = 'id' THEN oi.id::text
+                     WHEN sqlc.arg(order_by)::text = 'tableNumber' THEN t."table_number"::text
+                     WHEN sqlc.arg(order_by)::text = 'statusCode' THEN mos."code"::text
+                     WHEN sqlc.arg(order_by)::text = 'productName' THEN oi."product_name"::text
+                     WHEN sqlc.arg(order_by)::text = 'quantity' THEN oi."quantity"::text
+                     ELSE oi.id::text
+                     END
+             END DESC
+OFFSET sqlc.arg(page_number) LIMIT sqlc.arg(page_size);
+
+-- name: GetTotalSearchOrderItems :one
+SELECT COUNT(*)
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
+  AND (
+    sqlc.narg(table_number)::int[] IS NULL
+        OR array_length(sqlc.narg(table_number)::int[], 1) = 0
+        OR t.table_number = ANY (sqlc.narg(table_number)::int[])
+    )
+  AND (
+    sqlc.narg(status_code)::varchar[] IS NULL
+        OR array_length(sqlc.narg(status_code)::varchar[], 1) = 0
+        OR mos.code = ANY (sqlc.narg(status_code)::varchar[])
+    );
 
 -- name: GetTableNumberOrderByID :one
 SELECT t.table_number

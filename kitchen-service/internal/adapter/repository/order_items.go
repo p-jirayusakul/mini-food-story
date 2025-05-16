@@ -8,6 +8,9 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
+	"github.com/jackc/pgx/v5/pgtype"
+	"math"
+	"strings"
 )
 
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
@@ -30,27 +33,42 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.O
 	return
 }
 
-func (i *Implement) SearchOrderItems(ctx context.Context) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+	searchParams := buildSearchOrderItemsParams(payload)
 
-	items, err := i.repository.GetAllOrderWithItems(ctx)
+	items, err := i.repository.SearchOrderItems(ctx, searchParams)
 	if err != nil {
-		return nil, &exceptions.CustomError{
+		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
 			Errors: fmt.Errorf("failed to get order items: %w", err),
 		}
 	}
 
-	result = make([]*domain.OrderItems, len(items))
+	totalItemsParam := database.GetTotalSearchOrderItemsParams{
+		ProductName: searchParams.ProductName,
+		TableNumber: searchParams.TableNumber,
+		StatusCode:  searchParams.StatusCode,
+	}
+
+	totalItems, err := i.repository.GetTotalSearchOrderItems(ctx, totalItemsParam)
+	if err != nil {
+		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch product: %w", err),
+		}
+	}
+
+	data := make([]*domain.OrderItems, len(items))
 	for index, v := range items {
 		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
 		if err != nil {
-			return nil, &exceptions.CustomError{
+			return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
 				Status: exceptions.ERRUNKNOWN,
 				Errors: err,
 			}
 		}
 
-		result[index] = &domain.OrderItems{
+		data[index] = &domain.OrderItems{
 			ID:            v.ID,
 			OrderID:       v.OrderID,
 			ProductID:     v.ProductID,
@@ -69,7 +87,11 @@ func (i *Implement) SearchOrderItems(ctx context.Context) (result []*domain.Orde
 
 	}
 
-	return
+	return domain.SearchOrderItemsResult{
+		TotalItems: totalItems,
+		TotalPages: int64(math.Ceil(float64(totalItems) / float64(searchParams.PageSize))),
+		Data:       data,
+	}, nil
 }
 
 func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
@@ -168,4 +190,23 @@ func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID
 		Note:          utils.PgTextToStringPtr(items.Note),
 		CreatedAt:     createdAt,
 	}, nil
+}
+
+func buildSearchOrderItemsParams(payload domain.SearchOrderItems) database.SearchOrderItemsParams {
+	params := database.SearchOrderItemsParams{
+		ProductName: pgtype.Text{String: payload.Name, Valid: payload.Name != ""},
+		TableNumber: payload.TableNumber,
+		OrderByType: payload.OrderByType,
+		OrderBy:     payload.OrderBy,
+		PageSize:    payload.PageSize,
+		PageNumber:  payload.PageNumber,
+	}
+
+	for _, v := range payload.StatusCode {
+		params.StatusCode = append(params.StatusCode, strings.ToUpper(v))
+	}
+
+	params.PageSize, params.PageNumber = utils.CalculatePageSizeAndNumber(payload.PageSize, payload.PageNumber)
+
+	return params
 }
