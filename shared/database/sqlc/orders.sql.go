@@ -290,7 +290,8 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE (($1::varchar IS NULL OR oi."product_name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR oi.product_name_en ILIKE '%' || $1::varchar || '%'))
+WHERE  DATE(oi.created_at) = CURRENT_DATE
+  AND (($1::varchar IS NULL OR oi."product_name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR oi.product_name_en ILIKE '%' || $1::varchar || '%'))
   AND (
     $2::int[] IS NULL
         OR array_length($2::int[], 1) = 0
@@ -366,7 +367,8 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE (($1::varchar IS NULL OR oi."product_name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR oi.product_name_en ILIKE '%' || $1::varchar || '%'))
+WHERE  DATE(oi.created_at) = CURRENT_DATE
+  AND (($1::varchar IS NULL OR oi."product_name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR oi.product_name_en ILIKE '%' || $1::varchar || '%'))
   AND (
     $2::int[] IS NULL
         OR array_length($2::int[], 1) = 0

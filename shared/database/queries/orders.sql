@@ -39,7 +39,8 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
+WHERE  DATE(oi.created_at) = CURRENT_DATE
+  AND ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
   AND (
     sqlc.narg(table_number)::int[] IS NULL
         OR array_length(sqlc.narg(table_number)::int[], 1) = 0
@@ -80,7 +81,8 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
+WHERE  DATE(oi.created_at) = CURRENT_DATE
+  AND ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
   AND (
     sqlc.narg(table_number)::int[] IS NULL
         OR array_length(sqlc.narg(table_number)::int[], 1) = 0
