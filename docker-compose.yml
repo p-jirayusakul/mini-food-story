@@ -11,6 +11,8 @@ x-common-env: &common-env
   REDIS_ADDRESS: "dragonfly:6379"
   REDIS_PASSWORD: ${REDIS_PASSWORD}
   KAFKA_BROKERS: "kafka:29092"
+  TZ: "Asia/Bangkok"
+
 
 services:
   dragonfly:
@@ -105,6 +107,7 @@ services:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: "Asia/Bangkok"
     ports:
       - "5432:5432"
     volumes:

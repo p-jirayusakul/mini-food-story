@@ -33,11 +33,15 @@ RUN go build -o app cmd/main.go
 # Stage 2: Create lightweight production image
 FROM alpine:3.20.1 AS prod
 
+RUN apk add --no-cache tzdata
+
 # Set working directory in the production container
 WORKDIR /app
 
 # Copy compiled binary from build stage
 COPY --from=build /app/kitchen-service/app .
+
+ENV TZ=Asia/Bangkok
 
 # Expose the port
 EXPOSE 8083
