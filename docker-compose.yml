@@ -99,22 +99,21 @@ services:
       - mini_food_story
 
   psql_bp:
-    image: postgres:latest
+    image: postgres:17.5
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     ports:
-      - "${DB_PORT}:5432"
+      - "5432:5432"
     volumes:
       - psql_volume_bp:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}'" ]
-      interval: 5s
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME}" ]
+      interval: 10s
       timeout: 5s
       retries: 3
-      start_period: 15s
     networks:
       - mini_food_story
 
@@ -125,7 +124,7 @@ services:
       - ./shared/database/migrations:/migrations
     command: [
       "-path", "/migrations",
-      "-database", "postgres://${DB_USERNAME}:${DB_PASSWORD}@psql_bp:${DB_PORT}/${DB_DATABASE}?sslmode=disable",
+      "-database", "postgres://postgres:1234@psql_bp:5432/food_story?sslmode=disable&search_path=public",
       "up"
     ]
     depends_on:
@@ -133,6 +132,22 @@ services:
         condition: service_healthy
     networks:
       - mini_food_story
+
+  pgadmin:
+    image: dpage/pgadmin4:9.3.0
+    container_name: pgadmin-container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@domain.com
+      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5050:80"
+    networks:
+      - mini_food_story
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
 
   table-service:
     build:
@@ -218,5 +233,6 @@ services:
 volumes:
   dragonflydata:
   psql_volume_bp:
+  pgadmin_data:
 networks:
   mini_food_story:

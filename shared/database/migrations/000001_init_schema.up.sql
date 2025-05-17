@@ -1,3 +1,5 @@
+CREATE SCHEMA IF NOT EXISTS public AUTHORIZATION postgres;
+
 CREATE TYPE "table_session_status" AS ENUM (
     'active',
     'closed',
@@ -51,7 +53,7 @@ CREATE TABLE "tables" (
 CREATE TABLE "table_session" (
                                  "id" bigint UNIQUE PRIMARY KEY NOT NULL,
                                  "table_id" bigint NOT NULL,
-                                 "session_id" uuid UNIQUE NOT NULL DEFAULT 'gen_random_uuid()',
+                                 "session_id" uuid UNIQUE NOT NULL DEFAULT gen_random_uuid(),
                                  "number_of_people" int NOT NULL DEFAULT 1,
                                  "status" table_session_status,
                                  "started_at" timestamp NOT NULL DEFAULT 'NOW()',
