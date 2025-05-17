@@ -7,7 +7,20 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getTimeNow = `-- name: GetTimeNow :one
+select NOW() as "today"
+`
+
+func (q *Queries) GetTimeNow(ctx context.Context) (pgtype.Timestamptz, error) {
+	row := q.db.QueryRow(ctx, getTimeNow)
+	var today pgtype.Timestamptz
+	err := row.Scan(&today)
+	return today, err
+}
 
 const health = `-- name: Health :one
 SELECT 1

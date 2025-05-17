@@ -29,6 +29,8 @@ func NewHTTPHandler(
 func (s *Handler) setupRoutes() {
 	group := s.router.Group("/tables")
 
+	group.Get("/time", s.GetTime)
+
 	group.Get("/status", s.ListTableStatus)
 	group.Post("", s.CreateTable)
 	group.Post("/session", s.CreateTableSession)

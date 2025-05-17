@@ -1,5 +1,3 @@
-CREATE SCHEMA IF NOT EXISTS public AUTHORIZATION postgres;
-
 CREATE TYPE "table_session_status" AS ENUM (
     'active',
     'closed',
@@ -18,16 +16,16 @@ CREATE TABLE "md_table_statuses" (
                                      "code" varchar(15) UNIQUE NOT NULL,
                                      "name" varchar(100) UNIQUE NOT NULL,
                                      "name_en" varchar(100) UNIQUE NOT NULL,
-                                     "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                                     "updated_at" timestamp
+                                     "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                     "updated_at" timestamptz
 );
 
 CREATE TABLE "md_categories" (
                                  "id" bigint UNIQUE PRIMARY KEY NOT NULL,
                                  "name" varchar(100) UNIQUE NOT NULL,
                                  "name_en" varchar(100) UNIQUE NOT NULL,
-                                 "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                                 "updated_at" timestamp
+                                 "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                 "updated_at" timestamptz
 );
 
 CREATE TABLE "md_order_statuses" (
@@ -37,8 +35,8 @@ CREATE TABLE "md_order_statuses" (
                                      "name_en" varchar(100) UNIQUE NOT NULL,
                                      "sort_order" int UNIQUE NOT NULL,
                                      "is_final" bool NOT NULL DEFAULT false,
-                                     "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                                     "updated_at" timestamp
+                                     "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                     "updated_at" timestamptz
 );
 
 CREATE TABLE "tables" (
@@ -46,8 +44,8 @@ CREATE TABLE "tables" (
                           "table_number" int UNIQUE NOT NULL,
                           "status_id" bigint NOT NULL,
                           "seats" int NOT NULL DEFAULT 0,
-                          "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                          "updated_at" timestamp
+                          "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                          "updated_at" timestamptz
 );
 
 CREATE TABLE "table_session" (
@@ -56,9 +54,9 @@ CREATE TABLE "table_session" (
                                  "session_id" uuid UNIQUE NOT NULL DEFAULT gen_random_uuid(),
                                  "number_of_people" int NOT NULL DEFAULT 1,
                                  "status" table_session_status,
-                                 "started_at" timestamp NOT NULL DEFAULT 'NOW()',
-                                 "expire_at" timestamp NOT NULL,
-                                 "ended_at" timestamp
+                                 "started_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                 "expire_at" timestamptz NOT NULL,
+                                 "ended_at" timestamptz
 );
 
 CREATE TABLE "products" (
@@ -70,8 +68,8 @@ CREATE TABLE "products" (
                             "price" numeric(10,2) NOT NULL DEFAULT 0,
                             "is_available" bool NOT NULL DEFAULT false,
                             "image_url" text,
-                            "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                            "updated_at" timestamp
+                            "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                            "updated_at" timestamptz
 );
 
 CREATE TABLE "orders" (
@@ -80,8 +78,8 @@ CREATE TABLE "orders" (
                           "table_id" bigint NOT NULL,
                           "status_id" bigint NOT NULL,
                           "total_amount" numeric(10,2) NOT NULL DEFAULT 0,
-                          "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                          "updated_at" timestamp
+                          "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                          "updated_at" timestamptz
 );
 
 CREATE TABLE "order_items" (
@@ -94,9 +92,9 @@ CREATE TABLE "order_items" (
                                "price" numeric(10,2) NOT NULL DEFAULT 0,
                                "quantity" int NOT NULL DEFAULT 1,
                                "note" text,
-                               "prepared_at" timestamp,
-                               "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                               "updated_at" timestamp
+                               "prepared_at" timestamptz,
+                               "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                               "updated_at" timestamptz
 );
 
 CREATE TABLE "payments" (
@@ -105,10 +103,10 @@ CREATE TABLE "payments" (
                             "amount" numeric(10,2) NOT NULL DEFAULT 0,
                             "method" bigint NOT NULL,
                             "status" payment_status DEFAULT 'pending',
-                            "paid_at" timestamp,
+                            "paid_at" timestamptz,
                             "transaction_id" text,
-                            "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                            "updated_at" timestamp,
+                            "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                            "updated_at" timestamptz,
                             "note" text
 );
 
@@ -118,8 +116,8 @@ CREATE TABLE "payment_methods" (
                                    "name" varchar(100) UNIQUE NOT NULL,
                                    "name_en" varchar(100) UNIQUE NOT NULL,
                                    "enable" bool NOT NULL DEFAULT false,
-                                   "created_at" timestamp NOT NULL DEFAULT 'NOW()',
-                                   "updated_at" timestamp
+                                   "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                   "updated_at" timestamptz
 );
 
 CREATE INDEX ON "md_table_statuses" ("id");
@@ -196,43 +194,41 @@ ALTER TABLE "payments" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id");
 
 ALTER TABLE "payments" ADD FOREIGN KEY ("method") REFERENCES "payment_methods" ("id");
 
-
-
 -- Insert Master Data
 
 INSERT INTO public.md_categories (id,name,name_en,created_at,updated_at) VALUES
-                                                                             (1921143886227443712,'อาหาร','Food','2025-05-07 10:55:02.255781',NULL),
-                                                                             (1921144050476388352,'เครื่องดื่ม','Drink','2025-05-07 10:55:02.255781',NULL),
-                                                                             (1921144250070732800,'ขนม','Dessert','2025-05-07 10:55:02.255781',NULL);
+                                                                             (1921143886227443712,'อาหาร','Food',NOW(),NULL),
+                                                                             (1921144050476388352,'เครื่องดื่ม','Drink',NOW(),NULL),
+                                                                             (1921144250070732800,'ขนม','Dessert',NOW(),NULL);
 
 INSERT INTO public.md_order_statuses (id,code,name,name_en,sort_order,is_final,created_at,updated_at) VALUES
-                                                                                                          (1921868485739155456,'PENDING','รอยืนยันออเดอร์','Pending',1,false,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                          (1921868485739155457,'CONFIRMED','ยืนยันออเดอร์','Confirmed',2,false,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                          (1921868485739155458,'PREPARING','กำลังเตรียมอาหาร','Preparing',3,false,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                          (1921868485739155459,'SERVED','เสิร์ฟอาหารแล้ว','Served',4,false,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                          (1921868485739155460,'WAITING_PAYMENT','รอชำระเงิน','Waiting for Payment',5,false,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                          (1921868485739155461,'COMPLETED','เสร็จสิ้น','Completed',6,true,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                          (1921868485739155462,'CANCELLED','ยกเลิก','Cancelled',7,true,'2025-05-07 10:55:02.255781',NULL);
+                                                                                                          (1921868485739155456,'PENDING','รอยืนยันออเดอร์','Pending',1,false,NOW(),NULL),
+                                                                                                          (1921868485739155457,'CONFIRMED','ยืนยันออเดอร์','Confirmed',2,false,NOW(),NULL),
+                                                                                                          (1921868485739155458,'PREPARING','กำลังเตรียมอาหาร','Preparing',3,false,NOW(),NULL),
+                                                                                                          (1921868485739155459,'SERVED','เสิร์ฟอาหารแล้ว','Served',4,false,NOW(),NULL),
+                                                                                                          (1921868485739155460,'WAITING_PAYMENT','รอชำระเงิน','Waiting for Payment',5,false,NOW(),NULL),
+                                                                                                          (1921868485739155461,'COMPLETED','เสร็จสิ้น','Completed',6,true,NOW(),NULL),
+                                                                                                          (1921868485739155462,'CANCELLED','ยกเลิก','Cancelled',7,true,NOW(),NULL);
 INSERT INTO public.md_table_statuses (id,code,name,name_en,created_at,updated_at) VALUES
-                                                                                      (1919968486671519744,'AVAILABLE','ว่าง','Available','2025-05-07 10:55:02.255781',NULL),
-                                                                                      (1919968486843486208,'RESERVED','ถูกจองล่วงหน้า','Reserved','2025-05-07 10:55:02.255781',NULL),
-                                                                                      (1919968486847680512,'OCCUPIED','มีลูกค้า','Occupied','2025-05-07 10:55:02.255781',NULL),
-                                                                                      (1919968486847680513,'ORDERED','สั่งอาหารแล้ว','Ordered','2025-05-07 10:55:02.255781',NULL),
-                                                                                      (1919968486847680514,'WAITING_PAYMENT','รอชำระเงิน','Waiting for Payment','2025-05-07 10:55:02.255781',NULL),
-                                                                                      (1919968486847680515,'CLEANING','รอทำความสะอาด','Cleaning','2025-05-07 10:55:02.255781',NULL),
-                                                                                      (1919968486847680516,'DISABLED','ปิดการใช้งานชั่วคราว','Disabled','2025-05-07 10:55:02.255781',NULL);
+                                                                                      (1919968486671519744,'AVAILABLE','ว่าง','Available',NOW(),NULL),
+                                                                                      (1919968486843486208,'RESERVED','ถูกจองล่วงหน้า','Reserved',NOW(),NULL),
+                                                                                      (1919968486847680512,'OCCUPIED','มีลูกค้า','Occupied',NOW(),NULL),
+                                                                                      (1919968486847680513,'ORDERED','สั่งอาหารแล้ว','Ordered',NOW(),NULL),
+                                                                                      (1919968486847680514,'WAITING_PAYMENT','รอชำระเงิน','Waiting for Payment',NOW(),NULL),
+                                                                                      (1919968486847680515,'CLEANING','รอทำความสะอาด','Cleaning',NOW(),NULL),
+                                                                                      (1919968486847680516,'DISABLED','ปิดการใช้งานชั่วคราว','Disabled',NOW(),NULL);
 
 
 INSERT INTO public.products (id,name,name_en,categories,description,price,is_available,image_url,created_at,updated_at) VALUES
-                                                                                                                            (1921822053405560832,'ข้าวผัด','Fried rice',1921143886227443712,'lorem ipso',60.00,true,NULL,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                                            (1921822481287483392,'เค้กแครอท','Carrot cake',1921144250070732800,'lorem ipso',120.00,true,NULL,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                                            (1921822608437809152,'แป๊ปซี่','Pepsi',1921144050476388352,'lorem ipso',30.00,true,NULL,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                                            (1921828287366041600,'ข้าวผัดกระเพรา','Phat kaphrao',1921143886227443712,'lorem ipso',70.50,true,NULL,'2025-05-07 10:55:02.255781',NULL),
-                                                                                                                            (1921821817723424768,'ข้าวมันไก่','Chicken rice',1921143886227443712,'lorem ipso',80.00,true,NULL,'2025-05-07 10:55:02.255781',NULL);
+                                                                                                                            (1921822053405560832,'ข้าวผัด','Fried rice',1921143886227443712,'lorem ipso',60.00,true,NULL,NOW(),NULL),
+                                                                                                                            (1921822481287483392,'เค้กแครอท','Carrot cake',1921144250070732800,'lorem ipso',120.00,true,NULL,NOW(),NULL),
+                                                                                                                            (1921822608437809152,'แป๊ปซี่','Pepsi',1921144050476388352,'lorem ipso',30.00,true,NULL,NOW(),NULL),
+                                                                                                                            (1921828287366041600,'ข้าวผัดกระเพรา','Phat kaphrao',1921143886227443712,'lorem ipso',70.50,true,NULL,NOW(),NULL),
+                                                                                                                            (1921821817723424768,'ข้าวมันไก่','Chicken rice',1921143886227443712,'lorem ipso',80.00,true,NULL,NOW(),NULL);
 
 INSERT INTO public."tables" (id,table_number,status_id,seats,created_at,updated_at) VALUES
-                                                                                        (1920153361642950656,5,1919968486671519744,4,'2025-05-07 10:55:02.255781','2025-05-16 08:50:56.627875'),
-                                                                                        (1919972141986484224,3,1919968486671519744,4,'2025-05-07 10:55:02.255781','2025-05-16 12:39:00.230686'),
-                                                                                        (1919996486741921792,4,1919968486671519744,5,'2025-05-07 10:55:02.255781','2025-05-16 12:58:13.367591'),
-                                                                                        (1919968785813475328,1,1919968486671519744,5,'2025-05-07 10:55:02.255781','2025-05-16 13:35:10.203902'),
-                                                                                        (1919971956241731584,2,1919968486671519744,3,'2025-05-07 10:55:02.255781','2025-05-16 13:36:29.07');
+                                                                                        (1920153361642950656,5,1919968486671519744,4,NOW(),NULL),
+                                                                                        (1919972141986484224,3,1919968486671519744,4,NOW(),NULL),
+                                                                                        (1919996486741921792,4,1919968486671519744,5,NOW(),NULL),
+                                                                                        (1919968785813475328,1,1919968486671519744,5,NOW(),NULL),
+                                                                                        (1919971956241731584,2,1919968486671519744,3,NOW(),NULL);

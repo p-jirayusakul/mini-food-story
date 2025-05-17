@@ -85,7 +85,6 @@ services:
     networks:
       - mini_food_story
 
-
   kafka-init-topics:
     image: confluentinc/cp-kafka:7.9.1
     volumes:
@@ -120,6 +119,22 @@ services:
     networks:
       - mini_food_story
 
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin-container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@domain.com
+      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5050:80"
+    networks:
+      - mini_food_story
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
   migrate:
     image: migrate/migrate
     container_name: my_migration
@@ -136,22 +151,6 @@ services:
     networks:
       - mini_food_story
 
-  pgadmin:
-    image: dpage/pgadmin4:9.3.0
-    container_name: pgadmin-container
-    environment:
-      PGADMIN_DEFAULT_EMAIL: user@domain.com
-      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5050:80"
-    networks:
-      - mini_food_story
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-
   table-service:
     build:
       context: ./       # Root directory ของ mono repo
@@ -164,8 +163,6 @@ services:
       PORT: 8080
     depends_on:
       psql_bp:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
       dragonfly:
         condition: service_healthy
@@ -185,8 +182,6 @@ services:
       PORT: 8081
     depends_on:
       psql_bp:
-        condition: service_healthy
-      kafka:
         condition: service_healthy
       dragonfly:
         condition: service_healthy
