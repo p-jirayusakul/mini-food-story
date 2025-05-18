@@ -6,7 +6,6 @@ import (
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
 	"github.com/gofiber/fiber/v2"
-	"strconv"
 )
 
 func (s *Handler) CreateOrder(c *fiber.Ctx) error {
@@ -43,14 +42,12 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 		})
 	}
 
-	result, customError := s.useCase.CreateOrder(c.Context(), sessionID, items)
+	_, customError := s.useCase.CreateOrder(c.Context(), sessionID, items)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseCreated(c, "create order success", createResponse{
-		ID: strconv.FormatInt(result, 10),
-	})
+	return middleware.ResponseCreated(c, "create order success", nil)
 }
 
 func (s *Handler) GetOrderByID(c *fiber.Ctx) error {
@@ -177,4 +174,41 @@ func (s *Handler) UpdateOrderItemsStatusCancelled(c *fiber.Ctx) error {
 	}
 
 	return middleware.ResponseOK(c, "update order item status success", nil)
+}
+
+func (s *Handler) SearchOrderItemsInComplete(c *fiber.Ctx) error {
+	orderID, err := utils.StrToInt64(c.Params("id"))
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	body := new(SearchOrderItemsIncomplete)
+	if err := c.QueryParser(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	orderByType := "desc"
+	if body.OrderByType != "" {
+		orderByType = body.OrderByType
+	}
+
+	payload := domain.SearchOrderItems{
+		Name:        body.Search,
+		StatusCode:  utils.FilterOutEmptyStr(body.StatusCode),
+		OrderByType: orderByType,
+		OrderBy:     body.OrderBy,
+		PageSize:    body.PageSize,
+		PageNumber:  body.PageNumber,
+	}
+
+	result, customError := s.useCase.SearchOrderItemsIncomplete(c.Context(), orderID, payload)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get order items success", result)
 }

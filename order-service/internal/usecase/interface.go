@@ -19,6 +19,7 @@ type Usecase interface {
 	GetOrderItems(ctx context.Context, sessionID uuid.UUID) (result []*domain.OrderItems, customError *exceptions.CustomError)
 	GetOderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.OrderItems, customError *exceptions.CustomError)
 	UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload domain.OrderItemsStatus) (customError *exceptions.CustomError)
+	SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError)
 }
 
 type Implement struct {

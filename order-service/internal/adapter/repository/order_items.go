@@ -9,6 +9,8 @@ import (
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
+	"math"
+	"strings"
 	"time"
 )
 
@@ -237,4 +239,84 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.O
 	}
 
 	return
+}
+
+func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+	searchParams := buildSearchOrderItemsIncompleteParams(orderID, payload)
+
+	items, err := i.repository.SearchOrderItemsIsNotFinal(ctx, searchParams)
+	if err != nil {
+		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", err),
+		}
+	}
+
+	totalItemsParam := database.GetTotalSearchOrderItemsIsNotFinalParams{
+		ProductName: searchParams.ProductName,
+		OrderID:     orderID,
+		StatusCode:  searchParams.StatusCode,
+	}
+
+	totalItems, err := i.repository.GetTotalSearchOrderItemsIsNotFinal(ctx, totalItemsParam)
+	if err != nil {
+		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch product: %w", err),
+		}
+	}
+
+	data := make([]*domain.OrderItems, len(items))
+	for index, v := range items {
+		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
+		if err != nil {
+			return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
+				Status: exceptions.ERRUNKNOWN,
+				Errors: err,
+			}
+		}
+
+		data[index] = &domain.OrderItems{
+			ID:            v.ID,
+			OrderID:       v.OrderID,
+			ProductID:     v.ProductID,
+			StatusID:      v.StatusID,
+			TableNumber:   v.TableNumber,
+			StatusName:    v.StatusName,
+			StatusNameEN:  v.StatusNameEN,
+			StatusCode:    v.StatusCode,
+			ProductName:   v.ProductName,
+			ProductNameEN: v.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(v.Price),
+			Quantity:      v.Quantity,
+			Note:          utils.PgTextToStringPtr(v.Note),
+			CreatedAt:     createdAt,
+		}
+
+	}
+
+	return domain.SearchOrderItemsResult{
+		TotalItems: totalItems,
+		TotalPages: int64(math.Ceil(float64(totalItems) / float64(searchParams.PageSize))),
+		Data:       data,
+	}, nil
+}
+
+func buildSearchOrderItemsIncompleteParams(orderID int64, payload domain.SearchOrderItems) database.SearchOrderItemsIsNotFinalParams {
+	params := database.SearchOrderItemsIsNotFinalParams{
+		OrderID:     orderID,
+		ProductName: pgtype.Text{String: payload.Name, Valid: payload.Name != ""},
+		OrderByType: payload.OrderByType,
+		OrderBy:     payload.OrderBy,
+		PageSize:    payload.PageSize,
+		PageNumber:  payload.PageNumber,
+	}
+
+	for _, v := range payload.StatusCode {
+		params.StatusCode = append(params.StatusCode, strings.ToUpper(v))
+	}
+
+	params.PageSize, params.PageNumber = utils.CalculatePageSizeAndNumber(payload.PageSize, payload.PageNumber)
+
+	return params
 }

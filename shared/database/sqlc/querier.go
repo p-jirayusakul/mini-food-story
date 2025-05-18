@@ -37,9 +37,11 @@ type Querier interface {
 	GetTotalPageSearchProducts(ctx context.Context, arg GetTotalPageSearchProductsParams) (int64, error)
 	GetTotalPageSearchTables(ctx context.Context, arg GetTotalPageSearchTablesParams) (int64, error)
 	GetTotalSearchOrderItems(ctx context.Context, arg GetTotalSearchOrderItemsParams) (int64, error)
+	GetTotalSearchOrderItemsIsNotFinal(ctx context.Context, arg GetTotalSearchOrderItemsIsNotFinalParams) (int64, error)
 	Health(ctx context.Context) (int32, error)
 	IsOrderExist(ctx context.Context, id int64) (bool, error)
 	IsOrderItemsExist(ctx context.Context, id int64) (bool, error)
+	IsOrderItemsNotFinal(ctx context.Context, orderID int64) (bool, error)
 	IsOrderStatusExist(ctx context.Context, code string) (bool, error)
 	IsOrderStatusFinal(ctx context.Context, code string) (bool, error)
 	IsOrderWithItemsExists(ctx context.Context, arg IsOrderWithItemsExistsParams) (bool, error)
@@ -54,12 +56,13 @@ type Querier interface {
 	ListTableStatus(ctx context.Context) ([]*ListTableStatusRow, error)
 	QuickSearchTables(ctx context.Context, arg QuickSearchTablesParams) ([]*QuickSearchTablesRow, error)
 	SearchOrderItems(ctx context.Context, arg SearchOrderItemsParams) ([]*SearchOrderItemsRow, error)
+	SearchOrderItemsIsNotFinal(ctx context.Context, arg SearchOrderItemsIsNotFinalParams) ([]*SearchOrderItemsIsNotFinalRow, error)
 	SearchProducts(ctx context.Context, arg SearchProductsParams) ([]*SearchProductsRow, error)
 	SearchTables(ctx context.Context, arg SearchTablesParams) ([]*SearchTablesRow, error)
 	UpdateOrderItemsStatus(ctx context.Context, arg UpdateOrderItemsStatusParams) error
 	UpdateOrderItemsStatusServed(ctx context.Context, id int64) error
 	UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) error
-	UpdateOrderStatusWaitForCompleted(ctx context.Context, id int64) error
+	UpdateOrderStatusCompletedAndAmount(ctx context.Context, arg UpdateOrderStatusCompletedAndAmountParams) error
 	UpdateOrderStatusWaitForPayment(ctx context.Context, id int64) error
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
 	UpdateProductAvailability(ctx context.Context, arg UpdateProductAvailabilityParams) error

@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func (i *PaymentRepoImplement) CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, customError *exceptions.CustomError) {
+func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, customError *exceptions.CustomError) {
 
 	var note pgtype.Text
 	if payload.Note != nil {
@@ -58,7 +58,7 @@ func (i *PaymentRepoImplement) CreatePaymentTransaction(ctx context.Context, pay
 	return transactionID, nil
 }
 
-func (i *PaymentRepoImplement) CallbackPaymentTransaction(ctx context.Context, transactionID string) (customError *exceptions.CustomError) {
+func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionID string) (customError *exceptions.CustomError) {
 	err := i.repository.UpdateStatusPaymentPaidByTransactionID(ctx, transactionID)
 	if err != nil {
 		return &exceptions.CustomError{
@@ -82,7 +82,17 @@ func (i *PaymentRepoImplement) CallbackPaymentTransaction(ctx context.Context, t
 		}
 	}
 
-	err = i.repository.UpdateOrderStatusWaitForCompleted(ctx, orderID)
+	amount, err := i.repository.GetTotalAmountToPayForServedItems(ctx, orderID)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch table status: %w", err),
+		}
+	}
+	err = i.repository.UpdateOrderStatusCompletedAndAmount(ctx, database.UpdateOrderStatusCompletedAndAmountParams{
+		ID:     orderID,
+		Amount: amount,
+	})
 	if err != nil {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,

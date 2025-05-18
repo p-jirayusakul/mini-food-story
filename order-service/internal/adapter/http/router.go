@@ -41,4 +41,6 @@ func (s *Handler) setupRoutes() {
 	group.Get("/current/items/:orderItemsID<int>", s.GetOrderItemsByID)
 	group.Patch("/current/items/:orderItemsID<int>/status/cancelled", s.UpdateOrderItemsStatusCancelled)
 
+	group.Get("/:id<int>/items/status/incomplete", s.SearchOrderItemsInComplete)
+
 }

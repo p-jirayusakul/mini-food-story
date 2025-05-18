@@ -7,7 +7,7 @@ import (
 	"food-story/pkg/exceptions"
 )
 
-func (i *PaymentRepoImplement) ListPaymentMethods(ctx context.Context) (result []*domain.PaymentMethod, customError *exceptions.CustomError) {
+func (i *Implement) ListPaymentMethods(ctx context.Context) (result []*domain.PaymentMethod, customError *exceptions.CustomError) {
 	data, err := i.repository.ListPaymentMethods(ctx)
 	if err != nil {
 		return nil, &exceptions.CustomError{

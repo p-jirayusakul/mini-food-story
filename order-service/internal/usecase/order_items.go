@@ -83,3 +83,7 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.U
 
 	return i.repository.UpdateOrderItemsStatus(ctx, payload)
 }
+
+func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+	return i.repository.SearchOrderItemsIncomplete(ctx, orderID, payload)
+}

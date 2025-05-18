@@ -16,10 +16,10 @@ type PaymentUsecase interface {
 
 type PaymentImplement struct {
 	config     config.Config
-	repository repository.PaymentRepoImplement
+	repository repository.Implement
 }
 
-func NewUsecase(config config.Config, repository repository.PaymentRepoImplement) *PaymentImplement {
+func NewUsecase(config config.Config, repository repository.Implement) *PaymentImplement {
 	return &PaymentImplement{
 		config,
 		repository,

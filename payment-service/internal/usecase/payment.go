@@ -10,6 +10,11 @@ import (
 
 func (i *PaymentImplement) CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, customError *exceptions.CustomError) {
 
+	customError = i.repository.IsOrderItemsNotFinal(ctx, payload.OrderID)
+	if customError != nil {
+		return "", customError
+	}
+
 	transactionID, customError = i.repository.CreatePaymentTransaction(ctx, payload)
 	if customError != nil {
 		return "", customError

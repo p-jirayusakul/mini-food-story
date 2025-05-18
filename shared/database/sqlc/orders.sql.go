@@ -323,6 +323,34 @@ func (q *Queries) GetTotalSearchOrderItems(ctx context.Context, arg GetTotalSear
 	return count, err
 }
 
+const getTotalSearchOrderItemsIsNotFinal = `-- name: GetTotalSearchOrderItemsIsNotFinal :one
+SELECT COUNT(*)
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+  AND (($2::varchar IS NULL OR oi."product_name" ILIKE '%' || $2::varchar || '%') OR ($2::varchar IS NULL OR oi.product_name_en ILIKE '%' || $2::varchar || '%'))
+  AND (
+    $3::varchar[] IS NULL
+        OR array_length($3::varchar[], 1) = 0
+        OR mos.code = ANY ($3::varchar[])
+    )
+`
+
+type GetTotalSearchOrderItemsIsNotFinalParams struct {
+	OrderID     int64       `json:"order_id"`
+	ProductName pgtype.Text `json:"product_name"`
+	StatusCode  []string    `json:"status_code"`
+}
+
+func (q *Queries) GetTotalSearchOrderItemsIsNotFinal(ctx context.Context, arg GetTotalSearchOrderItemsIsNotFinalParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getTotalSearchOrderItemsIsNotFinal, arg.OrderID, arg.ProductName, arg.StatusCode)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const isOrderExist = `-- name: IsOrderExist :one
 SELECT COUNT(id) > 0
 FROM public.orders WHERE id = $1
@@ -330,6 +358,21 @@ FROM public.orders WHERE id = $1
 
 func (q *Queries) IsOrderExist(ctx context.Context, id int64) (bool, error) {
 	row := q.db.QueryRow(ctx, isOrderExist, id)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const isOrderItemsNotFinal = `-- name: IsOrderItemsNotFinal :one
+SELECT COUNT(*) > 0
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+`
+
+func (q *Queries) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (bool, error) {
+	row := q.db.QueryRow(ctx, isOrderItemsNotFinal, orderID)
 	var column_1 bool
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -480,6 +523,125 @@ func (q *Queries) SearchOrderItems(ctx context.Context, arg SearchOrderItemsPara
 	return items, nil
 }
 
+const searchOrderItemsIsNotFinal = `-- name: SearchOrderItemsIsNotFinal :many
+SELECT o.id  AS "orderID",
+       oi.id AS "id",
+       oi.product_id as "productID",
+       oi.product_name as "productName",
+       oi.product_name_en as "productNameEN",
+       t.table_number as "tableNumber",
+       oi.quantity,
+       (oi.price * oi.quantity) as "price",
+       oi.status_id as "statusID",
+       mos.name as "statusName",
+       mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
+       oi.note as "note",
+       oi.created_at
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+  AND (($2::varchar IS NULL OR oi."product_name" ILIKE '%' || $2::varchar || '%') OR ($2::varchar IS NULL OR oi.product_name_en ILIKE '%' || $2::varchar || '%'))
+  AND (
+    $3::varchar[] IS NULL
+        OR array_length($3::varchar[], 1) = 0
+        OR mos.code = ANY ($3::varchar[])
+    )
+ORDER BY CASE
+             WHEN $4::text = 'asc' THEN
+                 CASE
+                     WHEN $5::text = 'id' THEN oi.id::text
+                     WHEN $5::text = 'statusCode' THEN mos."code"::text
+                     WHEN $5::text = 'productName' THEN oi."product_name"::text
+                     WHEN $5::text = 'quantity' THEN oi."quantity"::text
+                     ELSE oi.id::text
+                     END
+             END,
+         CASE
+             WHEN $4::text = 'desc' THEN
+                 CASE
+                     WHEN $5::text = 'id' THEN oi.id::text
+                     WHEN $5::text = 'statusCode' THEN mos."code"::text
+                     WHEN $5::text = 'productName' THEN oi."product_name"::text
+                     WHEN $5::text = 'quantity' THEN oi."quantity"::text
+                     ELSE oi.id::text
+                     END
+             END DESC
+OFFSET $6 LIMIT $7
+`
+
+type SearchOrderItemsIsNotFinalParams struct {
+	OrderID     int64       `json:"order_id"`
+	ProductName pgtype.Text `json:"product_name"`
+	StatusCode  []string    `json:"status_code"`
+	OrderByType string      `json:"order_by_type"`
+	OrderBy     string      `json:"order_by"`
+	PageNumber  int64       `json:"page_number"`
+	PageSize    int64       `json:"page_size"`
+}
+
+type SearchOrderItemsIsNotFinalRow struct {
+	OrderID       int64              `json:"orderID"`
+	ID            int64              `json:"id"`
+	ProductID     int64              `json:"productID"`
+	ProductName   string             `json:"productName"`
+	ProductNameEN string             `json:"productNameEN"`
+	TableNumber   int32              `json:"tableNumber"`
+	Quantity      int32              `json:"quantity"`
+	Price         pgtype.Numeric     `json:"price"`
+	StatusID      int64              `json:"statusID"`
+	StatusName    string             `json:"statusName"`
+	StatusNameEN  string             `json:"statusNameEN"`
+	StatusCode    string             `json:"statusCode"`
+	Note          pgtype.Text        `json:"note"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) SearchOrderItemsIsNotFinal(ctx context.Context, arg SearchOrderItemsIsNotFinalParams) ([]*SearchOrderItemsIsNotFinalRow, error) {
+	rows, err := q.db.Query(ctx, searchOrderItemsIsNotFinal,
+		arg.OrderID,
+		arg.ProductName,
+		arg.StatusCode,
+		arg.OrderByType,
+		arg.OrderBy,
+		arg.PageNumber,
+		arg.PageSize,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*SearchOrderItemsIsNotFinalRow{}
+	for rows.Next() {
+		var i SearchOrderItemsIsNotFinalRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.ID,
+			&i.ProductID,
+			&i.ProductName,
+			&i.ProductNameEN,
+			&i.TableNumber,
+			&i.Quantity,
+			&i.Price,
+			&i.StatusID,
+			&i.StatusName,
+			&i.StatusNameEN,
+			&i.StatusCode,
+			&i.Note,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateOrderStatus = `-- name: UpdateOrderStatus :exec
 UPDATE public.orders
 SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = $1::text LIMIT 1)
@@ -496,14 +658,19 @@ func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusPa
 	return err
 }
 
-const updateOrderStatusWaitForCompleted = `-- name: UpdateOrderStatusWaitForCompleted :exec
+const updateOrderStatusCompletedAndAmount = `-- name: UpdateOrderStatusCompletedAndAmount :exec
 UPDATE public.orders
-SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'COMPLETED' LIMIT 1)
-WHERE id = $1::bigint
+SET total_amount =$1::numeric, status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'COMPLETED' LIMIT 1)
+WHERE id = $2::bigint
 `
 
-func (q *Queries) UpdateOrderStatusWaitForCompleted(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, updateOrderStatusWaitForCompleted, id)
+type UpdateOrderStatusCompletedAndAmountParams struct {
+	Amount pgtype.Numeric `json:"amount"`
+	ID     int64          `json:"id"`
+}
+
+func (q *Queries) UpdateOrderStatusCompletedAndAmount(ctx context.Context, arg UpdateOrderStatusCompletedAndAmountParams) error {
+	_, err := q.db.Exec(ctx, updateOrderStatusCompletedAndAmount, arg.Amount, arg.ID)
 	return err
 }
 
