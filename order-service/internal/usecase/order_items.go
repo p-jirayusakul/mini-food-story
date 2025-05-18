@@ -39,7 +39,7 @@ func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, i
 	return
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, sessionID uuid.UUID) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUID) (result []*domain.CurrentOrderItems, customError *exceptions.CustomError) {
 	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
 		return
@@ -53,10 +53,10 @@ func (i *Implement) GetOrderItems(ctx context.Context, sessionID uuid.UUID) (res
 		}
 	}
 
-	return i.repository.GetOrderItems(ctx, orderID, tableSession.TableNumber)
+	return i.repository.GetCurrentOrderItems(ctx, orderID, tableSession.TableNumber)
 }
 
-func (i *Implement) GetOderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetCurrentOderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
 	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
 		return

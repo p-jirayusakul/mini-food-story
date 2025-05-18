@@ -32,6 +32,7 @@ WHERE id = sqlc.arg(id)::bigint;
 
 -- name: SearchOrderItems :many
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -112,6 +113,7 @@ WHERE o.id = sqlc.arg(order_id)::bigint LIMIT 1;
 
 -- name: GetOrderWithItems :many
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -132,6 +134,7 @@ order by oi.id DESC;
 
 -- name: GetOrderWithItemsByID :one
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -151,6 +154,7 @@ WHERE o.id = sqlc.arg(order_id)::bigint AND oi.id = sqlc.arg(order_items_id)::bi
 
 -- name: GetOrderWithItemsGroupID :many
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -177,6 +181,7 @@ WHERE o.id = sqlc.arg(order_id)::bigint AND oi.id = sqlc.arg(order_items_id)::bi
 
 -- name: SearchOrderItemsIsNotFinal :many
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",

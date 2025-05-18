@@ -88,6 +88,7 @@ func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchO
 		data[index] = &domain.OrderItems{
 			ID:            v.ID,
 			OrderID:       v.OrderID,
+			OrderNumber:   v.OrderNumber,
 			ProductID:     v.ProductID,
 			StatusID:      v.StatusID,
 			TableNumber:   v.TableNumber,
@@ -138,6 +139,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 		result[index] = &domain.OrderItems{
 			ID:            v.ID,
 			OrderID:       v.OrderID,
+			OrderNumber:   v.OrderNumber,
 			ProductID:     v.ProductID,
 			StatusID:      v.StatusID,
 			TableNumber:   tableNumber,
@@ -194,6 +196,7 @@ func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID
 	return &domain.OrderItems{
 		ID:            items.ID,
 		OrderID:       items.OrderID,
+		OrderNumber:   items.OrderNumber,
 		ProductID:     items.ProductID,
 		StatusID:      items.StatusID,
 		TableNumber:   tableNumber,

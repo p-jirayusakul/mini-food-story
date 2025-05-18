@@ -74,6 +74,7 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow,
 
 const getOrderWithItems = `-- name: GetOrderWithItems :many
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -95,6 +96,7 @@ order by oi.id DESC
 
 type GetOrderWithItemsRow struct {
 	OrderID       int64              `json:"orderID"`
+	OrderNumber   string             `json:"orderNumber"`
 	ID            int64              `json:"id"`
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
@@ -120,6 +122,7 @@ func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetO
 		var i GetOrderWithItemsRow
 		if err := rows.Scan(
 			&i.OrderID,
+			&i.OrderNumber,
 			&i.ID,
 			&i.ProductID,
 			&i.ProductName,
@@ -145,6 +148,7 @@ func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetO
 
 const getOrderWithItemsByID = `-- name: GetOrderWithItemsByID :one
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -170,6 +174,7 @@ type GetOrderWithItemsByIDParams struct {
 
 type GetOrderWithItemsByIDRow struct {
 	OrderID       int64              `json:"orderID"`
+	OrderNumber   string             `json:"orderNumber"`
 	ID            int64              `json:"id"`
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
@@ -189,6 +194,7 @@ func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithIte
 	var i GetOrderWithItemsByIDRow
 	err := row.Scan(
 		&i.OrderID,
+		&i.OrderNumber,
 		&i.ID,
 		&i.ProductID,
 		&i.ProductName,
@@ -207,6 +213,7 @@ func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithIte
 
 const getOrderWithItemsGroupID = `-- name: GetOrderWithItemsGroupID :many
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -228,6 +235,7 @@ order by oi.id DESC
 
 type GetOrderWithItemsGroupIDRow struct {
 	OrderID       int64              `json:"orderID"`
+	OrderNumber   string             `json:"orderNumber"`
 	ID            int64              `json:"id"`
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
@@ -253,6 +261,7 @@ func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []i
 		var i GetOrderWithItemsGroupIDRow
 		if err := rows.Scan(
 			&i.OrderID,
+			&i.OrderNumber,
 			&i.ID,
 			&i.ProductID,
 			&i.ProductName,
@@ -399,6 +408,7 @@ func (q *Queries) IsOrderWithItemsExists(ctx context.Context, arg IsOrderWithIte
 
 const searchOrderItems = `-- name: SearchOrderItems :many
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -465,6 +475,7 @@ type SearchOrderItemsParams struct {
 
 type SearchOrderItemsRow struct {
 	OrderID       int64              `json:"orderID"`
+	OrderNumber   string             `json:"orderNumber"`
 	ID            int64              `json:"id"`
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
@@ -499,6 +510,7 @@ func (q *Queries) SearchOrderItems(ctx context.Context, arg SearchOrderItemsPara
 		var i SearchOrderItemsRow
 		if err := rows.Scan(
 			&i.OrderID,
+			&i.OrderNumber,
 			&i.ID,
 			&i.ProductID,
 			&i.ProductName,
@@ -525,6 +537,7 @@ func (q *Queries) SearchOrderItems(ctx context.Context, arg SearchOrderItemsPara
 
 const searchOrderItemsIsNotFinal = `-- name: SearchOrderItemsIsNotFinal :many
 SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
        oi.id AS "id",
        oi.product_id as "productID",
        oi.product_name as "productName",
@@ -584,6 +597,7 @@ type SearchOrderItemsIsNotFinalParams struct {
 
 type SearchOrderItemsIsNotFinalRow struct {
 	OrderID       int64              `json:"orderID"`
+	OrderNumber   string             `json:"orderNumber"`
 	ID            int64              `json:"id"`
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
@@ -618,6 +632,7 @@ func (q *Queries) SearchOrderItemsIsNotFinal(ctx context.Context, arg SearchOrde
 		var i SearchOrderItemsIsNotFinalRow
 		if err := rows.Scan(
 			&i.OrderID,
+			&i.OrderNumber,
 			&i.ID,
 			&i.ProductID,
 			&i.ProductName,

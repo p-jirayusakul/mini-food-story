@@ -2,6 +2,7 @@ package domain
 
 type OrderItems struct {
 	ID            int64   `json:"id,string"`
+	OrderNumber   string  `json:"orderNumber"`
 	OrderID       int64   `json:"orderID,string"`
 	ProductID     int64   `json:"productID,string"`
 	StatusID      int64   `json:"statusID,string"`

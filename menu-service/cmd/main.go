@@ -32,6 +32,7 @@ func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
 
 	// close database
 	fiberServer.CloseDB()
+	log.Println("Database closed")
 
 	if err := fiberServer.App.ShutdownWithContext(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)

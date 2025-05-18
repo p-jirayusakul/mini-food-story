@@ -118,7 +118,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.GetOrderItems(c.Context(), sessionID)
+	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -141,7 +141,7 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.GetOderItemsByID(c.Context(), sessionID, orderItemsID)
+	result, customError := s.useCase.GetCurrentOderItemsByID(c.Context(), sessionID, orderItemsID)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}

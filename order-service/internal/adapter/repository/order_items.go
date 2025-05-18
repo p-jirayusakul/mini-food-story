@@ -110,6 +110,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 		result[index] = &domain.OrderItems{
 			ID:            v.ID,
 			OrderID:       v.OrderID,
+			OrderNumber:   v.OrderNumber,
 			ProductID:     v.ProductID,
 			StatusID:      v.StatusID,
 			TableNumber:   tableNumber,
@@ -129,7 +130,50 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 	return
 }
 
-func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.CurrentOrderItems, customError *exceptions.CustomError) {
+	customError = i.IsOrderExist(ctx, orderID)
+	if customError != nil {
+		return
+	}
+
+	items, err := i.repository.GetOrderWithItems(ctx, orderID)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", err),
+		}
+	}
+
+	result = make([]*domain.CurrentOrderItems, len(items))
+	for index, v := range items {
+		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
+		if err != nil {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRUNKNOWN,
+				Errors: err,
+			}
+		}
+
+		result[index] = &domain.CurrentOrderItems{
+			ID:            v.ID,
+			ProductID:     v.ProductID,
+			StatusName:    v.StatusName,
+			StatusNameEN:  v.StatusNameEN,
+			StatusCode:    v.StatusCode,
+			ProductName:   v.ProductName,
+			ProductNameEN: v.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(v.Price),
+			Quantity:      v.Quantity,
+			Note:          utils.PgTextToStringPtr(v.Note),
+			CreatedAt:     createdAt,
+		}
+
+	}
+
+	return
+}
+
+func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
 
 	customError = i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
 	if customError != nil {
@@ -163,12 +207,9 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 		}
 	}
 
-	return &domain.OrderItems{
+	return &domain.CurrentOrderItems{
 		ID:            items.ID,
-		OrderID:       items.OrderID,
 		ProductID:     items.ProductID,
-		StatusID:      items.StatusID,
-		TableNumber:   tableNumber,
 		StatusName:    items.StatusName,
 		StatusNameEN:  items.StatusNameEN,
 		StatusCode:    items.StatusCode,
@@ -204,6 +245,7 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 		result[index] = &domain.OrderItems{
 			ID:            v.ID,
 			OrderID:       v.OrderID,
+			OrderNumber:   v.OrderNumber,
 			ProductID:     v.ProductID,
 			StatusID:      v.StatusID,
 			TableNumber:   tableNumber,
