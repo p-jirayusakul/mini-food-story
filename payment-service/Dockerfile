@@ -40,7 +40,7 @@ RUN apk add --no-cache tzdata
 WORKDIR /app
 
 # Copy compiled binary from build stage
-COPY --from=build /app/kitchen-service/app .
+COPY --from=build /app/payment-service/app .
 
 ENV TZ=Asia/Bangkok
 
