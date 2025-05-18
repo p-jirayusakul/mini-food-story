@@ -15,11 +15,9 @@ type TableUsecase interface {
 	UpdateTable(ctx context.Context, payload domain.Table) (customError *exceptions.CustomError)
 	UpdateTableStatus(ctx context.Context, payload domain.TableStatus) (customError *exceptions.CustomError)
 	SearchTableByFilters(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
-	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
-	CreateTableSession(ctx context.Context, payload domain.TableSession) (string, *exceptions.CustomError)
+	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError)
+	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError)
 	GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentTableSession, *exceptions.CustomError)
-
-	GetCurrentTime(ctx context.Context) (result domain.TestTime, customError *exceptions.CustomError)
 }
 
 type TableImplement struct {

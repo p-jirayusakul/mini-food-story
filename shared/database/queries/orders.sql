@@ -1,7 +1,7 @@
 -- name: CreateOrder :one
 INSERT INTO public.orders
-(id, session_id, table_id, status_id)
-VALUES(sqlc.arg(id)::bigint, sqlc.arg(session_id)::uuid, sqlc.arg(table_id)::bigint, (SELECT id FROM public.md_order_statuses WHERE code = 'CONFIRMED' LIMIT 1))
+(id, order_number, session_id, table_id, status_id)
+VALUES(sqlc.arg(id)::bigint, sqlc.arg(order_number)::varchar, sqlc.arg(session_id)::uuid, sqlc.arg(table_id)::bigint, (SELECT id FROM public.md_order_statuses WHERE code = 'CONFIRMED' LIMIT 1))
 RETURNING id;
 
 -- name: IsOrderExist :one
@@ -18,6 +18,16 @@ WHERE o.id = sqlc.arg(id)::bigint;
 -- name: UpdateOrderStatus :exec
 UPDATE public.orders
 SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = sqlc.arg(status_code)::text LIMIT 1)
+WHERE id = sqlc.arg(id)::bigint;
+
+-- name: UpdateOrderStatusWaitForPayment :exec
+UPDATE public.orders
+SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'WAITING_PAYMENT' LIMIT 1)
+WHERE id = sqlc.arg(id)::bigint;
+
+-- name: UpdateOrderStatusWaitForCompleted :exec
+UPDATE public.orders
+SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'COMPLETED' LIMIT 1)
 WHERE id = sqlc.arg(id)::bigint;
 
 -- name: SearchOrderItems :many

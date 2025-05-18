@@ -33,6 +33,23 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.O
 	return
 }
 
+func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
+	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
+	if customError != nil {
+		return
+	}
+
+	err := i.repository.UpdateOrderItemsStatusServed(ctx, payload.ID)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to update order items status: %w", err),
+		}
+	}
+
+	return
+}
+
 func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
 	searchParams := buildSearchOrderItemsParams(payload)
 

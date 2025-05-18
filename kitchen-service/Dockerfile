@@ -20,6 +20,7 @@ COPY ./table-service ./table-service
 COPY ./menu-service ./menu-service
 COPY ./order-service ./order-service
 COPY ./kitchen-service ./kitchen-service
+COPY ./payment-service ./payment-service
 
 # Set working directory to kitchen-service
 WORKDIR /app/kitchen-service

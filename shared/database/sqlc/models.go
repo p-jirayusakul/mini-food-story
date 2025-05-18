@@ -99,41 +99,42 @@ func (ns NullTableSessionStatus) Value() (driver.Value, error) {
 }
 
 type MdCategory struct {
-	ID        int64            `json:"id"`
-	Name      string           `json:"name"`
-	NameEn    string           `json:"name_en"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        int64              `json:"id"`
+	Name      string             `json:"name"`
+	NameEn    string             `json:"name_en"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type MdOrderStatus struct {
-	ID        int64            `json:"id"`
-	Code      string           `json:"code"`
-	Name      string           `json:"name"`
-	NameEn    string           `json:"name_en"`
-	SortOrder int32            `json:"sort_order"`
-	IsFinal   bool             `json:"is_final"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        int64              `json:"id"`
+	Code      string             `json:"code"`
+	Name      string             `json:"name"`
+	NameEn    string             `json:"name_en"`
+	SortOrder int32              `json:"sort_order"`
+	IsFinal   bool               `json:"is_final"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type MdTableStatus struct {
-	ID        int64            `json:"id"`
-	Code      string           `json:"code"`
-	Name      string           `json:"name"`
-	NameEn    string           `json:"name_en"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        int64              `json:"id"`
+	Code      string             `json:"code"`
+	Name      string             `json:"name"`
+	NameEn    string             `json:"name_en"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Order struct {
-	ID          int64            `json:"id"`
-	SessionID   pgtype.UUID      `json:"session_id"`
-	TableID     int64            `json:"table_id"`
-	StatusID    int64            `json:"status_id"`
-	TotalAmount pgtype.Numeric   `json:"total_amount"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	ID          int64              `json:"id"`
+	OrderNumber string             `json:"order_number"`
+	SessionID   pgtype.UUID        `json:"session_id"`
+	TableID     int64              `json:"table_id"`
+	StatusID    int64              `json:"status_id"`
+	TotalAmount pgtype.Numeric     `json:"total_amount"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type OrderItem struct {
@@ -147,54 +148,60 @@ type OrderItem struct {
 	Quantity      int32          `json:"quantity"`
 	Note          pgtype.Text    `json:"note"`
 	// เวลาที่ทำอาหารเสร็จ
-	PreparedAt pgtype.Timestamp `json:"prepared_at"`
-	CreatedAt  pgtype.Timestamp `json:"created_at"`
-	UpdatedAt  pgtype.Timestamp `json:"updated_at"`
+	PreparedAt pgtype.Timestamptz `json:"prepared_at"`
+	CreatedAt  pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+}
+
+type OrderSequence struct {
+	OrderDate     pgtype.Date `json:"order_date"`
+	CurrentNumber int32       `json:"current_number"`
 }
 
 type Payment struct {
-	ID            int64             `json:"id"`
-	OrderID       int64             `json:"order_id"`
-	Amount        pgtype.Numeric    `json:"amount"`
-	Method        int64             `json:"method"`
-	Status        NullPaymentStatus `json:"status"`
-	PaidAt        pgtype.Timestamp  `json:"paid_at"`
-	TransactionID pgtype.Text       `json:"transaction_id"`
-	CreatedAt     pgtype.Timestamp  `json:"created_at"`
-	UpdatedAt     pgtype.Timestamp  `json:"updated_at"`
-	Note          pgtype.Text       `json:"note"`
+	ID            int64              `json:"id"`
+	OrderID       int64              `json:"order_id"`
+	Amount        pgtype.Numeric     `json:"amount"`
+	Method        int64              `json:"method"`
+	Status        NullPaymentStatus  `json:"status"`
+	PaidAt        pgtype.Timestamptz `json:"paid_at"`
+	TransactionID string             `json:"transaction_id"`
+	RefCode       string             `json:"ref_code"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
+	Note          pgtype.Text        `json:"note"`
 }
 
 type PaymentMethod struct {
-	ID        int64            `json:"id"`
-	Code      string           `json:"code"`
-	Name      string           `json:"name"`
-	NameEn    string           `json:"name_en"`
-	Enable    bool             `json:"enable"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        int64              `json:"id"`
+	Code      string             `json:"code"`
+	Name      string             `json:"name"`
+	NameEn    string             `json:"name_en"`
+	Enable    bool               `json:"enable"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Product struct {
-	ID          int64            `json:"id"`
-	Name        string           `json:"name"`
-	NameEn      string           `json:"name_en"`
-	Categories  int64            `json:"categories"`
-	Description pgtype.Text      `json:"description"`
-	Price       pgtype.Numeric   `json:"price"`
-	IsAvailable bool             `json:"is_available"`
-	ImageUrl    pgtype.Text      `json:"image_url"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	ID          int64              `json:"id"`
+	Name        string             `json:"name"`
+	NameEn      string             `json:"name_en"`
+	Categories  int64              `json:"categories"`
+	Description pgtype.Text        `json:"description"`
+	Price       pgtype.Numeric     `json:"price"`
+	IsAvailable bool               `json:"is_available"`
+	ImageUrl    pgtype.Text        `json:"image_url"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Table struct {
-	ID          int64            `json:"id"`
-	TableNumber int32            `json:"table_number"`
-	StatusID    int64            `json:"status_id"`
-	Seats       int32            `json:"seats"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	UpdatedAt   pgtype.Timestamp `json:"updated_at"`
+	ID          int64              `json:"id"`
+	TableNumber int32              `json:"table_number"`
+	StatusID    int64              `json:"status_id"`
+	Seats       int32              `json:"seats"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type TableSession struct {
@@ -203,7 +210,7 @@ type TableSession struct {
 	SessionID      pgtype.UUID            `json:"session_id"`
 	NumberOfPeople int32                  `json:"number_of_people"`
 	Status         NullTableSessionStatus `json:"status"`
-	StartedAt      pgtype.Timestamp       `json:"started_at"`
-	ExpireAt       pgtype.Timestamp       `json:"expire_at"`
-	EndedAt        pgtype.Timestamp       `json:"ended_at"`
+	StartedAt      pgtype.Timestamptz     `json:"started_at"`
+	ExpireAt       pgtype.Timestamptz     `json:"expire_at"`
+	EndedAt        pgtype.Timestamptz     `json:"ended_at"`
 }

@@ -9,15 +9,6 @@ import (
 	"strconv"
 )
 
-func (s *Handler) GetTime(c *fiber.Ctx) error {
-	result, customError := s.useCase.GetCurrentTime(c.Context())
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
-	}
-
-	return middleware.ResponseOK(c, "get current time success", result)
-}
-
 func (s *Handler) ListTableStatus(c *fiber.Ctx) error {
 	result, customError := s.useCase.ListTableStatus(c.Context())
 	if customError != nil {

@@ -16,7 +16,7 @@ CREATE TABLE "md_table_statuses" (
                                      "code" varchar(15) UNIQUE NOT NULL,
                                      "name" varchar(100) UNIQUE NOT NULL,
                                      "name_en" varchar(100) UNIQUE NOT NULL,
-                                     "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                     "created_at" timestamptz NOT NULL DEFAULT NOW(),
                                      "updated_at" timestamptz
 );
 
@@ -24,7 +24,7 @@ CREATE TABLE "md_categories" (
                                  "id" bigint UNIQUE PRIMARY KEY NOT NULL,
                                  "name" varchar(100) UNIQUE NOT NULL,
                                  "name_en" varchar(100) UNIQUE NOT NULL,
-                                 "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                 "created_at" timestamptz NOT NULL DEFAULT NOW(),
                                  "updated_at" timestamptz
 );
 
@@ -35,7 +35,7 @@ CREATE TABLE "md_order_statuses" (
                                      "name_en" varchar(100) UNIQUE NOT NULL,
                                      "sort_order" int UNIQUE NOT NULL,
                                      "is_final" bool NOT NULL DEFAULT false,
-                                     "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                     "created_at" timestamptz NOT NULL DEFAULT NOW(),
                                      "updated_at" timestamptz
 );
 
@@ -44,7 +44,7 @@ CREATE TABLE "tables" (
                           "table_number" int UNIQUE NOT NULL,
                           "status_id" bigint NOT NULL,
                           "seats" int NOT NULL DEFAULT 0,
-                          "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                          "created_at" timestamptz NOT NULL DEFAULT NOW(),
                           "updated_at" timestamptz
 );
 
@@ -54,7 +54,7 @@ CREATE TABLE "table_session" (
                                  "session_id" uuid UNIQUE NOT NULL DEFAULT gen_random_uuid(),
                                  "number_of_people" int NOT NULL DEFAULT 1,
                                  "status" table_session_status,
-                                 "started_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                 "started_at" timestamptz NOT NULL DEFAULT NOW(),
                                  "expire_at" timestamptz NOT NULL,
                                  "ended_at" timestamptz
 );
@@ -68,17 +68,18 @@ CREATE TABLE "products" (
                             "price" numeric(10,2) NOT NULL DEFAULT 0,
                             "is_available" bool NOT NULL DEFAULT false,
                             "image_url" text,
-                            "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                            "created_at" timestamptz NOT NULL DEFAULT NOW(),
                             "updated_at" timestamptz
 );
 
 CREATE TABLE "orders" (
                           "id" bigint UNIQUE PRIMARY KEY NOT NULL,
+                          "order_number" varchar(50) UNIQUE NOT NULL,
                           "session_id" uuid,
                           "table_id" bigint NOT NULL,
                           "status_id" bigint NOT NULL,
                           "total_amount" numeric(10,2) NOT NULL DEFAULT 0,
-                          "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                          "created_at" timestamptz NOT NULL DEFAULT NOW(),
                           "updated_at" timestamptz
 );
 
@@ -93,8 +94,13 @@ CREATE TABLE "order_items" (
                                "quantity" int NOT NULL DEFAULT 1,
                                "note" text,
                                "prepared_at" timestamptz,
-                               "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                               "created_at" timestamptz NOT NULL DEFAULT NOW(),
                                "updated_at" timestamptz
+);
+
+CREATE TABLE "order_sequences" (
+                                   "order_date" date PRIMARY KEY NOT NULL,
+                                   "current_number" int NOT NULL
 );
 
 CREATE TABLE "payments" (
@@ -104,8 +110,9 @@ CREATE TABLE "payments" (
                             "method" bigint NOT NULL,
                             "status" payment_status DEFAULT 'pending',
                             "paid_at" timestamptz,
-                            "transaction_id" text,
-                            "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                            "transaction_id" text UNIQUE NOT NULL,
+                            "ref_code" varchar(150) UNIQUE NOT NULL,
+                            "created_at" timestamptz NOT NULL DEFAULT NOW(),
                             "updated_at" timestamptz,
                             "note" text
 );
@@ -116,7 +123,7 @@ CREATE TABLE "payment_methods" (
                                    "name" varchar(100) UNIQUE NOT NULL,
                                    "name_en" varchar(100) UNIQUE NOT NULL,
                                    "enable" bool NOT NULL DEFAULT false,
-                                   "created_at" timestamptz NOT NULL DEFAULT 'NOW()',
+                                   "created_at" timestamptz NOT NULL DEFAULT NOW(),
                                    "updated_at" timestamptz
 );
 
@@ -148,9 +155,9 @@ CREATE INDEX ON "products" ("name");
 
 CREATE INDEX ON "products" ("name_en");
 
-CREATE UNIQUE INDEX ON "orders" ("id");
+CREATE INDEX ON "orders" ("id");
 
-CREATE INDEX "orders_table_status" ON "orders" ("table_id", "status_id");
+CREATE INDEX ON "orders" ("order_number");
 
 CREATE INDEX ON "orders" ("status_id");
 
@@ -158,15 +165,17 @@ CREATE INDEX ON "orders" ("created_at");
 
 CREATE INDEX ON "order_items" ("id");
 
-CREATE INDEX "order_items_order_status" ON "order_items" ("order_id", "status_id");
+CREATE INDEX "order_items_order_id" ON "order_items" ("order_id", "id");
 
 CREATE INDEX ON "order_items" ("order_id");
-
-CREATE INDEX ON "order_items" ("status_id");
 
 CREATE INDEX ON "payments" ("id");
 
 CREATE INDEX ON "payments" ("order_id");
+
+CREATE INDEX ON "payments" ("transaction_id");
+
+CREATE INDEX ON "payments" ("ref_code");
 
 CREATE INDEX ON "payment_methods" ("id");
 
@@ -232,3 +241,9 @@ INSERT INTO public."tables" (id,table_number,status_id,seats,created_at,updated_
                                                                                         (1919996486741921792,4,1919968486671519744,5,NOW(),NULL),
                                                                                         (1919968785813475328,1,1919968486671519744,5,NOW(),NULL),
                                                                                         (1919971956241731584,2,1919968486671519744,3,NOW(),NULL);
+
+
+INSERT INTO public.payment_methods (id,code,"name",name_en,"enable",created_at,updated_at) VALUES
+                                                                                               (1923732004537372672,'CASH','เงินสด','Cash',true,NOW(),NULL),
+                                                                                               (1923732004537372673,'CREDIT_CARD','บัตรเครดิต','Credit Card',true,NOW(),NULL),
+                                                                                               (1923732004537372675,'PROMPTPAY','พร้อมเพย์','PromptPay',true,NOW(),NULL);

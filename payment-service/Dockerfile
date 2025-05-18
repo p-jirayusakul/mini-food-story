@@ -22,8 +22,8 @@ COPY ./order-service ./order-service
 COPY ./kitchen-service ./kitchen-service
 COPY ./payment-service ./payment-service
 
-# Set working directory to table-service
-WORKDIR /app/table-service
+# Set working directory to kitchen-service
+WORKDIR /app/payment-service
 
 # Install dependencies
 RUN go mod tidy
@@ -40,12 +40,12 @@ RUN apk add --no-cache tzdata
 WORKDIR /app
 
 # Copy compiled binary from build stage
-COPY --from=build /app/table-service/app .
+COPY --from=build /app/kitchen-service/app .
 
 ENV TZ=Asia/Bangkok
 
 # Expose the port
-EXPOSE 8080
+EXPOSE 8084
 
 # Set the default command to run the app
 CMD ["./app"]

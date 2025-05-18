@@ -1,7 +1,6 @@
 package http
 
 import (
-	"context"
 	"food-story/kitchen-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
@@ -76,13 +75,13 @@ func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = s.HandleStatusOrderItems(c.Context(), domain.OrderItemsStatus{
+	customError := s.useCase.UpdateOrderItemsStatusServed(c.Context(), domain.OrderItemsStatus{
 		ID:         orderItemsID,
 		OrderID:    orderID,
 		StatusCode: "SERVED",
 	})
-	if err != nil {
-		return err
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
 	return middleware.ResponseOK(c, "update order item status served success", nil)
@@ -94,25 +93,16 @@ func (s *Handler) UpdateOrderItemsStatusCancelled(c *fiber.Ctx) error {
 		return err
 	}
 
-	err = s.HandleStatusOrderItems(c.Context(), domain.OrderItemsStatus{
+	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), domain.OrderItemsStatus{
 		ID:         orderItemsID,
 		OrderID:    orderID,
 		StatusCode: "CANCELLED",
 	})
-	if err != nil {
-		return err
-	}
-
-	return middleware.ResponseOK(c, "update order item status cancelled success", nil)
-}
-
-func (s *Handler) HandleStatusOrderItems(ctx context.Context, payload domain.OrderItemsStatus) error {
-	customError := s.useCase.UpdateOrderItemsStatus(ctx, payload)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return nil
+	return middleware.ResponseOK(c, "update order item status cancelled success", nil)
 }
 
 func handleParams(c *fiber.Ctx) (orderItemsID, orderID int64, err error) {

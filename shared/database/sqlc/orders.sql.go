@@ -13,19 +13,25 @@ import (
 
 const createOrder = `-- name: CreateOrder :one
 INSERT INTO public.orders
-(id, session_id, table_id, status_id)
-VALUES($1::bigint, $2::uuid, $3::bigint, (SELECT id FROM public.md_order_statuses WHERE code = 'CONFIRMED' LIMIT 1))
+(id, order_number, session_id, table_id, status_id)
+VALUES($1::bigint, $2::varchar, $3::uuid, $4::bigint, (SELECT id FROM public.md_order_statuses WHERE code = 'CONFIRMED' LIMIT 1))
 RETURNING id
 `
 
 type CreateOrderParams struct {
-	ID        int64       `json:"id"`
-	SessionID pgtype.UUID `json:"session_id"`
-	TableID   int64       `json:"table_id"`
+	ID          int64       `json:"id"`
+	OrderNumber string      `json:"order_number"`
+	SessionID   pgtype.UUID `json:"session_id"`
+	TableID     int64       `json:"table_id"`
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error) {
-	row := q.db.QueryRow(ctx, createOrder, arg.ID, arg.SessionID, arg.TableID)
+	row := q.db.QueryRow(ctx, createOrder,
+		arg.ID,
+		arg.OrderNumber,
+		arg.SessionID,
+		arg.TableID,
+	)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
@@ -88,19 +94,19 @@ order by oi.id DESC
 `
 
 type GetOrderWithItemsRow struct {
-	OrderID       int64            `json:"orderID"`
-	ID            int64            `json:"id"`
-	ProductID     int64            `json:"productID"`
-	ProductName   string           `json:"productName"`
-	ProductNameEN string           `json:"productNameEN"`
-	Quantity      int32            `json:"quantity"`
-	Price         pgtype.Numeric   `json:"price"`
-	StatusID      int64            `json:"statusID"`
-	StatusName    string           `json:"statusName"`
-	StatusNameEN  string           `json:"statusNameEN"`
-	StatusCode    string           `json:"statusCode"`
-	Note          pgtype.Text      `json:"note"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	OrderID       int64              `json:"orderID"`
+	ID            int64              `json:"id"`
+	ProductID     int64              `json:"productID"`
+	ProductName   string             `json:"productName"`
+	ProductNameEN string             `json:"productNameEN"`
+	Quantity      int32              `json:"quantity"`
+	Price         pgtype.Numeric     `json:"price"`
+	StatusID      int64              `json:"statusID"`
+	StatusName    string             `json:"statusName"`
+	StatusNameEN  string             `json:"statusNameEN"`
+	StatusCode    string             `json:"statusCode"`
+	Note          pgtype.Text        `json:"note"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetOrderWithItemsRow, error) {
@@ -163,19 +169,19 @@ type GetOrderWithItemsByIDParams struct {
 }
 
 type GetOrderWithItemsByIDRow struct {
-	OrderID       int64            `json:"orderID"`
-	ID            int64            `json:"id"`
-	ProductID     int64            `json:"productID"`
-	ProductName   string           `json:"productName"`
-	ProductNameEN string           `json:"productNameEN"`
-	Quantity      int32            `json:"quantity"`
-	Price         pgtype.Numeric   `json:"price"`
-	StatusID      int64            `json:"statusID"`
-	StatusName    string           `json:"statusName"`
-	StatusNameEN  string           `json:"statusNameEN"`
-	StatusCode    string           `json:"statusCode"`
-	Note          pgtype.Text      `json:"note"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	OrderID       int64              `json:"orderID"`
+	ID            int64              `json:"id"`
+	ProductID     int64              `json:"productID"`
+	ProductName   string             `json:"productName"`
+	ProductNameEN string             `json:"productNameEN"`
+	Quantity      int32              `json:"quantity"`
+	Price         pgtype.Numeric     `json:"price"`
+	StatusID      int64              `json:"statusID"`
+	StatusName    string             `json:"statusName"`
+	StatusNameEN  string             `json:"statusNameEN"`
+	StatusCode    string             `json:"statusCode"`
+	Note          pgtype.Text        `json:"note"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error) {
@@ -221,19 +227,19 @@ order by oi.id DESC
 `
 
 type GetOrderWithItemsGroupIDRow struct {
-	OrderID       int64            `json:"orderID"`
-	ID            int64            `json:"id"`
-	ProductID     int64            `json:"productID"`
-	ProductName   string           `json:"productName"`
-	ProductNameEN string           `json:"productNameEN"`
-	Quantity      int32            `json:"quantity"`
-	Price         pgtype.Numeric   `json:"price"`
-	StatusID      int64            `json:"statusID"`
-	StatusName    string           `json:"statusName"`
-	StatusNameEN  string           `json:"statusNameEN"`
-	StatusCode    string           `json:"statusCode"`
-	Note          pgtype.Text      `json:"note"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	OrderID       int64              `json:"orderID"`
+	ID            int64              `json:"id"`
+	ProductID     int64              `json:"productID"`
+	ProductName   string             `json:"productName"`
+	ProductNameEN string             `json:"productNameEN"`
+	Quantity      int32              `json:"quantity"`
+	Price         pgtype.Numeric     `json:"price"`
+	StatusID      int64              `json:"statusID"`
+	StatusName    string             `json:"statusName"`
+	StatusNameEN  string             `json:"statusNameEN"`
+	StatusCode    string             `json:"statusCode"`
+	Note          pgtype.Text        `json:"note"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []int64) ([]*GetOrderWithItemsGroupIDRow, error) {
@@ -415,20 +421,20 @@ type SearchOrderItemsParams struct {
 }
 
 type SearchOrderItemsRow struct {
-	OrderID       int64            `json:"orderID"`
-	ID            int64            `json:"id"`
-	ProductID     int64            `json:"productID"`
-	ProductName   string           `json:"productName"`
-	ProductNameEN string           `json:"productNameEN"`
-	TableNumber   int32            `json:"tableNumber"`
-	Quantity      int32            `json:"quantity"`
-	Price         pgtype.Numeric   `json:"price"`
-	StatusID      int64            `json:"statusID"`
-	StatusName    string           `json:"statusName"`
-	StatusNameEN  string           `json:"statusNameEN"`
-	StatusCode    string           `json:"statusCode"`
-	Note          pgtype.Text      `json:"note"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	OrderID       int64              `json:"orderID"`
+	ID            int64              `json:"id"`
+	ProductID     int64              `json:"productID"`
+	ProductName   string             `json:"productName"`
+	ProductNameEN string             `json:"productNameEN"`
+	TableNumber   int32              `json:"tableNumber"`
+	Quantity      int32              `json:"quantity"`
+	Price         pgtype.Numeric     `json:"price"`
+	StatusID      int64              `json:"statusID"`
+	StatusName    string             `json:"statusName"`
+	StatusNameEN  string             `json:"statusNameEN"`
+	StatusCode    string             `json:"statusCode"`
+	Note          pgtype.Text        `json:"note"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) SearchOrderItems(ctx context.Context, arg SearchOrderItemsParams) ([]*SearchOrderItemsRow, error) {
@@ -487,5 +493,27 @@ type UpdateOrderStatusParams struct {
 
 func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) error {
 	_, err := q.db.Exec(ctx, updateOrderStatus, arg.StatusCode, arg.ID)
+	return err
+}
+
+const updateOrderStatusWaitForCompleted = `-- name: UpdateOrderStatusWaitForCompleted :exec
+UPDATE public.orders
+SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'COMPLETED' LIMIT 1)
+WHERE id = $1::bigint
+`
+
+func (q *Queries) UpdateOrderStatusWaitForCompleted(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateOrderStatusWaitForCompleted, id)
+	return err
+}
+
+const updateOrderStatusWaitForPayment = `-- name: UpdateOrderStatusWaitForPayment :exec
+UPDATE public.orders
+SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'WAITING_PAYMENT' LIMIT 1)
+WHERE id = $1::bigint
+`
+
+func (q *Queries) UpdateOrderStatusWaitForPayment(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateOrderStatusWaitForPayment, id)
 	return err
 }

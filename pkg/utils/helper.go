@@ -248,7 +248,7 @@ func StringPtrToPgText(value *string) pgtype.Text {
 	}
 }
 
-func PgTimestampToThaiISO8601(ts pgtype.Timestamp) (string, error) {
+func PgTimestampToThaiISO8601(ts pgtype.Timestamptz) (string, error) {
 	if !ts.Valid {
 		return "", fmt.Errorf("timestamp is null")
 	}

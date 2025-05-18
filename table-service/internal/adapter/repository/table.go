@@ -187,7 +187,7 @@ func (i *TableRepoImplement) CreateTableSession(ctx context.Context, payload dom
 		TableID:        payload.TableID,
 		NumberOfPeople: payload.NumberOfPeople,
 		SessionID:      pgtype.UUID{Bytes: sessionByte, Valid: true},
-		ExpireAt:       pgtype.Timestamp{Time: expiry, Valid: true},
+		ExpireAt:       pgtype.Timestamptz{Time: expiry, Valid: true},
 	})
 	if err != nil {
 		return &exceptions.CustomError{

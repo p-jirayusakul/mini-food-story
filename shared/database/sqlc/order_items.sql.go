@@ -12,16 +12,16 @@ import (
 )
 
 type CreateOrderItemsParams struct {
-	ID            int64            `json:"id"`
-	OrderID       int64            `json:"order_id"`
-	ProductID     int64            `json:"product_id"`
-	StatusID      int64            `json:"status_id"`
-	ProductName   string           `json:"product_name"`
-	ProductNameEn string           `json:"product_name_en"`
-	Price         pgtype.Numeric   `json:"price"`
-	Quantity      int32            `json:"quantity"`
-	Note          pgtype.Text      `json:"note"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
+	ID            int64              `json:"id"`
+	OrderID       int64              `json:"order_id"`
+	ProductID     int64              `json:"product_id"`
+	StatusID      int64              `json:"status_id"`
+	ProductName   string             `json:"product_name"`
+	ProductNameEn string             `json:"product_name_en"`
+	Price         pgtype.Numeric     `json:"price"`
+	Quantity      int32              `json:"quantity"`
+	Note          pgtype.Text        `json:"note"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 }
 
 const getOrderItemsByID = `-- name: GetOrderItemsByID :one
@@ -58,6 +58,19 @@ func (q *Queries) GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderIte
 	return &i, err
 }
 
+const getTotalAmountToPayForServedItems = `-- name: GetTotalAmountToPayForServedItems :one
+SELECT SUM(price * quantity) AS total_amount
+FROM public.order_items
+WHERE order_id = $1 AND status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1)
+`
+
+func (q *Queries) GetTotalAmountToPayForServedItems(ctx context.Context, orderID int64) (pgtype.Numeric, error) {
+	row := q.db.QueryRow(ctx, getTotalAmountToPayForServedItems, orderID)
+	var total_amount pgtype.Numeric
+	err := row.Scan(&total_amount)
+	return total_amount, err
+}
+
 const isOrderItemsExist = `-- name: IsOrderItemsExist :one
 SELECT COUNT(id) > 0
 FROM public.order_items WHERE id = $1
@@ -83,5 +96,16 @@ type UpdateOrderItemsStatusParams struct {
 
 func (q *Queries) UpdateOrderItemsStatus(ctx context.Context, arg UpdateOrderItemsStatusParams) error {
 	_, err := q.db.Exec(ctx, updateOrderItemsStatus, arg.StatusCode, arg.ID)
+	return err
+}
+
+const updateOrderItemsStatusServed = `-- name: UpdateOrderItemsStatusServed :exec
+UPDATE public.order_items
+SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1), prepared_at=NOW(), updated_at = NOW()
+WHERE id = $1::bigint
+`
+
+func (q *Queries) UpdateOrderItemsStatusServed(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateOrderItemsStatusServed, id)
 	return err
 }

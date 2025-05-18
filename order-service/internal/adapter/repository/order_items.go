@@ -74,7 +74,7 @@ func (i *Implement) BuildPayloadOrderItems(ctx context.Context, items []domain.O
 			Price:         product.Price,
 			Quantity:      item.Quantity,
 			Note:          utils.StringPtrToPgText(item.Note),
-			CreatedAt:     pgtype.Timestamp{Time: time.Now(), Valid: true},
+			CreatedAt:     pgtype.Timestamptz{Time: time.Now(), Valid: true},
 		})
 	}
 

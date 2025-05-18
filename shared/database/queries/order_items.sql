@@ -15,3 +15,13 @@ FROM public.order_items WHERE id = $1;
 UPDATE public.order_items
 SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = sqlc.arg(status_code)::text LIMIT 1), updated_at = NOW()
 WHERE id = sqlc.arg(id)::bigint;
+
+-- name: UpdateOrderItemsStatusServed :exec
+UPDATE public.order_items
+SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1), prepared_at=NOW(), updated_at = NOW()
+WHERE id = sqlc.arg(id)::bigint;
+
+-- name: GetTotalAmountToPayForServedItems :one
+SELECT SUM(price * quantity) AS total_amount
+FROM public.order_items
+WHERE order_id = $1 AND status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1);

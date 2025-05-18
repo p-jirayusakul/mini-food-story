@@ -13,22 +13,26 @@ import (
 type Querier interface {
 	CreateOrder(ctx context.Context, arg CreateOrderParams) (int64, error)
 	CreateOrderItems(ctx context.Context, arg []CreateOrderItemsParams) (int64, error)
+	CreatePayment(ctx context.Context, arg CreatePaymentParams) (int64, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (int64, error)
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
 	CreateTableStatus(ctx context.Context, arg CreateTableStatusParams) (int64, error)
+	GetOrCreateOrderSequence(ctx context.Context, orderDate pgtype.Date) (int32, error)
 	GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error)
 	GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderItemsByIDRow, error)
 	GetOrderStatusPreparing(ctx context.Context) (int64, error)
 	GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetOrderWithItemsRow, error)
 	GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error)
 	GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []int64) ([]*GetOrderWithItemsGroupIDRow, error)
+	GetPaymentOrderIDByTransaction(ctx context.Context, transactionID string) (int64, error)
 	GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error)
 	GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error)
 	GetTableNumber(ctx context.Context, id int64) (int32, error)
 	GetTableNumberOrderByID(ctx context.Context, orderID int64) (int32, error)
 	GetTableSession(ctx context.Context, sessionid pgtype.UUID) (*GetTableSessionRow, error)
 	GetTimeNow(ctx context.Context) (pgtype.Timestamptz, error)
+	GetTotalAmountToPayForServedItems(ctx context.Context, orderID int64) (pgtype.Numeric, error)
 	GetTotalPageQuickSearchTables(ctx context.Context, numberOfPeople int32) (int64, error)
 	GetTotalPageSearchProducts(ctx context.Context, arg GetTotalPageSearchProductsParams) (int64, error)
 	GetTotalPageSearchTables(ctx context.Context, arg GetTotalPageSearchTablesParams) (int64, error)
@@ -46,16 +50,23 @@ type Querier interface {
 	IsTableSessionExists(ctx context.Context, sessionid pgtype.UUID) (bool, error)
 	ListCategory(ctx context.Context) ([]*ListCategoryRow, error)
 	ListOrderStatus(ctx context.Context) ([]*ListOrderStatusRow, error)
+	ListPaymentMethods(ctx context.Context) ([]*ListPaymentMethodsRow, error)
 	ListTableStatus(ctx context.Context) ([]*ListTableStatusRow, error)
 	QuickSearchTables(ctx context.Context, arg QuickSearchTablesParams) ([]*QuickSearchTablesRow, error)
 	SearchOrderItems(ctx context.Context, arg SearchOrderItemsParams) ([]*SearchOrderItemsRow, error)
 	SearchProducts(ctx context.Context, arg SearchProductsParams) ([]*SearchProductsRow, error)
 	SearchTables(ctx context.Context, arg SearchTablesParams) ([]*SearchTablesRow, error)
 	UpdateOrderItemsStatus(ctx context.Context, arg UpdateOrderItemsStatusParams) error
+	UpdateOrderItemsStatusServed(ctx context.Context, id int64) error
 	UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) error
+	UpdateOrderStatusWaitForCompleted(ctx context.Context, id int64) error
+	UpdateOrderStatusWaitForPayment(ctx context.Context, id int64) error
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
 	UpdateProductAvailability(ctx context.Context, arg UpdateProductAvailabilityParams) error
 	UpdateStatusCloseTableSession(ctx context.Context, sessionid pgtype.UUID) error
+	UpdateStatusPaymentFail(ctx context.Context, id int64) error
+	UpdateStatusPaymentPaidByID(ctx context.Context, id int64) error
+	UpdateStatusPaymentPaidByTransactionID(ctx context.Context, transactionID string) error
 	UpdateTables(ctx context.Context, arg UpdateTablesParams) error
 	UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error
 	UpdateTablesStatusAvailable(ctx context.Context, dollar_1 pgtype.Int8) error

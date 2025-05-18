@@ -18,11 +18,11 @@ VALUES($1, $2, $3, $4, 'active', NOW(), $5, NULL)
 `
 
 type CreateTableSessionParams struct {
-	ID             int64            `json:"id"`
-	TableID        int64            `json:"table_id"`
-	NumberOfPeople int32            `json:"number_of_people"`
-	SessionID      pgtype.UUID      `json:"session_id"`
-	ExpireAt       pgtype.Timestamp `json:"expire_at"`
+	ID             int64              `json:"id"`
+	TableID        int64              `json:"table_id"`
+	NumberOfPeople int32              `json:"number_of_people"`
+	SessionID      pgtype.UUID        `json:"session_id"`
+	ExpireAt       pgtype.Timestamptz `json:"expire_at"`
 }
 
 func (q *Queries) CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error {
@@ -54,7 +54,7 @@ type GetTableSessionRow struct {
 	TableID     int64                  `json:"tableID"`
 	TableNumber int32                  `json:"tableNumber"`
 	Status      NullTableSessionStatus `json:"status"`
-	StartedAt   pgtype.Timestamp       `json:"startedAt"`
+	StartedAt   pgtype.Timestamptz     `json:"startedAt"`
 	OrderID     pgtype.Int8            `json:"orderID"`
 }
 
