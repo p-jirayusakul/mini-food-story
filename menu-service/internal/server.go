@@ -9,7 +9,6 @@ import (
 	"food-story/pkg/common"
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
-	dbcfg "food-story/shared/config"
 	database "food-story/shared/database/sqlc"
 	"food-story/shared/snowflakeid"
 	"github.com/gofiber/fiber/v2"
@@ -48,7 +47,7 @@ func New() *FiberServer {
 	app.Use(middleware.LogHandler())
 
 	// connect to database
-	configDB := dbcfg.InitDBConfig(EnvFile)
+	configDB := config.InitDBConfig(EnvFile)
 	dbConn, err := configDB.ConnectToDatabase()
 	if err != nil {
 		panic(err)

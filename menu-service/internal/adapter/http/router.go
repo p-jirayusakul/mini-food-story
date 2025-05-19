@@ -30,6 +30,6 @@ func (s *Handler) setupRoutes() {
 	group := s.router.Group("/menu")
 
 	group.Get("", s.SearchMenu)
-	group.Get("/:id<int>", s.GetMenu)
+	group.Get("/:id<int>", s.GetMenuByID)
 	group.Get("/category", s.CategoryList)
 }

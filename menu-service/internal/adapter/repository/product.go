@@ -41,6 +41,14 @@ func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProd
 }
 
 func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Product, *exceptions.CustomError) {
+
+	if ctx.Err() != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: fmt.Errorf("request cancelled or timeout: %w", ctx.Err()),
+		}
+	}
+
 	data, err := i.repository.GetProductAvailableByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {

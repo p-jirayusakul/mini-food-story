@@ -14,7 +14,7 @@ func (s *Handler) CategoryList(c *fiber.Ctx) error {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseOK(c, "get list categories success", result)
+	return middleware.ResponseOK(c, "get list category success", result)
 }
 
 func (s *Handler) SearchMenu(c *fiber.Ctx) error {
@@ -45,7 +45,7 @@ func (s *Handler) SearchMenu(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "search menu success", result)
 }
 
-func (s *Handler) GetMenu(c *fiber.Ctx) error {
+func (s *Handler) GetMenuByID(c *fiber.Ctx) error {
 	id, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())

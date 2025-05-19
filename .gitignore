@@ -17,11 +17,11 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-.env
-.env.dev
-.env.local
-.env.uat
-.env.production
+#.env
+#.env.dev
+#.env.local
+#.env.uat
+#.env.production
 
 # Go workspace file
 go.work
