@@ -13,7 +13,7 @@ type TableSession struct {
 }
 
 type CurrentTableSession struct {
-	SessionID   uuid.UUID `json:"sessionID,string"`
+	SessionID   uuid.UUID `json:"sessionID"`
 	TableID     int64     `json:"tableID,string"`
 	TableNumber int32     `json:"tableNumber"`
 	Status      string    `json:"status"`

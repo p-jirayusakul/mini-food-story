@@ -8,13 +8,13 @@ import (
 
 type Handler struct {
 	router    fiber.Router
-	useCase   usecase.TableUsecase
+	useCase   usecase.UseCase
 	validator *middleware.CustomValidator
 }
 
 func NewHTTPHandler(
 	router fiber.Router,
-	useCase usecase.TableUsecase,
+	useCase usecase.UseCase,
 	validator *middleware.CustomValidator,
 ) *Handler {
 	handler := &Handler{

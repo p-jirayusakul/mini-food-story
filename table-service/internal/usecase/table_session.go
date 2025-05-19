@@ -8,6 +8,7 @@ import (
 	"food-story/shared/redis"
 	"food-story/table-service/internal/domain"
 	"github.com/google/uuid"
+	"log/slog"
 	"time"
 )
 
@@ -19,18 +20,18 @@ const (
 func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError) {
 
 	if customError = i.repository.IsTableAvailableOrReserved(ctx, payload.TableID); customError != nil {
-		return
+		return "", customError
 	}
 
 	sessionID, sessionExpiry := generateSessionDetails()
 	encryptedSessionID, customError := encryptSessionID(sessionID, sessionExpiry, i.config.SecretKey)
 	if customError != nil {
-		return
+		return "", customError
 	}
 
 	tableNumber, customError := i.repository.GetTableNumber(ctx, payload.TableID)
 	if customError != nil {
-		return
+		return "", customError
 	}
 
 	key := redis.KeyTable + sessionID.String()
@@ -43,13 +44,16 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 		OrderID:     nil,
 	}, TableSessionDuration)
 	if customError != nil {
-		return
+		return "", customError
 	}
 
 	customError = i.repository.CreateTableSession(ctx, payload, sessionID, sessionExpiry)
 	if customError != nil {
-		_ = i.cache.DeleteCachedTable(key)
-		return
+		cacheErr := i.cache.DeleteCachedTable(key)
+		if cacheErr != nil {
+			slog.Error("failed to delete cache table session: ", "error", cacheErr)
+		}
+		return "", customError
 	}
 
 	return i.config.FrontendURL + "?s=" + encryptedSessionID, nil
@@ -88,10 +92,6 @@ func (i *Implement) GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentT
 	return cachedTable, nil
 }
 
-func (i *Implement) IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError {
-	return i.cache.IsCachedTableExist(sessionID)
-}
-
 func generateSessionDetails() (uuid.UUID, time.Time) {
 	return uuid.New(), time.Now().Add(TableSessionDuration)
 }
@@ -102,7 +102,7 @@ func encryptSessionID(sessionID uuid.UUID, expiry time.Time, key string) (string
 		Expiry:    expiry,
 	}, []byte(key))
 
-	if err == nil {
+	if err != nil {
 		return "", &exceptions.CustomError{
 			Status: exceptions.ERRUNKNOWN,
 			Errors: fmt.Errorf("failed to encrypt session ID: %w", err),

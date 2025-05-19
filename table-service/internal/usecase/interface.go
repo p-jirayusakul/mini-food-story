@@ -7,7 +7,6 @@ import (
 	"food-story/table-service/internal/adapter/cache"
 	"food-story/table-service/internal/adapter/repository"
 	"food-story/table-service/internal/domain"
-	"github.com/google/uuid"
 )
 
 type UseCase interface {
@@ -19,7 +18,6 @@ type UseCase interface {
 	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError)
 	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError)
 	GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentTableSession, *exceptions.CustomError)
-	IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError
 }
 
 type Implement struct {

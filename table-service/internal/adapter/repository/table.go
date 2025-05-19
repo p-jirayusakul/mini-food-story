@@ -191,7 +191,7 @@ func (i *Implement) SearchTables(ctx context.Context, search domain.SearchTables
 	}, nil
 }
 
-func (i *Implement) QuickSearchTables(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
+func (i *Implement) QuickSearchAvailableTable(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
 	searchParams := buildQuickSearchParams(search)
 
 	var (
@@ -285,10 +285,6 @@ func (i *Implement) fetchQuickSearchTablesTotalItems(ctx context.Context, number
 func transformSearchResults[T TableRow](results []T) []*domain.Table {
 	data := make([]*domain.Table, len(results))
 	for index, row := range results {
-		if row == nil {
-			continue
-		}
-
 		data[index] = &domain.Table{
 			ID:          row.GetID(),
 			TableNumber: row.GetTableNumber(),

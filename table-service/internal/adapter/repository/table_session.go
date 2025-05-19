@@ -16,12 +16,11 @@ import (
 
 func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession, sessionID uuid.UUID, expiry time.Time) *exceptions.CustomError {
 
-	var sessionByte [16]byte = sessionID
 	err := i.repository.TXCreateTableSession(ctx, database.CreateTableSessionParams{
 		ID:             i.snowflakeID.Generate(),
 		TableID:        payload.TableID,
 		NumberOfPeople: payload.NumberOfPeople,
-		SessionID:      pgtype.UUID{Bytes: sessionByte, Valid: true},
+		SessionID:      utils.UUIDToPgUUID(sessionID),
 		ExpireAt:       pgtype.Timestamptz{Time: expiry, Valid: true},
 	})
 	if err != nil {
@@ -50,8 +49,7 @@ func (i *Implement) GetTableSession(ctx context.Context, sessionID uuid.UUID) (*
 		}
 	}
 
-	var result domain.CurrentTableSession
-	result = domain.CurrentTableSession{
+	result := domain.CurrentTableSession{
 		SessionID:   sessionID,
 		TableID:     data.TableID,
 		TableNumber: data.TableNumber,
