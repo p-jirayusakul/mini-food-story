@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"strings"
+	"sync"
 )
 
 // TableRow Define an interface that both QuickSearchTablesRow and SearchTablesRow can satisfy
@@ -113,7 +114,7 @@ func (i *Implement) CreateTable(ctx context.Context, table domain.Table) (result
 
 	result, err := i.repository.CreateTable(ctx, tableParams)
 	if err != nil {
-		return 0, handleUniqueConstraintError(err, "tables")
+		return 0, handleUpsertError(err, "tables")
 	}
 
 	return result, nil
@@ -129,7 +130,7 @@ func (i *Implement) UpdateTables(ctx context.Context, table domain.Table) (custo
 
 	err := i.repository.UpdateTables(ctx, tableParams)
 	if err != nil {
-		return handleUniqueConstraintError(err, "tables")
+		return handleUpsertError(err, "tables")
 	}
 
 	return nil
@@ -144,7 +145,7 @@ func (i *Implement) UpdateTablesStatus(ctx context.Context, tableStatus domain.T
 
 	err := i.repository.UpdateTablesStatus(ctx, tableStatusParams)
 	if err != nil {
-		return handleUniqueConstraintError(err, "tables")
+		return handleUpsertError(err, "tables")
 	}
 
 	return nil
@@ -153,19 +154,32 @@ func (i *Implement) UpdateTablesStatus(ctx context.Context, tableStatus domain.T
 func (i *Implement) SearchTables(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
 	searchParams := buildSearchParams(search)
 
-	if ctx.Err() != nil {
-		return domain.SearchTablesResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: exceptions.ErrCtxCanceledOrTimeout,
-		}
-	}
+	var (
+		searchResult  []*database.SearchTablesRow
+		searchErr     *exceptions.CustomError
+		totalItems    int64
+		totalItemsErr *exceptions.CustomError
+	)
 
-	searchResult, searchErr := i.fetchTables(ctx, searchParams)
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		searchResult, searchErr = i.fetchTables(ctx, searchParams)
+	}()
+
+	go func() {
+		defer wg.Done()
+		totalItems, totalItemsErr = i.fetchTotalItems(ctx, searchParams)
+	}()
+
+	wg.Wait()
+
 	if searchErr != nil {
 		return domain.SearchTablesResult{}, searchErr
 	}
 
-	totalItems, totalItemsErr := i.fetchTotalItems(ctx, searchParams)
 	if totalItemsErr != nil {
 		return domain.SearchTablesResult{}, totalItemsErr
 	}
@@ -177,15 +191,35 @@ func (i *Implement) SearchTables(ctx context.Context, search domain.SearchTables
 	}, nil
 }
 
-func (i *Implement) QuickSearchTables(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
-	searchParams := buildQuickSearchParams(payload)
+func (i *Implement) QuickSearchTables(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
+	searchParams := buildQuickSearchParams(search)
 
-	searchResult, searchErr := i.fetchQuickSearchTables(ctx, searchParams)
+	var (
+		searchResult  []*database.QuickSearchTablesRow
+		searchErr     *exceptions.CustomError
+		totalItems    int64
+		totalItemsErr *exceptions.CustomError
+	)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		searchResult, searchErr = i.fetchQuickSearchTables(ctx, searchParams)
+	}()
+
+	go func() {
+		defer wg.Done()
+		totalItems, totalItemsErr = i.fetchQuickSearchTablesTotalItems(ctx, search.NumberOfPeople)
+	}()
+
+	wg.Wait()
+
 	if searchErr != nil {
 		return domain.SearchTablesResult{}, searchErr
 	}
 
-	totalItems, totalItemsErr := i.fetchQuickSearchTablesTotalItems(ctx, payload.NumberOfPeople)
 	if totalItemsErr != nil {
 		return domain.SearchTablesResult{}, totalItemsErr
 	}
@@ -300,7 +334,7 @@ func buildQuickSearchParams(payload domain.SearchTables) database.QuickSearchTab
 	}
 }
 
-func handleUniqueConstraintError(err error, tableName string) *exceptions.CustomError {
+func handleUpsertError(err error, tableName string) *exceptions.CustomError {
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == exceptions.SqlstateUniqueViolation {
 		msg := fmt.Sprintf("%s already exists", utils.IndexToFieldName(pgErr.ConstraintName, tableName))
