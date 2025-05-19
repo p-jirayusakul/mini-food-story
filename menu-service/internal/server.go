@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"food-story/menu-service/internal/adapter/cache"
 	menuhd "food-story/menu-service/internal/adapter/http"
 	"food-story/menu-service/internal/adapter/repository"
 	"food-story/menu-service/internal/usecase"
@@ -10,11 +11,14 @@ import (
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
 	database "food-story/shared/database/sqlc"
+	"food-story/shared/redis"
 	"food-story/shared/snowflakeid"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
+	"log/slog"
 )
 
 const EnvFile = ".env"
@@ -22,7 +26,16 @@ const EnvFile = ".env"
 type FiberServer struct {
 	App *fiber.App
 
-	db *pgxpool.Pool
+	db    *pgxpool.Pool
+	redis *redis.RedisClient
+}
+
+func (s *FiberServer) CloseAllConnection() {
+	s.db.Close()
+	log.Println("Database closed")
+
+	s.redis.Close()
+	log.Println("Redis closed")
 }
 
 func New() *FiberServer {
@@ -54,6 +67,9 @@ func New() *FiberServer {
 	}
 	store := database.NewStore(dbConn)
 
+	// connect to redis
+	redisConn := redis.NewRedisClient(configApp.RedisAddress, configApp.RedisPassword, 0)
+
 	// Create a new Node with a Node number of 1
 	node := snowflakeid.CreateSnowflakeNode(1)
 	snowflakeNode := snowflakeid.NewSnowflake(node)
@@ -71,29 +87,37 @@ func New() *FiberServer {
 		},
 		LivenessEndpoint: common.LivenessEndpoint,
 		ReadinessProbe: func(c *fiber.Ctx) bool {
-			return readinessDatabase(c.Context(), dbConn)
+			return readiness(c.Context(), dbConn, redisConn)
 		},
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp)
-
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
 	return &FiberServer{
 		App: app,
 		db:  dbConn,
 	}
 }
 
-func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
-	return dbConn.Ping(ctx) == nil
+func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.RedisClient) bool {
+	dbErr := dbConn.Ping(ctx)
+	if dbErr != nil {
+		slog.Error("ping database", "error: ", dbErr)
+		return false
+	}
+
+	redisErr := redisConn.Client.Ping(ctx).Err()
+	if redisErr != nil {
+		slog.Error("ping redis", "error: ", redisErr)
+		return false
+	}
+
+	return true
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config) {
-	menuRepo := repository.NewRepo(configApp, store, snowflakeNode)
-	menuUsecase := usecase.NewUsecase(configApp, *menuRepo)
-	menuhd.NewHTTPHandler(router, menuUsecase, validator)
-}
-
-func (s *FiberServer) CloseDB() {
-	s.db.Close()
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
+	menuCache := cache.NewRedisTableCache(redisConn)
+	menuRepo := repository.NewRepository(configApp, store, snowflakeNode)
+	menuUsecase := usecase.NewUsecase(configApp, *menuRepo, menuCache)
+	menuhd.NewHTTPHandler(router, menuUsecase, validator, configApp)
 }

@@ -19,7 +19,7 @@ func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProd
 	if ctx.Err() != nil {
 		return domain.SearchProductResult{}, &exceptions.CustomError{
 			Status: exceptions.ERRBUSSINESS,
-			Errors: fmt.Errorf("request cancelled or timeout: %w", ctx.Err()),
+			Errors: exceptions.ErrCtxCanceledOrTimeout,
 		}
 	}
 
@@ -45,7 +45,7 @@ func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Produ
 	if ctx.Err() != nil {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRBUSSINESS,
-			Errors: fmt.Errorf("request cancelled or timeout: %w", ctx.Err()),
+			Errors: exceptions.ErrCtxCanceledOrTimeout,
 		}
 	}
 
@@ -59,14 +59,14 @@ func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Produ
 		}
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("get product failed, id: %d, error: %w", id, err),
+			Errors: errorGetProductFailed(id, err),
 		}
 	}
 
 	if data == nil {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("get product failed, id: %d, error: %w", id, err),
+			Errors: errorGetProductFailed(id, err),
 		}
 	}
 
@@ -157,4 +157,8 @@ func calculateTotalPages(totalItems int64, pageSize int64) int64 {
 	}
 
 	return int64(math.Ceil(float64(totalItems) / float64(pageSize)))
+}
+
+func errorGetProductFailed(id int64, err error) error {
+	return fmt.Errorf("get product failed, id: %d, error: %w", id, err)
 }

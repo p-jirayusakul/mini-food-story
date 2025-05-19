@@ -262,3 +262,10 @@ func PgTimestampToThaiISO8601(ts pgtype.Timestamptz) (string, error) {
 
 	return t.In(loc).Format(time.RFC3339), nil
 }
+
+func PareStringToUUID(str string) (uuid.UUID, error) {
+	if str == "" {
+		return uuid.UUID{}, errors.New("string is empty")
+	}
+	return uuid.Parse(str)
+}

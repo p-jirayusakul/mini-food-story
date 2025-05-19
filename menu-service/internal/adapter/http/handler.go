@@ -45,13 +45,13 @@ func (s *Handler) SearchMenu(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "search menu success", result)
 }
 
-func (s *Handler) GetMenuByID(c *fiber.Ctx) error {
-	id, err := utils.StrToInt64(c.Params("id"))
+func (s *Handler) GetProductByID(c *fiber.Ctx) error {
+	productID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.GetProductByID(c.Context(), id)
+	result, customError := s.useCase.GetProductByID(c.Context(), productID)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}

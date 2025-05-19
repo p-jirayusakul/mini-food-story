@@ -30,9 +30,8 @@ func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// close database
-	fiberServer.CloseDB()
-	log.Println("Database closed")
+	// close all connection
+	fiberServer.CloseAllConnection()
 
 	if err := fiberServer.App.ShutdownWithContext(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
