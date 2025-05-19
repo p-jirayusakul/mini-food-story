@@ -8,14 +8,75 @@ import (
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	"food-story/table-service/internal/domain"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
-	"math"
-	"strconv"
 	"strings"
-	"time"
 )
+
+// TableRow Define an interface that both QuickSearchTablesRow and SearchTablesRow can satisfy
+type TableRow interface {
+	GetID() int64
+	GetTableNumber() int32
+	GetStatus() string
+	GetStatusEN() string
+	GetSeats() int32
+}
+
+func (i *Implement) IsTableAvailableOrReserved(ctx context.Context, tableID int64) *exceptions.CustomError {
+	isAvailableOrReserved, err := i.repository.IsTableAvailableOrReserved(ctx, tableID)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to check table status: %w", err),
+		}
+	}
+
+	if !isAvailableOrReserved {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: errors.New("table not available or reserved"),
+		}
+	}
+
+	return nil
+}
+
+func (i *Implement) IsTableExists(ctx context.Context, id int64) *exceptions.CustomError {
+	isTableExists, err := i.repository.IsTableExists(ctx, id)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to check table exists: %w", err),
+		}
+	}
+
+	if !isTableExists {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: errors.New("table not found"),
+		}
+	}
+
+	return nil
+}
+
+func (i *Implement) GetTableNumber(ctx context.Context, tableID int64) (int32, *exceptions.CustomError) {
+	data, err := i.repository.GetTableNumber(ctx, tableID)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return 0, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: errors.New("table id not found"),
+			}
+		}
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get table number: %w", err),
+		}
+	}
+
+	return data, nil
+}
 
 func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Status, customError *exceptions.CustomError) {
 	data, err := i.repository.ListTableStatus(ctx)
@@ -44,7 +105,6 @@ func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Statu
 }
 
 func (i *Implement) CreateTable(ctx context.Context, table domain.Table) (result int64, customError *exceptions.CustomError) {
-
 	tableParams := database.CreateTableParams{
 		ID:          i.snowflakeID.Generate(),
 		TableNumber: table.TableNumber,
@@ -100,14 +160,34 @@ func (i *Implement) SearchTables(ctx context.Context, search domain.SearchTables
 		}
 	}
 
-	searchResult, tablesFetchErr := i.fetchTables(ctx, searchParams)
-	if tablesFetchErr != nil {
-		return domain.SearchTablesResult{}, tablesFetchErr
+	searchResult, searchErr := i.fetchTables(ctx, searchParams)
+	if searchErr != nil {
+		return domain.SearchTablesResult{}, searchErr
 	}
 
-	totalItems, totalItemsFetchErr := i.fetchTotalItems(ctx, searchParams)
-	if totalItemsFetchErr != nil {
-		return domain.SearchTablesResult{}, totalItemsFetchErr
+	totalItems, totalItemsErr := i.fetchTotalItems(ctx, searchParams)
+	if totalItemsErr != nil {
+		return domain.SearchTablesResult{}, totalItemsErr
+	}
+
+	return domain.SearchTablesResult{
+		TotalItems: totalItems,
+		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
+		Data:       transformSearchResults(searchResult),
+	}, nil
+}
+
+func (i *Implement) QuickSearchTables(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
+	searchParams := buildQuickSearchParams(payload)
+
+	searchResult, searchErr := i.fetchQuickSearchTables(ctx, searchParams)
+	if searchErr != nil {
+		return domain.SearchTablesResult{}, searchErr
+	}
+
+	totalItems, totalItemsErr := i.fetchQuickSearchTablesTotalItems(ctx, payload.NumberOfPeople)
+	if totalItemsErr != nil {
+		return domain.SearchTablesResult{}, totalItemsErr
 	}
 
 	return domain.SearchTablesResult{
@@ -145,171 +225,45 @@ func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchT
 	return totalItems, nil
 }
 
-func transformSearchResults(results []*database.SearchTablesRow) []*domain.Table {
+func (i *Implement) fetchQuickSearchTables(ctx context.Context, params database.QuickSearchTablesParams) ([]*database.QuickSearchTablesRow, *exceptions.CustomError) {
+	result, err := i.repository.QuickSearchTables(ctx, params)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch products: %w", err),
+		}
+	}
+	return result, nil
+}
+
+func (i *Implement) fetchQuickSearchTablesTotalItems(ctx context.Context, numberOfPeople int32) (int64, *exceptions.CustomError) {
+	totalItems, err := i.repository.GetTotalPageQuickSearchTables(ctx, numberOfPeople)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch total items: %w", err),
+		}
+	}
+
+	return totalItems, nil
+}
+
+func transformSearchResults[T TableRow](results []T) []*domain.Table {
 	data := make([]*domain.Table, len(results))
 	for index, row := range results {
-
 		if row == nil {
 			continue
 		}
 
 		data[index] = &domain.Table{
-			ID:          row.ID,
-			TableNumber: row.TableNumber,
-			Status:      row.Status,
-			StatusEn:    row.StatusEN,
-			Seats:       row.Seats,
+			ID:          row.GetID(),
+			TableNumber: row.GetTableNumber(),
+			Status:      row.GetStatus(),
+			StatusEn:    row.GetStatusEN(),
+			Seats:       row.GetSeats(),
 		}
 	}
 	return data
-}
-
-func (i *Implement) QuickSearchTables(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
-	searchParams := buildQuickSearchParams(payload)
-
-	searchResult, err := i.repository.QuickSearchTables(ctx, searchParams)
-	if err != nil {
-		return domain.SearchTablesResult{}, buildRepositoryError(err, "failed to fetch table status")
-	}
-
-	totalItems, err := i.repository.GetTotalPageQuickSearchTables(ctx, payload.NumberOfPeople)
-	if err != nil {
-		return domain.SearchTablesResult{}, buildRepositoryError(err, "failed to fetch total page count")
-	}
-
-	data := make([]*domain.Table, len(searchResult))
-	for index, row := range searchResult {
-		data[index] = &domain.Table{
-			ID:          row.ID,
-			TableNumber: row.TableNumber,
-			Status:      row.Status,
-			StatusEn:    row.StatusEN,
-			Seats:       row.Seats,
-		}
-	}
-
-	return domain.SearchTablesResult{
-		TotalItems: totalItems,
-		TotalPages: int64(math.Ceil(float64(totalItems) / float64(searchParams.PageSize))),
-		Data:       data,
-	}, nil
-}
-
-func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession, sessionID uuid.UUID, expiry time.Time) *exceptions.CustomError {
-
-	var sessionByte [16]byte = sessionID
-	err := i.repository.TXCreateTableSession(ctx, database.CreateTableSessionParams{
-		ID:             i.snowflakeID.Generate(),
-		TableID:        payload.TableID,
-		NumberOfPeople: payload.NumberOfPeople,
-		SessionID:      pgtype.UUID{Bytes: sessionByte, Valid: true},
-		ExpireAt:       pgtype.Timestamptz{Time: expiry, Valid: true},
-	})
-	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to create table session: %w", err),
-		}
-	}
-
-	return nil
-}
-
-func (i *Implement) IsTableAvailableOrReserved(ctx context.Context, tableID int64) *exceptions.CustomError {
-	isAvailableOrReserved, err := i.repository.IsTableAvailableOrReserved(ctx, tableID)
-	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check table status: %w", err),
-		}
-	}
-
-	if !isAvailableOrReserved {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: errors.New("table not available or reserved"),
-		}
-	}
-
-	return nil
-}
-
-func (i *Implement) GettableSession(ctx context.Context, sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError) {
-	var byteArray [16]byte = sessionID
-	id := pgtype.UUID{
-		Bytes: byteArray,
-		Valid: true,
-	}
-
-	isExists, err := i.repository.IsTableSessionExists(ctx, id)
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check table session exists: %w", err),
-		}
-	}
-
-	if !isExists {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: errors.New("table session not found"),
-		}
-	}
-
-	data, err := i.repository.GetTableSession(ctx, id)
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get table session: %w", err),
-		}
-	}
-
-	var result domain.CurrentTableSession
-	result = domain.CurrentTableSession{
-		SessionID:   sessionID,
-		TableID:     data.TableID,
-		TableNumber: data.TableNumber,
-		Status:      string(data.Status.TableSessionStatus),
-		StartedAt:   data.StartedAt.Time,
-	}
-
-	if data.OrderID.Valid {
-		orderID := strconv.FormatInt(data.OrderID.Int64, 10)
-		result.OrderID = &orderID
-	}
-
-	return &result, nil
-}
-
-func (i *Implement) IsTableExists(ctx context.Context, id int64) *exceptions.CustomError {
-	isTableExists, err := i.repository.IsTableExists(ctx, id)
-	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check table exists: %w", err),
-		}
-	}
-
-	if !isTableExists {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: errors.New("table not found"),
-		}
-	}
-
-	return nil
-}
-
-func (i *Implement) GetTableNumber(ctx context.Context, tableID int64) (int32, *exceptions.CustomError) {
-	data, err := i.repository.GetTableNumber(ctx, tableID)
-	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get table number: %w", err),
-		}
-	}
-
-	return data, nil
 }
 
 func buildSearchParams(payload domain.SearchTables) database.SearchTablesParams {
@@ -333,13 +287,6 @@ func buildSearchParams(payload domain.SearchTables) database.SearchTablesParams 
 		params.Seats = pgtype.Int4{Int32: *payload.Seats, Valid: true}
 	}
 	return params
-}
-
-func buildRepositoryError(err error, msg string) *exceptions.CustomError {
-	return &exceptions.CustomError{
-		Status: exceptions.ERRREPOSITORY,
-		Errors: fmt.Errorf("%s: %w", msg, err),
-	}
 }
 
 func buildQuickSearchParams(payload domain.SearchTables) database.QuickSearchTablesParams {

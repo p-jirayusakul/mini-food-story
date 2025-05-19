@@ -249,6 +249,14 @@ func StringPtrToPgText(value *string) pgtype.Text {
 	}
 }
 
+func UUIDToPgUUID(value uuid.UUID) pgtype.UUID {
+	var byteArray [16]byte = value
+	return pgtype.UUID{
+		Bytes: byteArray,
+		Valid: true,
+	}
+}
+
 func PgTimestampToThaiISO8601(ts pgtype.Timestamptz) (string, error) {
 	if !ts.Valid {
 		return "", fmt.Errorf("timestamp is null")

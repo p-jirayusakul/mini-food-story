@@ -24,11 +24,11 @@ type UseCase interface {
 
 type Implement struct {
 	config     config.Config
-	repository repository.TableRepoImplement
+	repository repository.Implement
 	cache      cache.RedisTableCacheInterface
 }
 
-func NewUsecase(config config.Config, repository repository.TableRepoImplement, cache cache.RedisTableCacheInterface) *Implement {
+func NewUsecase(config config.Config, repository repository.Implement, cache cache.RedisTableCacheInterface) *Implement {
 	return &Implement{
 		config,
 		repository,
