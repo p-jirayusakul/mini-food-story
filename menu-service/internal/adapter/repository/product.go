@@ -5,16 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"food-story/menu-service/internal/domain"
-	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
-	"math"
 )
 
 func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProduct) (domain.SearchProductResult, *exceptions.CustomError) {
-	searchParams := buildSearchProductParams(payload)
+	searchParams := buildSearchParams(payload)
 
 	if ctx.Err() != nil {
 		return domain.SearchProductResult{}, &exceptions.CustomError{
@@ -35,7 +33,7 @@ func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProd
 
 	return domain.SearchProductResult{
 		TotalItems: totalItems,
-		TotalPages: calculateTotalPages(totalItems, searchParams.PageSize),
+		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
 		Data:       transformSearchResults(searchResult),
 	}, nil
 }
@@ -111,7 +109,7 @@ func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchP
 	return totalItems, nil
 }
 
-func buildSearchProductParams(payload domain.SearchProduct) database.SearchProductsParams {
+func buildSearchParams(payload domain.SearchProduct) database.SearchProductsParams {
 	params := database.SearchProductsParams{
 		Name:        pgtype.Text{String: payload.Name, Valid: payload.Name != ""},
 		IsAvailable: pgtype.Bool{Bool: payload.IsAvailable, Valid: true},
@@ -149,14 +147,6 @@ func transformSearchResults(results []*database.SearchProductsRow) []*domain.Pro
 		}
 	}
 	return data
-}
-
-func calculateTotalPages(totalItems int64, pageSize int64) int64 {
-	if pageSize <= 0 {
-		pageSize = common.DefaultPageSize
-	}
-
-	return int64(math.Ceil(float64(totalItems) / float64(pageSize)))
 }
 
 func errorGetProductFailed(id int64, err error) error {

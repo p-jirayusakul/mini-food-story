@@ -11,57 +11,51 @@ import (
 	"time"
 )
 
-func (i *TableImplement) CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError) {
+const (
+	TableSessionDuration = 1 * time.Hour
+	SessionStatusActive  = "active"
+)
 
-	customError = i.repository.IsTableAvailableOrReserved(ctx, payload.TableID)
+func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError) {
+
+	if customError = i.repository.IsTableAvailableOrReserved(ctx, payload.TableID); customError != nil {
+		return
+	}
+
+	sessionID, sessionExpiry := generateSessionDetails()
+	encryptedSessionID, customError := encryptSessionID(sessionID, sessionExpiry, i.config.SecretKey)
 	if customError != nil {
 		return
 	}
 
-	sessionID := uuid.New()
-	expiry := time.Now().Add(1 * time.Hour)
-	sessionIDEncrypt, err := utils.EncryptSession(utils.SessionData{
-		SessionID: sessionID.String(),
-		Expiry:    expiry,
-	}, []byte(i.config.SecretKey))
-	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
-			Errors: fmt.Errorf("failed to create table session: %w", err),
-		}
-	}
-
 	tableNumber, customError := i.repository.GetTableNumber(ctx, payload.TableID)
 	if customError != nil {
-		return "", customError
+		return
 	}
 
 	key := redis.KeyTable + sessionID.String()
-	err = i.cache.SetCachedTable(key, &domain.CurrentTableSession{
+	customError = i.cache.SetCachedTable(redis.KeyTable+sessionID.String(), &domain.CurrentTableSession{
 		SessionID:   sessionID,
 		TableID:     payload.TableID,
 		TableNumber: tableNumber,
-		Status:      "active",
+		Status:      SessionStatusActive,
 		StartedAt:   time.Now(),
 		OrderID:     nil,
-	}, 1*time.Hour)
-	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
-			Errors: fmt.Errorf("failed to create table session: %w", err),
-		}
+	}, TableSessionDuration)
+	if customError != nil {
+		return
 	}
 
-	customError = i.repository.CreateTableSession(ctx, payload, sessionID, expiry)
+	customError = i.repository.CreateTableSession(ctx, payload, sessionID, sessionExpiry)
 	if customError != nil {
 		_ = i.cache.DeleteCachedTable(key)
 		return
 	}
 
-	return i.config.FrontendURL + "?s=" + sessionIDEncrypt, nil
+	return i.config.FrontendURL + "?s=" + encryptedSessionID, nil
 }
 
-func (i *TableImplement) GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentTableSession, *exceptions.CustomError) {
+func (i *Implement) GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentTableSession, *exceptions.CustomError) {
 	sessionIDDecrypt, err := utils.DecryptSession(sessionIDEncrypt, []byte(i.config.SecretKey))
 	if err != nil {
 		return nil, &exceptions.CustomError{
@@ -79,13 +73,9 @@ func (i *TableImplement) GetCurrentSession(sessionIDEncrypt string) (*domain.Cur
 		}
 	}
 
-	key := "table:" + sessionID
-	cachedTable, err := i.cache.GetCachedTable(key)
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
-			Errors: fmt.Errorf("failed to get current session: %w", err),
-		}
+	cachedTable, customError := i.cache.GetCachedTable(redis.KeyTable + sessionID)
+	if customError != nil {
+		return nil, customError
 	}
 
 	if cachedTable == nil {
@@ -96,4 +86,28 @@ func (i *TableImplement) GetCurrentSession(sessionIDEncrypt string) (*domain.Cur
 	}
 
 	return cachedTable, nil
+}
+
+func (i *Implement) IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError {
+	return i.cache.IsCachedTableExist(sessionID)
+}
+
+func generateSessionDetails() (uuid.UUID, time.Time) {
+	return uuid.New(), time.Now().Add(TableSessionDuration)
+}
+
+func encryptSessionID(sessionID uuid.UUID, expiry time.Time, key string) (string, *exceptions.CustomError) {
+	result, err := utils.EncryptSession(utils.SessionData{
+		SessionID: sessionID.String(),
+		Expiry:    expiry,
+	}, []byte(key))
+
+	if err == nil {
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: fmt.Errorf("failed to encrypt session ID: %w", err),
+		}
+	}
+
+	return result, nil
 }

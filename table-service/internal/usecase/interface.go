@@ -7,9 +7,10 @@ import (
 	"food-story/table-service/internal/adapter/cache"
 	"food-story/table-service/internal/adapter/repository"
 	"food-story/table-service/internal/domain"
+	"github.com/google/uuid"
 )
 
-type TableUsecase interface {
+type UseCase interface {
 	ListTableStatus(ctx context.Context) (result []*domain.Status, customError *exceptions.CustomError)
 	CreateTable(ctx context.Context, payload domain.Table) (result int64, customError *exceptions.CustomError)
 	UpdateTable(ctx context.Context, payload domain.Table) (customError *exceptions.CustomError)
@@ -18,20 +19,21 @@ type TableUsecase interface {
 	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError)
 	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError)
 	GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentTableSession, *exceptions.CustomError)
+	IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError
 }
 
-type TableImplement struct {
+type Implement struct {
 	config     config.Config
 	repository repository.TableRepoImplement
 	cache      cache.RedisTableCacheInterface
 }
 
-func NewUsecase(config config.Config, repository repository.TableRepoImplement, cache cache.RedisTableCacheInterface) *TableImplement {
-	return &TableImplement{
+func NewUsecase(config config.Config, repository repository.TableRepoImplement, cache cache.RedisTableCacheInterface) *Implement {
+	return &Implement{
 		config,
 		repository,
 		cache,
 	}
 }
 
-var _ TableUsecase = (*TableImplement)(nil)
+var _ UseCase = (*Implement)(nil)

@@ -6,12 +6,5 @@ import (
 )
 
 func (i *Implement) IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError {
-	err := i.cache.IsCachedTableExist(sessionID)
-	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRAUTHORIZED,
-			Errors: exceptions.ErrSessionExpired,
-		}
-	}
-	return nil
+	return i.cache.IsCachedTableExist(sessionID)
 }

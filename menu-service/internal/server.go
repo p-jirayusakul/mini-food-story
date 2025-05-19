@@ -16,9 +16,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"log/slog"
+	"time"
 )
 
 const EnvFile = ".env"
@@ -31,11 +33,15 @@ type FiberServer struct {
 }
 
 func (s *FiberServer) CloseAllConnection() {
-	s.db.Close()
-	log.Println("Database closed")
+	if s.db != nil {
+		s.db.Close()
+		log.Println("Database closed")
+	}
 
-	s.redis.Close()
-	log.Println("Redis closed")
+	if s.redis != nil {
+		s.redis.Close()
+		log.Println("Redis closed")
+	}
 }
 
 func New() *FiberServer {
@@ -54,6 +60,15 @@ func New() *FiberServer {
 		AllowOrigins: "*",
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization, Connection",
 		AllowMethods: "GET, PUT, POST, PATCH, DELETE, OPTIONS",
+	}))
+
+	// add rate limit
+	app.Use(limiter.New(limiter.Config{
+		Max:        100,
+		Expiration: 1 * time.Minute,
+		LimitReached: func(_ *fiber.Ctx) error {
+			return fiber.NewError(fiber.StatusTooManyRequests, "Too Many Requests")
+		},
 	}))
 
 	// add log handler
@@ -94,8 +109,9 @@ func New() *FiberServer {
 
 	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
 	return &FiberServer{
-		App: app,
-		db:  dbConn,
+		App:   app,
+		db:    dbConn,
+		redis: redisConn,
 	}
 }
 

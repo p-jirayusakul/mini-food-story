@@ -15,6 +15,7 @@ import (
 	"github.com/shopspring/decimal"
 	"io"
 	"log/slog"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
@@ -268,4 +269,12 @@ func PareStringToUUID(str string) (uuid.UUID, error) {
 		return uuid.UUID{}, errors.New("string is empty")
 	}
 	return uuid.Parse(str)
+}
+
+func CalculateTotalPages(totalItems int64, pageSize int64) int64 {
+	if pageSize <= 0 {
+		pageSize = common.DefaultPageSize
+	}
+
+	return int64(math.Ceil(float64(totalItems) / float64(pageSize)))
 }

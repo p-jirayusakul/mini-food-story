@@ -19,6 +19,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
+	"log/slog"
 	"time"
 )
 
@@ -29,6 +31,18 @@ type FiberServer struct {
 
 	db    *pgxpool.Pool
 	redis *redis.RedisClient
+}
+
+func (s *FiberServer) CloseAllConnection() {
+	if s.db != nil {
+		s.db.Close()
+		log.Println("Database closed")
+	}
+
+	if s.redis != nil {
+		s.redis.Close()
+		log.Println("Redis closed")
+	}
 }
 
 func New() *FiberServer {
@@ -89,7 +103,7 @@ func New() *FiberServer {
 		},
 		LivenessEndpoint: common.LivenessEndpoint,
 		ReadinessProbe: func(c *fiber.Ctx) bool {
-			return readinessDatabase(c.Context(), dbConn)
+			return readiness(c.Context(), dbConn, redisConn)
 		},
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
@@ -103,8 +117,20 @@ func New() *FiberServer {
 	}
 }
 
-func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
-	return dbConn.Ping(ctx) == nil
+func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.RedisClient) bool {
+	dbErr := dbConn.Ping(ctx)
+	if dbErr != nil {
+		slog.Error("ping database", "error: ", dbErr)
+		return false
+	}
+
+	redisErr := redisConn.Client.Ping(ctx).Err()
+	if redisErr != nil {
+		slog.Error("ping redis", "error: ", redisErr)
+		return false
+	}
+
+	return true
 }
 
 func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
@@ -112,12 +138,4 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 	tableRepo := repository.NewRepo(configApp, store, snowflakeNode)
 	tableUseCase := usecase.NewUsecase(configApp, *tableRepo, tableCache)
 	tablehd.NewHTTPHandler(router, tableUseCase, validator)
-}
-
-func (s *FiberServer) CloseDB() {
-	s.db.Close()
-}
-
-func (s *FiberServer) CloseRedis() {
-	s.redis.Close()
 }

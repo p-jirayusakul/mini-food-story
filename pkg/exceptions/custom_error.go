@@ -14,6 +14,7 @@ const (
 	ERRAUTHORIZED   Status = 7
 	ERRFORBIDDEN    Status = 8
 	ERRDATACONFLICT Status = 9
+	ERRCACHE        Status = 10
 )
 
 type Status int
@@ -44,6 +45,8 @@ func MapToHTTPStatusCode(status Status) int {
 		httpStatusCode = http.StatusForbidden
 	case ERRDATACONFLICT:
 		httpStatusCode = http.StatusConflict
+	case ERRCACHE:
+		httpStatusCode = http.StatusInternalServerError
 	default:
 		httpStatusCode = http.StatusInternalServerError
 	}
