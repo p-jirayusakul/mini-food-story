@@ -16,17 +16,7 @@ var (
 )
 
 const (
-	EXCOK                  = "OK"
-	EXCInternalServerError = "Internal Server Error"
-	EXCDataNotFound        = "Data not found"
-	EXCBadRequest          = "Bad Request"
-	EXCConvertValue        = "error converting value"
-	EXCOneOf               = "failed on the 'oneof' tag"
-	EXCMin                 = "failed on the 'min' tag"
-	EXCMax                 = "failed on the 'max' tag"
-	EXCRequired            = "failed on the 'required' tag"
-	EXCNoSpecialChar       = "failed on the 'no_special_char'"
-	EXCNoSpecialCharSlash  = "failed on the 'no_special_char_slash'"
+	ErrMsgDataNotFound = "data not found"
 )
 
 const (

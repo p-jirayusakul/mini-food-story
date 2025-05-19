@@ -7,7 +7,7 @@ import (
 	"food-story/pkg/exceptions"
 )
 
-func (i *ProductRepoImplement) ListCategory(ctx context.Context) (result []*domain.Category, customError *exceptions.CustomError) {
+func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category, customError *exceptions.CustomError) {
 	data, err := i.repository.ListCategory(ctx)
 	if err != nil {
 		return nil, &exceptions.CustomError{

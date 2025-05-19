@@ -6,14 +6,14 @@ import (
 	"food-story/shared/snowflakeid"
 )
 
-type ProductRepoImplement struct {
+type Implement struct {
 	config      config.Config
 	repository  database.Store
 	snowflakeID snowflakeid.SnowflakeInterface
 }
 
-func NewRepo(config config.Config, repository database.Store, snowflakeID snowflakeid.SnowflakeInterface) *ProductRepoImplement {
-	return &ProductRepoImplement{
+func NewRepo(config config.Config, repository database.Store, snowflakeID snowflakeid.SnowflakeInterface) *Implement {
+	return &Implement{
 		config,
 		repository,
 		snowflakeID,

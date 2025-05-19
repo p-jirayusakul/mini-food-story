@@ -9,16 +9,13 @@ import (
 	"food-story/pkg/common"
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
+	dbcfg "food-story/shared/config"
 	database "food-story/shared/database/sqlc"
 	"food-story/shared/snowflakeid"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
-
-	dbcfg "food-story/shared/config"
 )
 
 const EnvFile = ".env"
@@ -39,15 +36,6 @@ func New() *FiberServer {
 		JSONEncoder:              json.Marshal,
 		JSONDecoder:              json.Unmarshal,
 	})
-
-	// add rate limit
-	app.Use(limiter.New(limiter.Config{
-		Max:        100,
-		Expiration: 1 * time.Minute,
-		LimitReached: func(_ *fiber.Ctx) error {
-			return fiber.NewError(fiber.StatusTooManyRequests, "Too Many Requests")
-		},
-	}))
 
 	// add custom CORS
 	app.Use(cors.New(cors.Config{
