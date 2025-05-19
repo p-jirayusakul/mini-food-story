@@ -8,6 +8,7 @@ import (
 	"food-story/shared/redis"
 	"food-story/table-service/internal/domain"
 	"github.com/google/uuid"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +17,8 @@ type RedisTableCacheInterface interface {
 	SetCachedTable(key string, table *domain.CurrentTableSession, ttl time.Duration) *exceptions.CustomError
 	DeleteCachedTable(key string) *exceptions.CustomError
 	IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError
+	SetCachedTableNumber(key string, tableNumber int32, ttl time.Duration) *exceptions.CustomError
+	GetCachedTableNumber(key string) (int32, *exceptions.CustomError)
 }
 
 type RedisTableCache struct {
@@ -67,6 +70,46 @@ func (r *RedisTableCache) SetCachedTable(key string, table *domain.CurrentTableS
 	}
 
 	return nil
+}
+
+func (r *RedisTableCache) SetCachedTableNumber(key string, tableNumber int32, ttl time.Duration) *exceptions.CustomError {
+
+	err := r.client.Set(key, strconv.Itoa(int(tableNumber)), ttl)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: fmt.Errorf("set cache table number: %w", err),
+		}
+	}
+
+	return nil
+}
+
+func (r *RedisTableCache) GetCachedTableNumber(key string) (int32, *exceptions.CustomError) {
+	data, err := r.client.Get(key)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
+			return 0, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: exceptions.ErrRedisKeyNotFound,
+			}
+		}
+
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: fmt.Errorf("get cache session: %w", err),
+		}
+	}
+
+	parsedValue, err := strconv.ParseInt(data, 10, 32)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRUNKNOWN,
+			Errors: fmt.Errorf("parese string to int32: %w", err),
+		}
+	}
+
+	return int32(parsedValue), nil
 }
 
 func (r *RedisTableCache) DeleteCachedTable(key string) *exceptions.CustomError {

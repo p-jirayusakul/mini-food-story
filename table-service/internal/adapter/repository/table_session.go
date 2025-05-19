@@ -64,3 +64,15 @@ func (i *Implement) GetTableSession(ctx context.Context, sessionID uuid.UUID) (*
 
 	return &result, nil
 }
+
+func (i *Implement) GetCurrentDateTime(ctx context.Context) (time.Time, *exceptions.CustomError) {
+	currentTime, err := i.repository.GetTimeNow(ctx)
+	if err != nil {
+		return time.Time{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get current time: %w", err),
+		}
+	}
+
+	return currentTime.Time, nil
+}

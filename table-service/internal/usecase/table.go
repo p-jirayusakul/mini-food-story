@@ -18,7 +18,7 @@ func (i *Implement) UpdateTable(ctx context.Context, table domain.Table) (custom
 
 	customError = i.repository.IsTableExists(ctx, table.ID)
 	if customError != nil {
-		return
+		return customError
 	}
 
 	return i.repository.UpdateTables(ctx, table)
@@ -28,7 +28,7 @@ func (i *Implement) UpdateTableStatus(ctx context.Context, tableStatus domain.Ta
 
 	customError = i.repository.IsTableExists(ctx, tableStatus.ID)
 	if customError != nil {
-		return
+		return customError
 	}
 
 	return i.repository.UpdateTablesStatus(ctx, tableStatus)

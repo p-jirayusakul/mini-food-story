@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
@@ -29,18 +30,23 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 		return "", customError
 	}
 
-	tableNumber, customError := i.repository.GetTableNumber(ctx, payload.TableID)
+	tableNumber, customError := i.getTableNumberFromCache(ctx, payload.TableID)
+	if customError != nil {
+		return "", customError
+	}
+
+	startedAt, customError := i.repository.GetCurrentDateTime(ctx)
 	if customError != nil {
 		return "", customError
 	}
 
 	key := redis.KeyTable + sessionID.String()
-	customError = i.cache.SetCachedTable(redis.KeyTable+sessionID.String(), &domain.CurrentTableSession{
+	customError = i.cache.SetCachedTable(key, &domain.CurrentTableSession{
 		SessionID:   sessionID,
 		TableID:     payload.TableID,
 		TableNumber: tableNumber,
 		Status:      SessionStatusActive,
-		StartedAt:   time.Now(),
+		StartedAt:   startedAt,
 		OrderID:     nil,
 	}, TableSessionDuration)
 	if customError != nil {
@@ -110,4 +116,33 @@ func encryptSessionID(sessionID uuid.UUID, expiry time.Time, key string) (string
 	}
 
 	return result, nil
+}
+
+func (i *Implement) getTableNumberFromCache(ctx context.Context, tableID int64) (int32, *exceptions.CustomError) {
+	keyTableNumber := fmt.Sprintf("%s:%d", redis.KeyTable, tableID)
+	tableNumber, customError := i.cache.GetCachedTableNumber(keyTableNumber)
+	if customError != nil {
+		if errors.Is(customError.Errors, exceptions.ErrRedisKeyNotFound) {
+			tableNumberDB, getTableNumberErr := i.repository.GetTableNumber(ctx, tableID)
+			if getTableNumberErr != nil {
+				return 0, getTableNumberErr
+			}
+			setTableNumberErr := i.cache.SetCachedTableNumber(keyTableNumber, tableNumberDB, 24*time.Hour)
+			if setTableNumberErr != nil {
+				return 0, setTableNumberErr
+			}
+			tableNumber = tableNumberDB
+		} else {
+			return 0, customError
+		}
+	}
+
+	if tableNumber == 0 {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: errors.New("table not found"),
+		}
+	}
+
+	return tableNumber, nil
 }
