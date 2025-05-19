@@ -14,17 +14,24 @@ import (
 )
 
 const (
-	TableSessionDuration = 1 * time.Hour
-	SessionStatusActive  = "active"
+	SessionStatusActive = "active"
 )
 
 func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError) {
 
-	if customError = i.repository.IsTableAvailableOrReserved(ctx, payload.TableID); customError != nil {
+	if payload.TableID <= 0 || payload.NumberOfPeople <= 0 {
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: errors.New("invalid table session payload"),
+		}
+	}
+
+	customError = i.repository.IsTableAvailableOrReserved(ctx, payload.TableID)
+	if customError != nil {
 		return "", customError
 	}
 
-	sessionID, sessionExpiry := generateSessionDetails()
+	sessionID, sessionExpiry := i.generateSessionDetails()
 	encryptedSessionID, customError := encryptSessionID(sessionID, sessionExpiry, i.config.SecretKey)
 	if customError != nil {
 		return "", customError
@@ -48,7 +55,7 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 		Status:      SessionStatusActive,
 		StartedAt:   startedAt,
 		OrderID:     nil,
-	}, TableSessionDuration)
+	}, i.config.TableSessionDuration)
 	if customError != nil {
 		return "", customError
 	}
@@ -98,8 +105,8 @@ func (i *Implement) GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentT
 	return cachedTable, nil
 }
 
-func generateSessionDetails() (uuid.UUID, time.Time) {
-	return uuid.New(), time.Now().Add(TableSessionDuration)
+func (i *Implement) generateSessionDetails() (uuid.UUID, time.Time) {
+	return uuid.New(), time.Now().Add(i.config.TableSessionDuration)
 }
 
 func encryptSessionID(sessionID uuid.UUID, expiry time.Time, key string) (string, *exceptions.CustomError) {

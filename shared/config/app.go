@@ -4,19 +4,21 @@ import (
 	"fmt"
 	"github.com/spf13/viper"
 	"os"
+	"time"
 )
 
 type Config struct {
-	AppPort       string `mapstructure:"APP_PORT"`
-	AppEnv        string `mapstructure:"APP_ENV"`
-	AppHost       string `mapstructure:"APP_HOST"`
-	FrontendURL   string `mapstructure:"FRONTEND_URL"`
-	SecretKey     string `mapstructure:"SECRET_KEY"`
-	JwtSecret     string `mapstructure:"JWT_SECRET"`
-	JwtExpireMs   string `mapstructure:"JWT_EXPIRE_MILLISECOND"`
-	RedisAddress  string `mapstructure:"REDIS_ADDRESS"`
-	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
-	KafkaBrokers  string `mapstructure:"KAFKA_BROKERS"`
+	AppPort              string `mapstructure:"APP_PORT"`
+	AppEnv               string `mapstructure:"APP_ENV"`
+	AppHost              string `mapstructure:"APP_HOST"`
+	FrontendURL          string `mapstructure:"FRONTEND_URL"`
+	SecretKey            string `mapstructure:"SECRET_KEY"`
+	JwtSecret            string `mapstructure:"JWT_SECRET"`
+	JwtExpireMs          string `mapstructure:"JWT_EXPIRE_MILLISECOND"`
+	RedisAddress         string `mapstructure:"REDIS_ADDRESS"`
+	RedisPassword        string `mapstructure:"REDIS_PASSWORD"`
+	KafkaBrokers         string `mapstructure:"KAFKA_BROKERS"`
+	TableSessionDuration time.Duration
 }
 
 func InitConfig(envFile string) Config {
@@ -47,6 +49,14 @@ func InitConfig(envFile string) Config {
 	}
 
 	_ = viper.Unmarshal(&cfg)
+
+	if cfg.SecretKey != "" {
+		if len(cfg.SecretKey) != 32 {
+			panic("SecretKey must be 32 characters")
+		}
+	}
+
+	cfg.TableSessionDuration = 1 * time.Hour
 
 	return cfg
 }
