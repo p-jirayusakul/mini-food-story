@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - master
 
 env:
   GO_VERSION: stable
@@ -22,7 +21,10 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - id: set-modules
-        run: echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
+        run: |
+          modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')
+          echo "Modules found: $modules"
+          echo "modules=$modules" >> $GITHUB_OUTPUT
 
   golangci-lint:
     needs: detect-modules
@@ -35,6 +37,7 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: golangci-lint ${{ matrix.modules }}
         uses: golangci/golangci-lint-action@v8
         with:
