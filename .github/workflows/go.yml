@@ -18,17 +18,18 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.24.3'
+          go-version: 1.24.3
 
       - name: Install dependencies
-        working-directory: menu-service
+        working-directory: ./menu-service
         run: |
           go mod tidy
-          go mod download # Ensure all dependencies are fetched
+          go mod download
 
-      - name: Build application
-        run: go build -o app menu-service/cmd/main.go
+      - name: Build
+        working-directory: ./menu-service
+        run: go build -o app cmd/main.go
 
-      - name: Run tests
-        working-directory: menu-service
+      - name: Test
+        working-directory: ./menu-service
         run: go test -v ./...
