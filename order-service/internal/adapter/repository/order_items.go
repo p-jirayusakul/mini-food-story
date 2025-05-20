@@ -11,21 +11,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"math"
 	"strings"
-	"time"
 )
 
-func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderItems, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []domain.OrderItems, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
 
-	if len(items) == 0 {
-		return nil, nil
+	validationError := validationOrderItems(orderItems)
+	if validationError != nil {
+		return nil, validationError
 	}
 
-	orderItems, buildParamError := i.buildPayloadOrderItems(ctx, items)
+	orderItemsPayload, buildParamError := i.buildPayloadOrderItems(ctx, orderItems)
 	if buildParamError != nil {
 		return nil, buildParamError
 	}
 
-	_, err := i.repository.CreateOrderItems(ctx, orderItems)
+	_, err := i.repository.CreateOrderItems(ctx, orderItemsPayload)
 	if err != nil {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
@@ -46,29 +46,45 @@ func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderIt
 	return
 }
 
-func (i *Implement) buildPayloadOrderItems(ctx context.Context, items []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
-	var orderItems []database.CreateOrderItemsParams
-	for _, item := range items {
-		product, err := i.repository.GetProductByID(ctx, item.ProductID)
-		if err != nil {
-			if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-				return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
-					Status: exceptions.ERRNOTFOUND,
-					Errors: fmt.Errorf("product %d not found", item.ProductID),
-				}
+func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
+
+	validationError := validationOrderItems(orderItems)
+	if validationError != nil {
+		return []database.CreateOrderItemsParams{}, validationError
+	}
+
+	statusPreparingID, statusIDErr := i.GetOrderStatusPreparing(ctx)
+	if statusIDErr != nil {
+		return []database.CreateOrderItemsParams{}, statusIDErr
+	}
+
+	currentTime, timeErr := i.repository.GetTimeNow(ctx)
+	if timeErr != nil {
+		return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get current time: %w", timeErr),
+		}
+	}
+
+	result := make([]database.CreateOrderItemsParams, 0, len(orderItems))
+	for index, item := range orderItems {
+		product, repoErr := i.repository.GetProductByID(ctx, item.ProductID)
+		if repoErr != nil || product == nil {
+			msg := fmt.Sprintf("product %d not found", item.ProductID)
+			status := exceptions.ERRNOTFOUND
+
+			if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
+				status = exceptions.ERRREPOSITORY
+				msg = fmt.Sprintf("failed to get product: %v", repoErr)
 			}
+
 			return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
-				Status: exceptions.ERRREPOSITORY,
-				Errors: fmt.Errorf("failed to get product: %w", err),
+				Status: status,
+				Errors: fmt.Errorf(msg),
 			}
 		}
 
-		statusPreparingID, customError := i.GetOrderStatusPreparing(ctx)
-		if customError != nil {
-			return []database.CreateOrderItemsParams{}, customError
-		}
-
-		orderItems = append(orderItems, database.CreateOrderItemsParams{
+		result[index] = database.CreateOrderItemsParams{
 			ID:            i.snowflakeID.Generate(),
 			OrderID:       item.OrderID,
 			ProductID:     product.ID,
@@ -78,52 +94,60 @@ func (i *Implement) buildPayloadOrderItems(ctx context.Context, items []domain.O
 			Price:         product.Price,
 			Quantity:      item.Quantity,
 			Note:          utils.StringPtrToPgText(item.Note),
-			CreatedAt:     pgtype.Timestamptz{Time: time.Now(), Valid: true},
-		})
-	}
-
-	return orderItems, nil
-}
-
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
-	customError = i.IsOrderExist(ctx, orderID)
-	if customError != nil {
-		return
-	}
-
-	items, err := i.repository.GetOrderWithItems(ctx, orderID)
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", err),
+			CreatedAt:     currentTime,
 		}
 	}
 
-	result = make([]*domain.OrderItems, len(items))
-	for index, v := range items {
-		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
-		if err != nil {
+	return result, nil
+}
+
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+
+	if orderID <= 0 || tableNumber <= 0 {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: fmt.Errorf("order id or table number cannot be empty"),
+		}
+	}
+
+	customError = i.IsOrderExist(ctx, orderID)
+	if customError != nil {
+		return nil, customError
+	}
+
+	orderItems, repoErr := i.repository.GetOrderWithItems(ctx, orderID)
+	if repoErr != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", repoErr),
+		}
+	}
+
+	result = make([]*domain.OrderItems, len(orderItems))
+	for index, item := range orderItems {
+		createdAt, timeErr := utils.PgTimestampToThaiISO8601(item.CreatedAt)
+		if timeErr != nil {
 			return nil, &exceptions.CustomError{
 				Status: exceptions.ERRSYSTEM,
-				Errors: err,
+				Errors: timeErr,
 			}
 		}
 
 		result[index] = &domain.OrderItems{
-			ID:            v.ID,
-			OrderID:       v.OrderID,
-			OrderNumber:   v.OrderNumber,
-			ProductID:     v.ProductID,
-			StatusID:      v.StatusID,
+			ID:            item.ID,
+			OrderID:       item.OrderID,
+			OrderNumber:   item.OrderNumber,
+			ProductID:     item.ProductID,
+			StatusID:      item.StatusID,
 			TableNumber:   tableNumber,
-			StatusName:    v.StatusName,
-			StatusNameEN:  v.StatusNameEN,
-			StatusCode:    v.StatusCode,
-			ProductName:   v.ProductName,
-			ProductNameEN: v.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(v.Price),
-			Quantity:      v.Quantity,
-			Note:          utils.PgTextToStringPtr(v.Note),
+			StatusName:    item.StatusName,
+			StatusNameEN:  item.StatusNameEN,
+			StatusCode:    item.StatusCode,
+			ProductName:   item.ProductName,
+			ProductNameEN: item.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(item.Price),
+			Quantity:      item.Quantity,
+			Note:          utils.PgTextToStringPtr(item.Note),
 			CreatedAt:     createdAt,
 		}
 
@@ -132,41 +156,49 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 	return
 }
 
-func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.CurrentOrderItems, customError *exceptions.CustomError) {
-	customError = i.IsOrderExist(ctx, orderID)
-	if customError != nil {
-		return
-	}
+func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64) (result []*domain.CurrentOrderItems, customError *exceptions.CustomError) {
 
-	items, err := i.repository.GetOrderWithItems(ctx, orderID)
-	if err != nil {
+	if orderID <= 0 {
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", err),
+			Status: exceptions.ERRBUSSINESS,
+			Errors: fmt.Errorf("order id cannot be empty"),
 		}
 	}
 
-	result = make([]*domain.CurrentOrderItems, len(items))
-	for index, v := range items {
-		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
-		if err != nil {
+	customError = i.IsOrderExist(ctx, orderID)
+	if customError != nil {
+		return nil, customError
+	}
+
+	orderItems, repoErr := i.repository.GetOrderWithItems(ctx, orderID)
+	if repoErr != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", repoErr),
+		}
+	}
+
+	result = make([]*domain.CurrentOrderItems, len(orderItems))
+	for index, item := range orderItems {
+		createdAt, timErr := utils.PgTimestampToThaiISO8601(item.CreatedAt)
+		if timErr != nil {
 			return nil, &exceptions.CustomError{
 				Status: exceptions.ERRSYSTEM,
-				Errors: err,
+				Errors: timErr,
 			}
 		}
 
 		result[index] = &domain.CurrentOrderItems{
-			ID:            v.ID,
-			ProductID:     v.ProductID,
-			StatusName:    v.StatusName,
-			StatusNameEN:  v.StatusNameEN,
-			StatusCode:    v.StatusCode,
-			ProductName:   v.ProductName,
-			ProductNameEN: v.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(v.Price),
-			Quantity:      v.Quantity,
-			Note:          utils.PgTextToStringPtr(v.Note),
+			ID:            item.ID,
+			ProductID:     item.ProductID,
+			StatusName:    item.StatusName,
+			StatusNameEN:  item.StatusNameEN,
+			StatusCode:    item.StatusCode,
+			ProductName:   item.ProductName,
+			ProductNameEN: item.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(item.Price),
+			Quantity:      item.Quantity,
+			Note:          utils.PgTextToStringPtr(item.Note),
 			CreatedAt:     createdAt,
 		}
 
@@ -175,68 +207,76 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, tab
 	return
 }
 
-func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
 
-	customError = i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
-	if customError != nil {
-		return
+	orderItemsExistsErr := i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
+	if orderItemsExistsErr != nil {
+		return nil, orderItemsExistsErr
 	}
 
-	items, err := i.repository.GetOrderWithItemsByID(ctx, database.GetOrderWithItemsByIDParams{
+	orderItem, repoErr := i.repository.GetOrderWithItemsByID(ctx, database.GetOrderWithItemsByIDParams{
 		OrderID:      orderID,
 		OrderItemsID: orderItemsID,
 	})
-	if err != nil {
+	if repoErr != nil || orderItem == nil {
+		msg := fmt.Sprintf("order items is nil")
+		status := exceptions.ERRNOTFOUND
 
-		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: fmt.Errorf("order items not found"),
-			}
+		if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
+			status = exceptions.ERRREPOSITORY
+			msg = fmt.Sprintf("failed to get order items: %v", repoErr)
 		}
 
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", err),
+			Status: status,
+			Errors: fmt.Errorf(msg),
 		}
 	}
 
-	createdAt, err := utils.PgTimestampToThaiISO8601(items.CreatedAt)
-	if err != nil {
+	createdAt, timeErr := utils.PgTimestampToThaiISO8601(orderItem.CreatedAt)
+	if timeErr != nil {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRSYSTEM,
-			Errors: err,
+			Errors: timeErr,
 		}
 	}
 
 	return &domain.CurrentOrderItems{
-		ID:            items.ID,
-		ProductID:     items.ProductID,
-		StatusName:    items.StatusName,
-		StatusNameEN:  items.StatusNameEN,
-		StatusCode:    items.StatusCode,
-		ProductName:   items.ProductName,
-		ProductNameEN: items.ProductNameEN,
-		Price:         utils.PgNumericToFloat64(items.Price),
-		Quantity:      items.Quantity,
-		Note:          utils.PgTextToStringPtr(items.Note),
+		ID:            orderItem.ID,
+		ProductID:     orderItem.ProductID,
+		StatusName:    orderItem.StatusName,
+		StatusNameEN:  orderItem.StatusNameEN,
+		StatusCode:    orderItem.StatusCode,
+		ProductName:   orderItem.ProductName,
+		ProductNameEN: orderItem.ProductNameEN,
+		Price:         utils.PgNumericToFloat64(orderItem.Price),
+		Quantity:      orderItem.Quantity,
+		Note:          utils.PgTextToStringPtr(orderItem.Note),
 		CreatedAt:     createdAt,
 	}, nil
 }
 
 func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
 
-	items, err := i.repository.GetOrderWithItemsGroupID(ctx, orderItemsID)
-	if err != nil {
+	orderItems, repoErr := i.repository.GetOrderWithItemsGroupID(ctx, orderItemsID)
+	if repoErr != nil || orderItems == nil {
+		msg := fmt.Sprintf("order items is nil")
+		status := exceptions.ERRNOTFOUND
+
+		if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
+			status = exceptions.ERRREPOSITORY
+			msg = fmt.Sprintf("failed to get order items: %v", repoErr)
+		}
+
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", err),
+			Status: status,
+			Errors: fmt.Errorf(msg),
 		}
 	}
 
-	result = make([]*domain.OrderItems, len(items))
-	for index, v := range items {
-		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
+	result = make([]*domain.OrderItems, len(orderItems))
+	for index, item := range orderItems {
+		createdAt, err := utils.PgTimestampToThaiISO8601(item.CreatedAt)
 		if err != nil {
 			return nil, &exceptions.CustomError{
 				Status: exceptions.ERRSYSTEM,
@@ -245,20 +285,20 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 		}
 
 		result[index] = &domain.OrderItems{
-			ID:            v.ID,
-			OrderID:       v.OrderID,
-			OrderNumber:   v.OrderNumber,
-			ProductID:     v.ProductID,
-			StatusID:      v.StatusID,
+			ID:            item.ID,
+			OrderID:       item.OrderID,
+			OrderNumber:   item.OrderNumber,
+			ProductID:     item.ProductID,
+			StatusID:      item.StatusID,
 			TableNumber:   tableNumber,
-			StatusName:    v.StatusName,
-			StatusNameEN:  v.StatusNameEN,
-			StatusCode:    v.StatusCode,
-			ProductName:   v.ProductName,
-			ProductNameEN: v.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(v.Price),
-			Quantity:      v.Quantity,
-			Note:          utils.PgTextToStringPtr(v.Note),
+			StatusName:    item.StatusName,
+			StatusNameEN:  item.StatusNameEN,
+			StatusCode:    item.StatusCode,
+			ProductName:   item.ProductName,
+			ProductNameEN: item.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(item.Price),
+			Quantity:      item.Quantity,
+			Note:          utils.PgTextToStringPtr(item.Note),
 			CreatedAt:     createdAt,
 		}
 	}
@@ -268,7 +308,7 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
 	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
 	if customError != nil {
-		return
+		return customError
 	}
 
 	err := i.repository.UpdateOrderItemsStatus(ctx, database.UpdateOrderItemsStatusParams{
@@ -363,4 +403,14 @@ func buildSearchOrderItemsIncompleteParams(orderID int64, payload domain.SearchO
 	params.PageSize, params.PageNumber = utils.CalculatePageSizeAndNumber(payload.PageSize, payload.PageNumber)
 
 	return params
+}
+
+func validationOrderItems(items []domain.OrderItems) *exceptions.CustomError {
+	if len(items) == 0 {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: exceptions.ErrOrderItemsRequired,
+		}
+	}
+	return nil
 }

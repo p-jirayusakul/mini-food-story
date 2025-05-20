@@ -18,6 +18,7 @@ var (
 	ErrCtxCanceledOrTimeout = errors.New("request cancelled or timeout")
 	ErrOrderNotFound        = errors.New("order not found")
 	ErrOrderItemsNotFound   = errors.New("order items not found")
+	ErrOrderItemsRequired   = errors.New("order items cannot be empty")
 )
 
 const (
