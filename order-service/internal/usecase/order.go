@@ -81,7 +81,7 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderI
 func (i *Implement) GetOrderByID(ctx context.Context, sessionID uuid.UUID) (result *domain.Order, customError *exceptions.CustomError) {
 	orderID, customError := i.GetOrderIDFromSession(sessionID)
 	if customError != nil {
-		return
+		return nil, customError
 	}
 
 	return i.repository.GetOrderByID(ctx, orderID)

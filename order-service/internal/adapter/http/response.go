@@ -1,5 +1,8 @@
 package http
 
-type createResponse struct {
-	ID string `json:"id"`
+type CurrentOrderResponse struct {
+	TableNumber  int32  `json:"tableNumber"`
+	StatusName   string `json:"statusName"`
+	StatusNameEN string `json:"statusNameEN"`
+	StatusCode   string `json:"statusCode"`
 }

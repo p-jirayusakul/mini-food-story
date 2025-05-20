@@ -72,6 +72,7 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 		StatusID:     order.StatusID,
 		StatusName:   order.StatusName,
 		StatusNameEN: order.StatusNameEN,
+		StatusCode:   order.StatusCode,
 	}, nil
 }
 

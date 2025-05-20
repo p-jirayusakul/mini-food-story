@@ -351,21 +351,20 @@ func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []dom
 		}
 	}
 
-	result := make([]database.CreateOrderItemsParams, 0, len(orderItems))
+	result := make([]database.CreateOrderItemsParams, len(orderItems))
 	for index, item := range orderItems {
 		product, repoErr := i.repository.GetProductByID(ctx, item.ProductID)
-		if repoErr != nil || product == nil {
-			msg := fmt.Sprintf("product %d not found", item.ProductID)
-			status := exceptions.ERRNOTFOUND
-
-			if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
-				status = exceptions.ERRREPOSITORY
-				msg = fmt.Sprintf("failed to get product: %v", repoErr)
-			}
-
+		if repoErr != nil {
 			return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
-				Status: status,
-				Errors: fmt.Errorf(msg),
+				Status: exceptions.ERRREPOSITORY,
+				Errors: fmt.Errorf("failed to get product by id: %w", repoErr),
+			}
+		}
+
+		if product == nil {
+			return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: errors.New("product not found"),
 			}
 		}
 

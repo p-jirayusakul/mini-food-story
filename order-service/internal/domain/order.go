@@ -9,6 +9,7 @@ type Order struct {
 	StatusID     int64  `json:"statusID,string"`
 	StatusName   string `json:"statusName"`
 	StatusNameEN string `json:"statusNameEN"`
+	StatusCode   string `json:"statusCode"`
 }
 
 type OrderStatus struct {

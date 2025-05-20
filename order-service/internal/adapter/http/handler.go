@@ -6,18 +6,14 @@ import (
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
 	"github.com/gofiber/fiber/v2"
+	"github.com/google/uuid"
 )
 
 func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 
-	sessionIDData := c.Get("X-Session-Id")
-	if sessionIDData == "" {
-		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
-	}
-
-	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
+	sessionID, err := getSession(c)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return err
 	}
 
 	body := new(OrderItems)
@@ -51,13 +47,9 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 }
 
 func (s *Handler) GetOrderByID(c *fiber.Ctx) error {
-	sessionIDData := c.Get("X-Session-Id")
-	if sessionIDData == "" {
-		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
-	}
-	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
+	sessionID, err := getSession(c)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return err
 	}
 
 	result, customError := s.useCase.GetOrderByID(c.Context(), sessionID)
@@ -65,18 +57,18 @@ func (s *Handler) GetOrderByID(c *fiber.Ctx) error {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseOK(c, "get order success", result)
+	return middleware.ResponseOK(c, "get order success", CurrentOrderResponse{
+		TableNumber:  result.TableNumber,
+		StatusName:   result.StatusName,
+		StatusNameEN: result.StatusNameEN,
+		StatusCode:   result.StatusCode,
+	})
 }
 
 func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
-	sessionIDData := c.Get("X-Session-Id")
-	if sessionIDData == "" {
-		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
-	}
-
-	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
+	sessionID, err := getSession(c)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return err
 	}
 
 	body := new(OrderItems)
@@ -109,13 +101,9 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 }
 
 func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
-	sessionIDData := c.Get("X-Session-Id")
-	if sessionIDData == "" {
-		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
-	}
-	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
+	sessionID, err := getSession(c)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return err
 	}
 
 	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID)
@@ -127,13 +115,9 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 }
 
 func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
-	sessionIDData := c.Get("X-Session-Id")
-	if sessionIDData == "" {
-		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
-	}
-	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
+	sessionID, err := getSession(c)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return err
 	}
 
 	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))
@@ -211,4 +195,18 @@ func (s *Handler) SearchOrderItemsInComplete(c *fiber.Ctx) error {
 	}
 
 	return middleware.ResponseOK(c, "get order items success", result)
+}
+
+func getSession(c *fiber.Ctx) (uuid.UUID, error) {
+	sessionIDAny, ok := c.Locals("sessionID").(string)
+	if !ok {
+		return uuid.UUID{}, middleware.ResponseError(fiber.StatusInternalServerError, exceptions.ErrFailedToReadSession.Error())
+	}
+
+	sessionID, err := utils.PareStringToUUID(sessionIDAny)
+	if err != nil {
+		return uuid.UUID{}, middleware.ResponseError(fiber.StatusInternalServerError, exceptions.ErrFailedToReadSession.Error())
+	}
+
+	return sessionID, nil
 }

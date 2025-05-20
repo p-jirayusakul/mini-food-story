@@ -38,7 +38,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 }
 
 const getOrderByID = `-- name: GetOrderByID :one
-SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN"
+SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN", mos.code as "statusCode"
 FROM public.orders as o
 JOIN public.md_order_statuses as mos ON o.status_id = mos.id
 JOIN public.tables as t ON o.table_id = t.id
@@ -54,6 +54,7 @@ type GetOrderByIDRow struct {
 	StatusID      int64       `json:"statusID"`
 	StatusName    string      `json:"statusName"`
 	StatusNameEN  string      `json:"statusNameEN"`
+	StatusCode    string      `json:"statusCode"`
 }
 
 func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error) {
@@ -68,6 +69,7 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow,
 		&i.StatusID,
 		&i.StatusName,
 		&i.StatusNameEN,
+		&i.StatusCode,
 	)
 	return &i, err
 }

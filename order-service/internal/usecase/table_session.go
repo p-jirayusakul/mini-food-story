@@ -54,3 +54,7 @@ func (i *Implement) GetCurrentTableSession(sessionID uuid.UUID) (result domain.C
 
 	return *session, nil
 }
+
+func (i *Implement) IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError {
+	return i.cache.IsCachedTableExist(sessionID)
+}
