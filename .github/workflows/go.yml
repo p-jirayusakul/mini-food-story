@@ -48,13 +48,7 @@ jobs:
 
       - id: set-modules
         run: |
-          INCLUDED_MODULES=$(for module in ${{ env.MODULES }}; do
-            if ! echo $module | grep -qE "${{ env.EXCLUDED_BUILD_MODULES }}"; then
-              echo $module
-            fi
-          done | jq -Rc 'split("\n")[:-1]')
-          echo "Filtered modules: $INCLUDED_MODULES"
-          echo "modules=$INCLUDED_MODULES" >> $GITHUB_OUTPUT
+          echo "modules=$(go list -m -json all | jq -s '[.[] | select(.Dir | test("shared|pkg") | not) | .Dir]' -c)" >> $GITHUB_OUTPUT
 
       - name: Configure Workspace and Install Dependencies
         run: |
