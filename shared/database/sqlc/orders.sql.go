@@ -88,10 +88,12 @@ SELECT o.id  AS "orderID",
        mos.name_en as "statusNameEN",
        mos.code as "statusCode",
        oi.note as "note",
-       oi.created_at
+       oi.created_at,
+       t.table_number as "tableNumber"
 FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+JOIN public.tables t ON o.table_id = t.id
 WHERE o.id = $1::bigint
 order by oi.id DESC
 `
@@ -111,6 +113,7 @@ type GetOrderWithItemsRow struct {
 	StatusCode    string             `json:"statusCode"`
 	Note          pgtype.Text        `json:"note"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	TableNumber   int32              `json:"tableNumber"`
 }
 
 func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetOrderWithItemsRow, error) {
@@ -137,6 +140,7 @@ func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetO
 			&i.StatusCode,
 			&i.Note,
 			&i.CreatedAt,
+			&i.TableNumber,
 		); err != nil {
 			return nil, err
 		}
@@ -227,10 +231,12 @@ SELECT o.id  AS "orderID",
        mos.name_en as "statusNameEN",
        mos.code as "statusCode",
        oi.note as "note",
-       oi.created_at
+       oi.created_at,
+       t.table_number as "tableNumber"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+        JOIN public.tables t ON o.table_id = t.id
 WHERE oi.id = ANY($1::bigint[])
 order by oi.id DESC
 `
@@ -250,6 +256,7 @@ type GetOrderWithItemsGroupIDRow struct {
 	StatusCode    string             `json:"statusCode"`
 	Note          pgtype.Text        `json:"note"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	TableNumber   int32              `json:"tableNumber"`
 }
 
 func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []int64) ([]*GetOrderWithItemsGroupIDRow, error) {
@@ -276,6 +283,7 @@ func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []i
 			&i.StatusCode,
 			&i.Note,
 			&i.CreatedAt,
+			&i.TableNumber,
 		); err != nil {
 			return nil, err
 		}

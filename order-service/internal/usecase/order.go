@@ -6,10 +6,11 @@ import (
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
+	shareModel "food-story/shared/model"
 	"github.com/google/uuid"
 )
 
-func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderItems []domain.OrderItems) (result int64, customError *exceptions.CustomError) {
+func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderItems []shareModel.OrderItems) (result int64, customError *exceptions.CustomError) {
 
 	if len(orderItems) == 0 {
 		return 0, &exceptions.CustomError{
@@ -65,7 +66,7 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderI
 		return 0, updateCacheErr
 	}
 
-	newOrderItems, getOrderItemsErr := i.repository.GetOrderItems(ctx, orderID, sessionDetail.TableNumber)
+	newOrderItems, getOrderItemsErr := i.repository.GetOrderItems(ctx, orderID)
 	if getOrderItemsErr != nil {
 		return 0, getOrderItemsErr
 	}

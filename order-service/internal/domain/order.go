@@ -1,6 +1,9 @@
 package domain
 
-import "github.com/google/uuid"
+import (
+	shareModel "food-story/shared/model"
+	"github.com/google/uuid"
+)
 
 type Order struct {
 	ID           int64  `json:"id,string"`
@@ -21,5 +24,5 @@ type OrderStatus struct {
 type CreateOrder struct {
 	SessionID  uuid.UUID
 	TableID    int64
-	OrderItems []OrderItems
+	OrderItems []shareModel.OrderItems
 }

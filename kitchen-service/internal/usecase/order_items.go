@@ -4,13 +4,14 @@ import (
 	"context"
 	"food-story/kitchen-service/internal/domain"
 	"food-story/pkg/exceptions"
+	shareModel "food-story/shared/model"
 )
 
-func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
+func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
 	return i.repository.UpdateOrderItemsStatus(ctx, payload)
 }
 
-func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
+func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
 	return i.repository.UpdateOrderItemsStatusServed(ctx, payload)
 }
 
@@ -18,7 +19,7 @@ func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchO
 	return i.repository.SearchOrderItems(ctx, payload)
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
 	tableNumber, customError := i.repository.GetTableNumberOrderByID(ctx, orderID)
 	if customError != nil {
 		return nil, customError
@@ -27,7 +28,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []
 	return i.repository.GetOrderItems(ctx, orderID, tableNumber)
 }
 
-func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *shareModel.OrderItems, customError *exceptions.CustomError) {
 	tableNumber, customError := i.repository.GetTableNumberOrderByID(ctx, orderID)
 	if customError != nil {
 		return nil, customError

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"food-story/kitchen-service/internal/adapter/websocket"
-	"food-story/kitchen-service/internal/domain"
 	"github.com/IBM/sarama"
 	"log"
 )
@@ -55,8 +54,4 @@ func StartConsumer(ctx context.Context, topics []string, client sarama.ConsumerG
 	}()
 	<-consumer.Ready
 	log.Println("Sarama consumer up and running!...")
-}
-
-func processOrder(order domain.OrderItems) {
-	log.Printf("  - Menu: %d %s x %d, Table: %d \n", order.OrderID, order.ProductName, order.Quantity, order.TableNumber)
 }

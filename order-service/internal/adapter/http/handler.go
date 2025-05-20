@@ -5,6 +5,7 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
+	shareModel "food-story/shared/model"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 )
@@ -25,13 +26,13 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	var items []domain.OrderItems
+	var items []shareModel.OrderItems
 	for _, item := range body.Items {
 		productID, err := utils.StrToInt64(item.ProductID)
 		if err != nil {
 			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 		}
-		items = append(items, domain.OrderItems{
+		items = append(items, shareModel.OrderItems{
 			ProductID: productID,
 			Quantity:  item.Quantity,
 			Note:      item.Note,
@@ -80,13 +81,13 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	var items []domain.OrderItems
+	var items []shareModel.OrderItems
 	for _, item := range body.Items {
 		productID, err := utils.StrToInt64(item.ProductID)
 		if err != nil {
 			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 		}
-		items = append(items, domain.OrderItems{
+		items = append(items, shareModel.OrderItems{
 			ProductID: productID,
 			Quantity:  item.Quantity,
 			Note:      item.Note,
@@ -149,7 +150,7 @@ func (s *Handler) UpdateOrderItemsStatusCancelled(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), sessionID, domain.OrderItemsStatus{
+	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), sessionID, shareModel.OrderItemsStatus{
 		ID:         orderItemsID,
 		StatusCode: "CANCELLED",
 	})

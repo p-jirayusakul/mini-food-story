@@ -8,29 +8,13 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
+	shareModel "food-story/shared/model"
 	"github.com/jackc/pgx/v5/pgtype"
 	"strings"
 	"sync"
 )
 
-type OrderItemsRow interface {
-	GetID() int64
-	GetOrderID() int64
-	GetOrderNumber() string
-	GetProductID() int64
-	GetStatusID() int64
-	GetStatusName() string
-	GetStatusNameEN() string
-	GetStatusCode() string
-	GetProductName() string
-	GetProductNameEN() string
-	GetPrice() pgtype.Numeric
-	GetQuantity() int32
-	GetNote() pgtype.Text
-	GetCreatedAt() pgtype.Timestamptz
-}
-
-func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []domain.OrderItems, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []shareModel.OrderItems) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
 
 	validationError := validationOrderItems(orderItems)
 	if validationError != nil {
@@ -55,7 +39,7 @@ func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []domain.Or
 		orderItemsID = append(orderItemsID, item.ID)
 	}
 
-	result, customError = i.GetOderItemsGroupID(ctx, orderItemsID, tableNumber)
+	result, customError = i.GetOderItemsGroupID(ctx, orderItemsID)
 	if customError != nil {
 		return nil, customError
 	}
@@ -63,9 +47,9 @@ func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []domain.Or
 	return
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
 
-	if orderID <= 0 || tableNumber <= 0 {
+	if orderID <= 0 {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRBUSSINESS,
 			Errors: fmt.Errorf("order id or table number cannot be empty"),
@@ -85,10 +69,10 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 		}
 	}
 
-	return transformOrderItemsResults(orderItems, tableNumber), nil
+	return shareModel.TransformOrderItemsResults(orderItems), nil
 }
 
-func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int64) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
 
 	if len(orderItemsID) == 0 {
 		return nil, &exceptions.CustomError{
@@ -112,7 +96,7 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 		}
 	}
 
-	return transformOrderItemsResults(orderItems, tableNumber), nil
+	return shareModel.TransformOrderItemsResults(orderItems), nil
 }
 
 func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64) (result []*domain.CurrentOrderItems, customError *exceptions.CustomError) {
@@ -214,7 +198,7 @@ func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, orderID, order
 	}, nil
 }
 
-func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
+func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
 	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
 	if customError != nil {
 		return customError
@@ -267,39 +251,10 @@ func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int6
 		return domain.SearchOrderItemsResult{}, totalItemsErr
 	}
 
-	data := make([]*domain.OrderItems, len(searchResult))
-	for index, item := range searchResult {
-		createdAt, sysErr := utils.PgTimestampToThaiISO8601(item.CreatedAt)
-		if sysErr != nil {
-			return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-				Status: exceptions.ERRSYSTEM,
-				Errors: sysErr,
-			}
-		}
-
-		data[index] = &domain.OrderItems{
-			ID:            item.ID,
-			OrderID:       item.OrderID,
-			ProductID:     item.ProductID,
-			StatusID:      item.StatusID,
-			TableNumber:   item.TableNumber,
-			StatusName:    item.StatusName,
-			StatusNameEN:  item.StatusNameEN,
-			StatusCode:    item.StatusCode,
-			ProductName:   item.ProductName,
-			ProductNameEN: item.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(item.Price),
-			Quantity:      item.Quantity,
-			Note:          utils.PgTextToStringPtr(item.Note),
-			CreatedAt:     createdAt,
-		}
-
-	}
-
 	return domain.SearchOrderItemsResult{
 		TotalItems: totalItems,
 		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
-		Data:       data,
+		Data:       shareModel.TransformOrderItemsResults(searchResult),
 	}, nil
 }
 
@@ -331,7 +286,7 @@ func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchO
 	return totalItems, nil
 }
 
-func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
+func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []shareModel.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
 
 	validationError := validationOrderItems(orderItems)
 	if validationError != nil {
@@ -404,7 +359,7 @@ func buildSearchOrderItemsIncompleteParams(orderID int64, payload domain.SearchO
 	return params
 }
 
-func validationOrderItems(items []domain.OrderItems) *exceptions.CustomError {
+func validationOrderItems(items []shareModel.OrderItems) *exceptions.CustomError {
 	if len(items) == 0 {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRBUSSINESS,
@@ -412,29 +367,4 @@ func validationOrderItems(items []domain.OrderItems) *exceptions.CustomError {
 		}
 	}
 	return nil
-}
-
-func transformOrderItemsResults[T OrderItemsRow](results []T, tableNumber int32) []*domain.OrderItems {
-	data := make([]*domain.OrderItems, len(results))
-	for index, row := range results {
-		createdAt, _ := utils.PgTimestampToThaiISO8601(row.GetCreatedAt())
-		data[index] = &domain.OrderItems{
-			ID:            row.GetID(),
-			OrderID:       row.GetOrderID(),
-			OrderNumber:   row.GetOrderNumber(),
-			ProductID:     row.GetProductID(),
-			StatusID:      row.GetStatusID(),
-			TableNumber:   tableNumber,
-			StatusName:    row.GetStatusName(),
-			StatusNameEN:  row.GetStatusNameEN(),
-			StatusCode:    row.GetStatusCode(),
-			ProductName:   row.GetProductName(),
-			ProductNameEN: row.GetProductNameEN(),
-			Price:         utils.PgNumericToFloat64(row.GetPrice()),
-			Quantity:      row.GetQuantity(),
-			Note:          utils.PgTextToStringPtr(row.GetNote()),
-			CreatedAt:     createdAt,
-		}
-	}
-	return data
 }

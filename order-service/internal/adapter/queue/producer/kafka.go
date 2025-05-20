@@ -2,13 +2,13 @@ package producer
 
 import (
 	"encoding/json"
-	"food-story/order-service/internal/domain"
 	"food-story/shared/kafka"
+	shareModel "food-story/shared/model"
 	"github.com/IBM/sarama"
 )
 
 type QueueProducerInterface interface {
-	PublishOrder(item domain.OrderItems) error
+	PublishOrder(item shareModel.OrderItems) error
 }
 type OrderProducer struct {
 	Producer sarama.SyncProducer
@@ -22,7 +22,7 @@ func NewQueue(producer sarama.SyncProducer) *OrderProducer {
 
 var _ QueueProducerInterface = (*OrderProducer)(nil)
 
-func (p *OrderProducer) PublishOrder(item domain.OrderItems) error {
+func (p *OrderProducer) PublishOrder(item shareModel.OrderItems) error {
 	message, err := json.Marshal(item)
 	if err != nil {
 		return err

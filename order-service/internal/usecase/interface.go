@@ -6,6 +6,7 @@ import (
 	"food-story/order-service/internal/adapter/queue/producer"
 	"food-story/pkg/exceptions"
 	"food-story/shared/config"
+	shareModel "food-story/shared/model"
 	"github.com/google/uuid"
 
 	"food-story/order-service/internal/adapter/repository"
@@ -13,12 +14,12 @@ import (
 )
 
 type Usecase interface {
-	CreateOrder(ctx context.Context, sessionID uuid.UUID, items []domain.OrderItems) (result int64, customError *exceptions.CustomError)
+	CreateOrder(ctx context.Context, sessionID uuid.UUID, items []shareModel.OrderItems) (result int64, customError *exceptions.CustomError)
 	GetOrderByID(ctx context.Context, sessionID uuid.UUID) (result *domain.Order, customError *exceptions.CustomError)
-	CreateOrderItems(ctx context.Context, sessionID uuid.UUID, items []domain.OrderItems) (customError *exceptions.CustomError)
+	CreateOrderItems(ctx context.Context, sessionID uuid.UUID, items []shareModel.OrderItems) (customError *exceptions.CustomError)
 	GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUID) (result []*domain.CurrentOrderItems, customError *exceptions.CustomError)
 	GetCurrentOrderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError)
-	UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload domain.OrderItemsStatus) (customError *exceptions.CustomError)
+	UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError)
 	SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError)
 	IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError
 }

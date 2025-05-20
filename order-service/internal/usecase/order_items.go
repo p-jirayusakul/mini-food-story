@@ -6,10 +6,11 @@ import (
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
+	shareModel "food-story/shared/model"
 	"github.com/google/uuid"
 )
 
-func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, items []domain.OrderItems) (customError *exceptions.CustomError) {
+func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, items []shareModel.OrderItems) (customError *exceptions.CustomError) {
 	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
 		return customError
@@ -24,7 +25,7 @@ func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, i
 		items[index].OrderID = orderID
 	}
 
-	orderItems, customError := i.repository.CreateOrderItems(ctx, items, tableSession.TableNumber)
+	orderItems, customError := i.repository.CreateOrderItems(ctx, items)
 	if customError != nil {
 		return
 	}
@@ -65,7 +66,7 @@ func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, sessionID uuid
 	return i.repository.GetCurrentOrderItemsByID(ctx, orderID, orderItemsID)
 }
 
-func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
+func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
 	orderID, customError := i.GetOrderIDFromSession(sessionID)
 	if customError != nil {
 		return customError

@@ -5,6 +5,7 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
+	shareModel "food-story/shared/model"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -75,7 +76,7 @@ func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
 		return err
 	}
 
-	customError := s.useCase.UpdateOrderItemsStatusServed(c.Context(), domain.OrderItemsStatus{
+	customError := s.useCase.UpdateOrderItemsStatusServed(c.Context(), shareModel.OrderItemsStatus{
 		ID:         orderItemsID,
 		OrderID:    orderID,
 		StatusCode: "SERVED",
@@ -93,7 +94,7 @@ func (s *Handler) UpdateOrderItemsStatusCancelled(c *fiber.Ctx) error {
 		return err
 	}
 
-	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), domain.OrderItemsStatus{
+	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), shareModel.OrderItemsStatus{
 		ID:         orderItemsID,
 		OrderID:    orderID,
 		StatusCode: "CANCELLED",

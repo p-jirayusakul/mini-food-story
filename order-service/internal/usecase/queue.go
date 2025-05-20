@@ -2,13 +2,13 @@ package usecase
 
 import (
 	"errors"
-	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
+	shareModel "food-story/shared/model"
 	"log/slog"
 	"sort"
 )
 
-func (i *Implement) PublishOrderToQueue(orderItems []*domain.OrderItems) *exceptions.CustomError {
+func (i *Implement) PublishOrderToQueue(orderItems []*shareModel.OrderItems) *exceptions.CustomError {
 
 	if orderItems == nil {
 		return &exceptions.CustomError{

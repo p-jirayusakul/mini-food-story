@@ -8,12 +8,13 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
+	shareModel "food-story/shared/model"
 	"github.com/jackc/pgx/v5/pgtype"
-	"math"
 	"strings"
+	"sync"
 )
 
-func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
+func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
 	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
 	if customError != nil {
 		return
@@ -33,7 +34,7 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.O
 	return
 }
 
-func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
+func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
 	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
 	if customError != nil {
 		return
@@ -53,66 +54,72 @@ func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload do
 func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
 	searchParams := buildSearchOrderItemsParams(payload)
 
-	items, err := i.repository.SearchOrderItems(ctx, searchParams)
-	if err != nil {
-		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", err),
-		}
+	var (
+		searchResult  []*database.SearchOrderItemsRow
+		searchErr     *exceptions.CustomError
+		totalItems    int64
+		totalItemsErr *exceptions.CustomError
+	)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		searchResult, searchErr = i.fetchSearchOrder(ctx, searchParams)
+	}()
+
+	go func() {
+		defer wg.Done()
+		totalItems, totalItemsErr = i.fetchSearchOrderTotalItems(ctx, searchParams)
+	}()
+
+	wg.Wait()
+
+	if searchErr != nil {
+		return domain.SearchOrderItemsResult{}, searchErr
 	}
 
-	totalItemsParam := database.GetTotalSearchOrderItemsParams{
-		ProductName: searchParams.ProductName,
-		TableNumber: searchParams.TableNumber,
-		StatusCode:  searchParams.StatusCode,
-	}
-
-	totalItems, err := i.repository.GetTotalSearchOrderItems(ctx, totalItemsParam)
-	if err != nil {
-		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch product: %w", err),
-		}
-	}
-
-	data := make([]*domain.OrderItems, len(items))
-	for index, v := range items {
-		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
-		if err != nil {
-			return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-				Status: exceptions.ERRSYSTEM,
-				Errors: err,
-			}
-		}
-
-		data[index] = &domain.OrderItems{
-			ID:            v.ID,
-			OrderID:       v.OrderID,
-			OrderNumber:   v.OrderNumber,
-			ProductID:     v.ProductID,
-			StatusID:      v.StatusID,
-			TableNumber:   v.TableNumber,
-			StatusName:    v.StatusName,
-			StatusNameEN:  v.StatusNameEN,
-			StatusCode:    v.StatusCode,
-			ProductName:   v.ProductName,
-			ProductNameEN: v.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(v.Price),
-			Quantity:      v.Quantity,
-			Note:          utils.PgTextToStringPtr(v.Note),
-			CreatedAt:     createdAt,
-		}
-
+	if totalItemsErr != nil {
+		return domain.SearchOrderItemsResult{}, totalItemsErr
 	}
 
 	return domain.SearchOrderItemsResult{
 		TotalItems: totalItems,
-		TotalPages: int64(math.Ceil(float64(totalItems) / float64(searchParams.PageSize))),
-		Data:       data,
+		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
+		Data:       shareModel.TransformOrderItemsResults(searchResult),
 	}, nil
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) fetchSearchOrder(ctx context.Context, params database.SearchOrderItemsParams) ([]*database.SearchOrderItemsRow, *exceptions.CustomError) {
+	result, err := i.repository.SearchOrderItems(ctx, params)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch products: %w", err),
+		}
+	}
+	return result, nil
+}
+
+func (i *Implement) fetchSearchOrderTotalItems(ctx context.Context, params database.SearchOrderItemsParams) (int64, *exceptions.CustomError) {
+	totalParams := database.GetTotalSearchOrderItemsParams{
+		ProductName: params.ProductName,
+		TableNumber: params.TableNumber,
+		StatusCode:  params.StatusCode,
+	}
+	totalItems, err := i.repository.GetTotalSearchOrderItems(ctx, totalParams)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch total items: %w", err),
+		}
+	}
+
+	return totalItems, nil
+}
+
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
 	customError = i.IsOrderExist(ctx, orderID)
 	if customError != nil {
 		return
@@ -126,7 +133,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 		}
 	}
 
-	result = make([]*domain.OrderItems, len(items))
+	result = make([]*shareModel.OrderItems, len(items))
 	for index, v := range items {
 		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
 		if err != nil {
@@ -136,7 +143,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 			}
 		}
 
-		result[index] = &domain.OrderItems{
+		result[index] = &shareModel.OrderItems{
 			ID:            v.ID,
 			OrderID:       v.OrderID,
 			OrderNumber:   v.OrderNumber,
@@ -159,7 +166,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 	return
 }
 
-func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *domain.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *shareModel.OrderItems, customError *exceptions.CustomError) {
 
 	customError = i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
 	if customError != nil {
@@ -193,7 +200,7 @@ func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID
 		}
 	}
 
-	return &domain.OrderItems{
+	return &shareModel.OrderItems{
 		ID:            items.ID,
 		OrderID:       items.OrderID,
 		OrderNumber:   items.OrderNumber,
