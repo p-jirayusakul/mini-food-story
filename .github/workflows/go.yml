@@ -1,89 +1,77 @@
-name: Go
+name: Go with GolangCI-Lint
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
+
+env:
+  GO_VERSION: stable
+  GOLANGCI_LINT_VERSION: v2.1
+  MODULES: "./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service"
 
 jobs:
-  test:
+  golangci-lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # Checkout repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
+      # Set up Go environment
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.24.3
+          go-version: ${{ env.GO_VERSION }}
 
+      # Configure workspace and download dependencies
       - name: Configure Workspace and Install Dependencies
         run: |
           go work init
-          go work use ./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service
-          if [ -d ./menu-service ]; then cd ./menu-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./kitchen-service ]; then cd ./kitchen-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./payment-service ]; then cd ./payment-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./table-service ]; then cd ./table-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./order-service ]; then cd ./order-service && go mod tidy && go mod download && cd ..; fi
+          go work use ${{ env.MODULES }}
+          for module in ${{ env.MODULES }}; do
+            cd $module
+            go mod tidy
+            go mod download
+            cd ..
+          done
 
-      - name: Run Tests for Menu Service
-        working-directory: ./menu-service
-        run: go test -v ./...
+      # Run golangci-lint
+      - name: Run GolangCI-Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
 
-      - name: Run Tests for Kitchen Service
-        working-directory: ./kitchen-service
-        run: go test -v ./...
-
-      - name: Run Tests for Payment Service
-        working-directory: ./payment-service
-        run: go test -v ./...
-
-      - name: Run Tests for Table Service
-        working-directory: ./table-service
-        run: go test -v ./...
-
-      - name: Run Tests for Order Service
-        working-directory: ./order-service
-        run: go test -v ./...
+      # Run tests for each module
+      - name: Run Tests
+        run: |
+          for module in ${{ env.MODULES }}; do
+            echo "Running tests for $module"
+            cd $module
+            go test -v ./...
+            cd ..
+          done
 
   build:
     runs-on: ubuntu-latest
-    needs: test # ให้ job `build` ทำงานหลังจาก `test`
+    needs: golangci-lint-and-test
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: 1.24.3
+          go-version: ${{ env.GO_VERSION }}
 
-      - name: Configure Workspace and Install Dependencies
+      - name: Configure Workspace and Build
         run: |
           go work init
-          go work use ./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service
-          if [ -d ./menu-service ]; then cd ./menu-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./kitchen-service ]; then cd ./kitchen-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./payment-service ]; then cd ./payment-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./table-service ]; then cd ./table-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./order-service ]; then cd ./order-service && go mod tidy && go mod download && cd ..; fi
-
-      - name: Build Menu Service
-        working-directory: ./menu-service
-        run: go build -o app cmd/main.go
-
-      - name: Build Kitchen Service
-        working-directory: ./kitchen-service
-        run: go build -o app cmd/main.go
-
-      - name: Build Payment Service
-        working-directory: ./payment-service
-        run: go build -o app cmd/main.go
-
-      - name: Build Table Service
-        working-directory: ./table-service
-        run: go build -o app cmd/main.go
-
-      - name: Build Order Service
-        working-directory: ./order-service
-        run: go build -o app cmd/main.go
+          go work use ${{ env.MODULES }}
+          for module in ${{ env.MODULES }}; do
+            echo "Building $module"
+            cd $module
+            go build -o app cmd/main.go || exit 1
+            cd ..
+          done
