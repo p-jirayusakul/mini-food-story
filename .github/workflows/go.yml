@@ -21,8 +21,11 @@ jobs:
       with:
         go-version: '1.24.2'
 
+    - name: dependencies
+      run: cd menu-service && go mod tidy
+      
     - name: Build
-      run: cd menu-service && go build -v ./...
+      run: go build -o app menu-service/cmd/main.go
 
     - name: Test
       run: cd menu-service && go test -v ./...
