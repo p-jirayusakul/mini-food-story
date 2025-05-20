@@ -19,7 +19,7 @@ func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category
 
 	if data == nil {
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
+			Status: exceptions.ERRREPOSITORY,
 			Errors: errors.New("category not found"),
 		}
 	}
