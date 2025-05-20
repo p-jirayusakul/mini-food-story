@@ -9,26 +9,40 @@ import (
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
+	"sync"
 )
 
 func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProduct) (domain.SearchProductResult, *exceptions.CustomError) {
 	searchParams := buildSearchParams(payload)
 
-	if ctx.Err() != nil {
-		return domain.SearchProductResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: exceptions.ErrCtxCanceledOrTimeout,
-		}
+	var (
+		searchResult  []*database.SearchProductsRow
+		searchErr     *exceptions.CustomError
+		totalItems    int64
+		totalItemsErr *exceptions.CustomError
+	)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		searchResult, searchErr = i.fetchProducts(ctx, searchParams)
+	}()
+
+	go func() {
+		defer wg.Done()
+		totalItems, totalItemsErr = i.fetchTotalItems(ctx, searchParams)
+	}()
+
+	wg.Wait()
+
+	if searchErr != nil {
+		return domain.SearchProductResult{}, searchErr
 	}
 
-	searchResult, productFetchErr := i.fetchProducts(ctx, searchParams)
-	if productFetchErr != nil {
-		return domain.SearchProductResult{}, productFetchErr
-	}
-
-	totalItems, totalItemsFetchErr := i.fetchTotalItems(ctx, searchParams)
-	if totalItemsFetchErr != nil {
-		return domain.SearchProductResult{}, totalItemsFetchErr
+	if totalItemsErr != nil {
+		return domain.SearchProductResult{}, totalItemsErr
 	}
 
 	return domain.SearchProductResult{
@@ -39,13 +53,6 @@ func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProd
 }
 
 func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Product, *exceptions.CustomError) {
-
-	if ctx.Err() != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: exceptions.ErrCtxCanceledOrTimeout,
-		}
-	}
 
 	data, err := i.repository.GetProductAvailableByID(ctx, id)
 	if err != nil {
