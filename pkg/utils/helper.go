@@ -251,6 +251,9 @@ func StringPtrToPgText(value *string) pgtype.Text {
 }
 
 func UUIDToPgUUID(value uuid.UUID) pgtype.UUID {
+	if value == uuid.Nil {
+		return pgtype.UUID{Valid: false}
+	}
 	var byteArray [16]byte = value
 	return pgtype.UUID{
 		Bytes: byteArray,

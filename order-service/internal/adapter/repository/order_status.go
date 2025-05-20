@@ -36,15 +36,3 @@ func (i *Implement) GetOrderStatusPreparing(ctx context.Context) (result int64, 
 
 	return id, nil
 }
-
-func (i *Implement) IsOrderStatusFinal(ctx context.Context, statusCode string) (isFinal bool, customError *exceptions.CustomError) {
-	isFinal, err := i.repository.IsOrderStatusFinal(ctx, statusCode)
-	if err != nil {
-		return false, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check order status exists: %w", err),
-		}
-	}
-
-	return isFinal, nil
-}

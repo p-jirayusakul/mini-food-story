@@ -44,7 +44,7 @@ func (i *Implement) CreateOrder(ctx context.Context, order domain.CreateOrder) (
 }
 
 func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.Order, customError *exceptions.CustomError) {
-	data, err := i.repository.GetOrderByID(ctx, id)
+	order, err := i.repository.GetOrderByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
 			return nil, &exceptions.CustomError{
@@ -58,7 +58,7 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 		}
 	}
 
-	if data == nil {
+	if order == nil {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRNOTFOUND,
 			Errors: exceptions.ErrOrderNotFound,
@@ -66,12 +66,12 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 	}
 
 	return &domain.Order{
-		ID:           data.ID,
-		TableID:      data.TableID,
-		TableNumber:  data.TableNumber,
-		StatusID:     data.StatusID,
-		StatusName:   data.StatusName,
-		StatusNameEN: data.StatusNameEN,
+		ID:           order.ID,
+		TableID:      order.TableID,
+		TableNumber:  order.TableNumber,
+		StatusID:     order.StatusID,
+		StatusName:   order.StatusName,
+		StatusNameEN: order.StatusNameEN,
 	}, nil
 }
 

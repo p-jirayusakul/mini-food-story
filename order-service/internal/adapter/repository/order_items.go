@@ -9,8 +9,8 @@ import (
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
-	"math"
 	"strings"
+	"sync"
 )
 
 type OrderItemsRow interface {
@@ -63,61 +63,6 @@ func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []domain.Or
 	return
 }
 
-func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
-
-	validationError := validationOrderItems(orderItems)
-	if validationError != nil {
-		return []database.CreateOrderItemsParams{}, validationError
-	}
-
-	statusPreparingID, statusIDErr := i.GetOrderStatusPreparing(ctx)
-	if statusIDErr != nil {
-		return []database.CreateOrderItemsParams{}, statusIDErr
-	}
-
-	currentTime, timeErr := i.repository.GetTimeNow(ctx)
-	if timeErr != nil {
-		return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get current time: %w", timeErr),
-		}
-	}
-
-	result := make([]database.CreateOrderItemsParams, 0, len(orderItems))
-	for index, item := range orderItems {
-		product, repoErr := i.repository.GetProductByID(ctx, item.ProductID)
-		if repoErr != nil || product == nil {
-			msg := fmt.Sprintf("product %d not found", item.ProductID)
-			status := exceptions.ERRNOTFOUND
-
-			if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
-				status = exceptions.ERRREPOSITORY
-				msg = fmt.Sprintf("failed to get product: %v", repoErr)
-			}
-
-			return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
-				Status: status,
-				Errors: fmt.Errorf(msg),
-			}
-		}
-
-		result[index] = database.CreateOrderItemsParams{
-			ID:            i.snowflakeID.Generate(),
-			OrderID:       item.OrderID,
-			ProductID:     product.ID,
-			StatusID:      statusPreparingID,
-			ProductName:   product.Name,
-			ProductNameEn: product.NameEn,
-			Price:         product.Price,
-			Quantity:      item.Quantity,
-			Note:          utils.StringPtrToPgText(item.Note),
-			CreatedAt:     currentTime,
-		}
-	}
-
-	return result, nil
-}
-
 func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
 
 	if orderID <= 0 || tableNumber <= 0 {
@@ -153,18 +98,17 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 	}
 
 	orderItems, repoErr := i.repository.GetOrderWithItemsGroupID(ctx, orderItemsID)
-	if repoErr != nil || orderItems == nil {
-		msg := fmt.Sprintf("order items is nil")
-		status := exceptions.ERRNOTFOUND
-
-		if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
-			status = exceptions.ERRREPOSITORY
-			msg = fmt.Sprintf("failed to get order items: %v", repoErr)
+	if repoErr != nil {
+		if errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: exceptions.ErrOrderItemsNotFound,
+			}
 		}
 
 		return nil, &exceptions.CustomError{
-			Status: status,
-			Errors: fmt.Errorf(msg),
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", repoErr),
 		}
 	}
 
@@ -233,18 +177,17 @@ func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, orderID, order
 		OrderID:      orderID,
 		OrderItemsID: orderItemsID,
 	})
-	if repoErr != nil || orderItem == nil {
-		msg := fmt.Sprintf("order items is nil")
-		status := exceptions.ERRNOTFOUND
-
-		if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
-			status = exceptions.ERRREPOSITORY
-			msg = fmt.Sprintf("failed to get order items: %v", repoErr)
+	if repoErr != nil {
+		if errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: exceptions.ErrOrderItemsNotFound,
+			}
 		}
 
 		return nil, &exceptions.CustomError{
-			Status: status,
-			Errors: fmt.Errorf(msg),
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get order items: %w", repoErr),
 		}
 	}
 
@@ -277,69 +220,77 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.O
 		return customError
 	}
 
-	err := i.repository.UpdateOrderItemsStatus(ctx, database.UpdateOrderItemsStatusParams{
+	repoErr := i.repository.UpdateOrderItemsStatus(ctx, database.UpdateOrderItemsStatusParams{
 		StatusCode: payload.StatusCode,
 		ID:         payload.ID,
 	})
-	if err != nil {
+	if repoErr != nil {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to update order items status: %w", err),
+			Errors: fmt.Errorf("failed to update order items status: %w", repoErr),
 		}
 	}
 
 	return
 }
 
-func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
-	searchParams := buildSearchOrderItemsIncompleteParams(orderID, payload)
+func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int64, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+	searchParams := buildSearchOrderItemsIncompleteParams(orderID, search)
 
-	items, err := i.repository.SearchOrderItemsIsNotFinal(ctx, searchParams)
-	if err != nil {
-		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", err),
-		}
+	var (
+		searchResult  []*database.SearchOrderItemsIsNotFinalRow
+		searchErr     *exceptions.CustomError
+		totalItems    int64
+		totalItemsErr *exceptions.CustomError
+	)
+
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		searchResult, searchErr = i.fetchOrderItemsNotFinal(ctx, searchParams)
+	}()
+
+	go func() {
+		defer wg.Done()
+		totalItems, totalItemsErr = i.fetchTotalItems(ctx, searchParams)
+	}()
+
+	wg.Wait()
+
+	if searchErr != nil {
+		return domain.SearchOrderItemsResult{}, searchErr
 	}
 
-	totalItemsParam := database.GetTotalSearchOrderItemsIsNotFinalParams{
-		ProductName: searchParams.ProductName,
-		OrderID:     orderID,
-		StatusCode:  searchParams.StatusCode,
+	if totalItemsErr != nil {
+		return domain.SearchOrderItemsResult{}, totalItemsErr
 	}
 
-	totalItems, err := i.repository.GetTotalSearchOrderItemsIsNotFinal(ctx, totalItemsParam)
-	if err != nil {
-		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch product: %w", err),
-		}
-	}
-
-	data := make([]*domain.OrderItems, len(items))
-	for index, v := range items {
-		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
-		if err != nil {
+	data := make([]*domain.OrderItems, len(searchResult))
+	for index, item := range searchResult {
+		createdAt, sysErr := utils.PgTimestampToThaiISO8601(item.CreatedAt)
+		if sysErr != nil {
 			return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
 				Status: exceptions.ERRSYSTEM,
-				Errors: err,
+				Errors: sysErr,
 			}
 		}
 
 		data[index] = &domain.OrderItems{
-			ID:            v.ID,
-			OrderID:       v.OrderID,
-			ProductID:     v.ProductID,
-			StatusID:      v.StatusID,
-			TableNumber:   v.TableNumber,
-			StatusName:    v.StatusName,
-			StatusNameEN:  v.StatusNameEN,
-			StatusCode:    v.StatusCode,
-			ProductName:   v.ProductName,
-			ProductNameEN: v.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(v.Price),
-			Quantity:      v.Quantity,
-			Note:          utils.PgTextToStringPtr(v.Note),
+			ID:            item.ID,
+			OrderID:       item.OrderID,
+			ProductID:     item.ProductID,
+			StatusID:      item.StatusID,
+			TableNumber:   item.TableNumber,
+			StatusName:    item.StatusName,
+			StatusNameEN:  item.StatusNameEN,
+			StatusCode:    item.StatusCode,
+			ProductName:   item.ProductName,
+			ProductNameEN: item.ProductNameEN,
+			Price:         utils.PgNumericToFloat64(item.Price),
+			Quantity:      item.Quantity,
+			Note:          utils.PgTextToStringPtr(item.Note),
 			CreatedAt:     createdAt,
 		}
 
@@ -347,9 +298,92 @@ func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int6
 
 	return domain.SearchOrderItemsResult{
 		TotalItems: totalItems,
-		TotalPages: int64(math.Ceil(float64(totalItems) / float64(searchParams.PageSize))),
+		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
 		Data:       data,
 	}, nil
+}
+
+func (i *Implement) fetchOrderItemsNotFinal(ctx context.Context, params database.SearchOrderItemsIsNotFinalParams) ([]*database.SearchOrderItemsIsNotFinalRow, *exceptions.CustomError) {
+	result, err := i.repository.SearchOrderItemsIsNotFinal(ctx, params)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch order items not final: %w", err),
+		}
+	}
+	return result, nil
+}
+
+func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchOrderItemsIsNotFinalParams) (int64, *exceptions.CustomError) {
+	totalParams := database.GetTotalSearchOrderItemsIsNotFinalParams{
+		ProductName: params.ProductName,
+		OrderID:     params.OrderID,
+		StatusCode:  params.StatusCode,
+	}
+	totalItems, err := i.repository.GetTotalSearchOrderItemsIsNotFinal(ctx, totalParams)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch total items: %w", err),
+		}
+	}
+
+	return totalItems, nil
+}
+
+func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
+
+	validationError := validationOrderItems(orderItems)
+	if validationError != nil {
+		return []database.CreateOrderItemsParams{}, validationError
+	}
+
+	statusPreparingID, statusIDErr := i.GetOrderStatusPreparing(ctx)
+	if statusIDErr != nil {
+		return []database.CreateOrderItemsParams{}, statusIDErr
+	}
+
+	currentTime, timeErr := i.repository.GetTimeNow(ctx)
+	if timeErr != nil {
+		return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get current time: %w", timeErr),
+		}
+	}
+
+	result := make([]database.CreateOrderItemsParams, 0, len(orderItems))
+	for index, item := range orderItems {
+		product, repoErr := i.repository.GetProductByID(ctx, item.ProductID)
+		if repoErr != nil || product == nil {
+			msg := fmt.Sprintf("product %d not found", item.ProductID)
+			status := exceptions.ERRNOTFOUND
+
+			if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
+				status = exceptions.ERRREPOSITORY
+				msg = fmt.Sprintf("failed to get product: %v", repoErr)
+			}
+
+			return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
+				Status: status,
+				Errors: fmt.Errorf(msg),
+			}
+		}
+
+		result[index] = database.CreateOrderItemsParams{
+			ID:            i.snowflakeID.Generate(),
+			OrderID:       item.OrderID,
+			ProductID:     product.ID,
+			StatusID:      statusPreparingID,
+			ProductName:   product.Name,
+			ProductNameEn: product.NameEn,
+			Price:         product.Price,
+			Quantity:      item.Quantity,
+			Note:          utils.StringPtrToPgText(item.Note),
+			CreatedAt:     currentTime,
+		}
+	}
+
+	return result, nil
 }
 
 func buildSearchOrderItemsIncompleteParams(orderID int64, payload domain.SearchOrderItems) database.SearchOrderItemsIsNotFinalParams {

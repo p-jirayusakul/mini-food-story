@@ -2,6 +2,8 @@ package database
 
 import "github.com/jackc/pgx/v5/pgtype"
 
+// ---- GetOrderWithItemsRow ---- /
+
 func (q *GetOrderWithItemsRow) GetID() int64 {
 	return q.ID
 }
@@ -57,6 +59,8 @@ func (q *GetOrderWithItemsRow) GetNote() pgtype.Text {
 func (q *GetOrderWithItemsRow) GetCreatedAt() pgtype.Timestamptz {
 	return q.CreatedAt
 }
+
+// ---- GetOrderWithItemsGroupIDRow ---- //
 
 func (q *GetOrderWithItemsGroupIDRow) GetID() int64 {
 	return q.ID
