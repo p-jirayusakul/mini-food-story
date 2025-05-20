@@ -47,11 +47,7 @@ jobs:
         run: |
           go work init
           go work use ./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service
-          if [ -d ./menu-service ]; then cd ./menu-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./kitchen-service ]; then cd ./kitchen-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./payment-service ]; then cd ./payment-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./table-service ]; then cd ./table-service && go mod tidy && go mod download && cd ..; fi
-          if [ -d ./order-service ]; then cd ./order-service && go mod tidy && go mod download && cd ..; fi
+          if [ -d ${{ matrix.modules }} ]; then cd ${{ matrix.modules }} && go mod tidy && go mod download;
 
       - name: golangci-lint ${{ matrix.modules }}
         uses: golangci/golangci-lint-action@v8

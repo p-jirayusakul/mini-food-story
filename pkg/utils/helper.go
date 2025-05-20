@@ -211,7 +211,7 @@ func DecryptSessionToUUID(encrypted string, key []byte) (result uuid.UUID, err e
 func ConvertFloatToIntExp(floatNumber float64) int64 {
 	num := decimal.NewFromFloat(floatNumber)
 	formattedNum := num.StringFixed(2)
-	result, _ := strconv.ParseInt(strings.Replace(formattedNum, ".", "", -1), 10, 64)
+	result, _ := strconv.ParseInt(strings.ReplaceAll(formattedNum, ".", ""), 10, 64)
 	return result
 }
 

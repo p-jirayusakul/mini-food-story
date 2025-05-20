@@ -21,7 +21,7 @@ func (store *SQLStore) TXCreateOrder(ctx context.Context, arg TXCreateOrderParam
 		orderID = orderIDRaw
 
 		if len(arg.CreateOrderItems) > 0 {
-			for index, _ := range arg.CreateOrderItems {
+			for index := range arg.CreateOrderItems {
 				arg.CreateOrderItems[index].OrderID = orderID
 			}
 			_, itemsError := q.CreateOrderItems(ctx, arg.CreateOrderItems)
