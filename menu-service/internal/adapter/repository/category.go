@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"food-story/menu-service/internal/domain"
 	"food-story/pkg/exceptions"
@@ -15,8 +16,12 @@ func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category
 			Errors: fmt.Errorf("failed to check product exists: %w", err),
 		}
 	}
+
 	if data == nil {
-		return nil, nil
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: errors.New("category not found"),
+		}
 	}
 
 	result = make([]*domain.Category, len(data))

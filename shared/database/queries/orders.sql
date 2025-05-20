@@ -148,10 +148,12 @@ SELECT o.id  AS "orderID",
        mos.name_en as "statusNameEN",
        mos.code as "statusCode",
        oi.note as "note",
-       oi.created_at
+       oi.created_at,
+       t.table_number as "tableNumber"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.table_number
 WHERE o.id = sqlc.arg(order_id)::bigint AND oi.id = sqlc.arg(order_items_id)::bigint LIMIT 1;
 
 -- name: GetOrderWithItemsGroupID :many

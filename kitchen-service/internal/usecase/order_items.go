@@ -20,12 +20,7 @@ func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchO
 }
 
 func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
-	tableNumber, customError := i.repository.GetTableNumberOrderByID(ctx, orderID)
-	if customError != nil {
-		return nil, customError
-	}
-
-	return i.repository.GetOrderItems(ctx, orderID, tableNumber)
+	return i.repository.GetOrderItems(ctx, orderID)
 }
 
 func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *shareModel.OrderItems, customError *exceptions.CustomError) {

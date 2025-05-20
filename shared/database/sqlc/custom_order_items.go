@@ -249,3 +249,65 @@ func (q *SearchOrderItemsIsNotFinalRow) GetCreatedAt() pgtype.Timestamptz {
 func (q *SearchOrderItemsIsNotFinalRow) GetTableNumber() int32 {
 	return q.TableNumber
 }
+
+// ---- GetOrderWithItemsByIDRow ---- //
+
+func (q *GetOrderWithItemsByIDRow) GetID() int64 {
+	return q.ID
+}
+
+func (q *GetOrderWithItemsByIDRow) GetOrderID() int64 {
+	return q.OrderID
+}
+
+func (q *GetOrderWithItemsByIDRow) GetOrderNumber() string {
+	return q.OrderNumber
+}
+
+func (q *GetOrderWithItemsByIDRow) GetProductID() int64 {
+	return q.ProductID
+}
+
+func (q *GetOrderWithItemsByIDRow) GetStatusID() int64 {
+	return q.StatusID
+}
+
+func (q *GetOrderWithItemsByIDRow) GetStatusName() string {
+	return q.StatusName
+}
+
+func (q *GetOrderWithItemsByIDRow) GetStatusNameEN() string {
+	return q.StatusNameEN
+}
+
+func (q *GetOrderWithItemsByIDRow) GetStatusCode() string {
+	return q.StatusCode
+}
+
+func (q *GetOrderWithItemsByIDRow) GetProductName() string {
+	return q.ProductName
+}
+
+func (q *GetOrderWithItemsByIDRow) GetProductNameEN() string {
+	return q.ProductNameEN
+}
+
+func (q *GetOrderWithItemsByIDRow) GetPrice() pgtype.Numeric {
+	return q.Price
+}
+
+func (q *GetOrderWithItemsByIDRow) GetQuantity() int32 {
+	return q.Quantity
+}
+
+func (q *GetOrderWithItemsByIDRow) GetNote() pgtype.Text {
+	return q.Note
+}
+
+func (q *GetOrderWithItemsByIDRow) GetCreatedAt() pgtype.Timestamptz {
+	return q.CreatedAt
+}
+
+func (q *GetOrderWithItemsByIDRow) GetTableNumber() int32 {
+	return q.TableNumber
+}

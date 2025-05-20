@@ -166,10 +166,12 @@ SELECT o.id  AS "orderID",
        mos.name_en as "statusNameEN",
        mos.code as "statusCode",
        oi.note as "note",
-       oi.created_at
+       oi.created_at,
+       t.table_number as "tableNumber"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.table_number
 WHERE o.id = $1::bigint AND oi.id = $2::bigint LIMIT 1
 `
 
@@ -193,6 +195,7 @@ type GetOrderWithItemsByIDRow struct {
 	StatusCode    string             `json:"statusCode"`
 	Note          pgtype.Text        `json:"note"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	TableNumber   int32              `json:"tableNumber"`
 }
 
 func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error) {
@@ -213,6 +216,7 @@ func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithIte
 		&i.StatusCode,
 		&i.Note,
 		&i.CreatedAt,
+		&i.TableNumber,
 	)
 	return &i, err
 }

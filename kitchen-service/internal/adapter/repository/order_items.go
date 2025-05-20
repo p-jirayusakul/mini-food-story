@@ -119,10 +119,10 @@ func (i *Implement) fetchSearchOrderTotalItems(ctx context.Context, params datab
 	return totalItems, nil
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumber int32) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
 	customError = i.IsOrderExist(ctx, orderID)
 	if customError != nil {
-		return
+		return nil, customError
 	}
 
 	items, err := i.repository.GetOrderWithItems(ctx, orderID)
@@ -133,44 +133,14 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 		}
 	}
 
-	result = make([]*shareModel.OrderItems, len(items))
-	for index, v := range items {
-		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
-		if err != nil {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRSYSTEM,
-				Errors: err,
-			}
-		}
-
-		result[index] = &shareModel.OrderItems{
-			ID:            v.ID,
-			OrderID:       v.OrderID,
-			OrderNumber:   v.OrderNumber,
-			ProductID:     v.ProductID,
-			StatusID:      v.StatusID,
-			TableNumber:   tableNumber,
-			StatusName:    v.StatusName,
-			StatusNameEN:  v.StatusNameEN,
-			StatusCode:    v.StatusCode,
-			ProductName:   v.ProductName,
-			ProductNameEN: v.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(v.Price),
-			Quantity:      v.Quantity,
-			Note:          utils.PgTextToStringPtr(v.Note),
-			CreatedAt:     createdAt,
-		}
-
-	}
-
-	return
+	return shareModel.TransformOrderItemsResults(items), nil
 }
 
 func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *shareModel.OrderItems, customError *exceptions.CustomError) {
 
 	customError = i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
 	if customError != nil {
-		return
+		return nil, customError
 	}
 
 	items, err := i.repository.GetOrderWithItemsByID(ctx, database.GetOrderWithItemsByIDParams{
@@ -192,31 +162,7 @@ func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID
 		}
 	}
 
-	createdAt, err := utils.PgTimestampToThaiISO8601(items.CreatedAt)
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: err,
-		}
-	}
-
-	return &shareModel.OrderItems{
-		ID:            items.ID,
-		OrderID:       items.OrderID,
-		OrderNumber:   items.OrderNumber,
-		ProductID:     items.ProductID,
-		StatusID:      items.StatusID,
-		TableNumber:   tableNumber,
-		StatusName:    items.StatusName,
-		StatusNameEN:  items.StatusNameEN,
-		StatusCode:    items.StatusCode,
-		ProductName:   items.ProductName,
-		ProductNameEN: items.ProductNameEN,
-		Price:         utils.PgNumericToFloat64(items.Price),
-		Quantity:      items.Quantity,
-		Note:          utils.PgTextToStringPtr(items.Note),
-		CreatedAt:     createdAt,
-	}, nil
+	return shareModel.TransformOrderItemsByIDResults(items), nil
 }
 
 func buildSearchOrderItemsParams(payload domain.SearchOrderItems) database.SearchOrderItemsParams {

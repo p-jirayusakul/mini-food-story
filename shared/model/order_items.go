@@ -71,3 +71,24 @@ func TransformOrderItemsResults[T OrderItemsRow](results []T) []*OrderItems {
 	}
 	return data
 }
+
+func TransformOrderItemsByIDResults[T OrderItemsRow](results T) *OrderItems {
+	createdAt, _ := utils.PgTimestampToThaiISO8601(results.GetCreatedAt())
+	return &OrderItems{
+		ID:            results.GetID(),
+		OrderID:       results.GetOrderID(),
+		OrderNumber:   results.GetOrderNumber(),
+		ProductID:     results.GetProductID(),
+		StatusID:      results.GetStatusID(),
+		TableNumber:   results.GetTableNumber(),
+		StatusName:    results.GetStatusName(),
+		StatusNameEN:  results.GetStatusNameEN(),
+		StatusCode:    results.GetStatusCode(),
+		ProductName:   results.GetProductName(),
+		ProductNameEN: results.GetProductNameEN(),
+		Price:         utils.PgNumericToFloat64(results.GetPrice()),
+		Quantity:      results.GetQuantity(),
+		Note:          utils.PgTextToStringPtr(results.GetNote()),
+		CreatedAt:     createdAt,
+	}
+}
