@@ -6,31 +6,31 @@ import (
 	"fmt"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
+	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	"github.com/jackc/pgx/v5/pgtype"
 	"time"
 )
 
-func (i *Implement) CreateOrder(ctx context.Context, payload domain.CreateOrder) (result int64, customError *exceptions.CustomError) {
+func (i *Implement) CreateOrder(ctx context.Context, order domain.CreateOrder) (orderID int64, customError *exceptions.CustomError) {
 
-	orderItemsPayload, customError := i.BuildPayloadOrderItems(ctx, payload.OrderItems)
-	if customError != nil {
-		return
+	orderItems, buildParamErr := i.buildPayloadOrderItems(ctx, order.OrderItems)
+	if buildParamErr != nil {
+		return 0, buildParamErr
 	}
 
-	orderNumber, customError := i.GetOrCreateOrderSequence(ctx)
-	if customError != nil {
-		return
+	orderNumber, sequenceError := i.getOrderSequence(ctx)
+	if sequenceError != nil {
+		return 0, sequenceError
 	}
 
-	var sessionByte [16]byte = payload.SessionID
-	id, err := i.repository.TXCreateOrder(ctx, database.TXCreateOrderParams{
-		CreateOrderItems: orderItemsPayload,
+	orderID, err := i.repository.TXCreateOrder(ctx, database.TXCreateOrderParams{
+		CreateOrderItems: orderItems,
 		CreateOrder: database.CreateOrderParams{
 			ID:          i.snowflakeID.Generate(),
 			OrderNumber: orderNumber,
-			SessionID:   pgtype.UUID{Bytes: sessionByte, Valid: true},
-			TableID:     payload.TableID,
+			SessionID:   utils.UUIDToPgUUID(order.SessionID),
+			TableID:     order.TableID,
 		},
 	})
 	if err != nil {
@@ -40,22 +40,7 @@ func (i *Implement) CreateOrder(ctx context.Context, payload domain.CreateOrder)
 		}
 	}
 
-	return id, nil
-}
-
-func (i *Implement) GetOrCreateOrderSequence(ctx context.Context) (string, *exceptions.CustomError) {
-	num, err := i.repository.GetOrCreateOrderSequence(ctx, pgtype.Date{
-		Time:  time.Now(),
-		Valid: true,
-	})
-	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get or create order sequence: %w", err),
-		}
-	}
-
-	return fmt.Sprintf("FS-%s-%04d", time.Now().Format("20060102"), num), nil
+	return orderID, nil
 }
 
 func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.Order, customError *exceptions.CustomError) {
@@ -64,12 +49,19 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
 			return nil, &exceptions.CustomError{
 				Status: exceptions.ERRNOTFOUND,
-				Errors: fmt.Errorf("order not found"),
+				Errors: exceptions.ErrOrderNotFound,
 			}
 		}
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
 			Errors: fmt.Errorf("failed to check order exists: %w", err),
+		}
+	}
+
+	if data == nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: exceptions.ErrOrderNotFound,
 		}
 	}
 
@@ -81,26 +73,6 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 		StatusName:   data.StatusName,
 		StatusNameEN: data.StatusNameEN,
 	}, nil
-}
-
-func (i *Implement) UpdateOrderStatus(ctx context.Context, payload domain.OrderStatus) (customError *exceptions.CustomError) {
-	customError = i.IsOrderExist(ctx, payload.ID)
-	if customError != nil {
-		return
-	}
-
-	err := i.repository.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{
-		StatusCode: payload.StatusCode,
-		ID:         payload.ID,
-	})
-	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to update order status: %w", err),
-		}
-	}
-
-	return
 }
 
 func (i *Implement) IsOrderExist(ctx context.Context, id int64) (customError *exceptions.CustomError) {
@@ -115,7 +87,7 @@ func (i *Implement) IsOrderExist(ctx context.Context, id int64) (customError *ex
 	if !isExist {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRNOTFOUND,
-			Errors: fmt.Errorf("order not found"),
+			Errors: exceptions.ErrOrderNotFound,
 		}
 	}
 
@@ -137,9 +109,49 @@ func (i *Implement) IsOrderWithItemsExists(ctx context.Context, orderID, orderIt
 	if !isExist {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRNOTFOUND,
-			Errors: fmt.Errorf("order item not found"),
+			Errors: exceptions.ErrOrderItemsNotFound,
 		}
 	}
 
 	return nil
+}
+
+func (i *Implement) getOrderSequence(ctx context.Context) (string, *exceptions.CustomError) {
+
+	currentTimeDB, err := i.repository.GetTimeNow(ctx)
+	if err != nil {
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get current time: %w", err),
+		}
+	}
+
+	if !currentTimeDB.Valid {
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("validation failed: current time is not valid"),
+		}
+	}
+
+	currentLocation, err := time.LoadLocation(i.config.TimeZone)
+	if err != nil {
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: fmt.Errorf("failed to load time zone: %w", err),
+		}
+	}
+
+	currentTime := currentTimeDB.Time.In(currentLocation)
+	sequence, err := i.repository.GetOrderSequence(ctx, pgtype.Date{
+		Time:  currentTime,
+		Valid: true,
+	})
+	if err != nil {
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get or create order sequence: %w", err),
+		}
+	}
+
+	return fmt.Sprintf("FS-%s-%04d", currentTime.In(currentLocation).Format("20060102"), sequence), nil
 }

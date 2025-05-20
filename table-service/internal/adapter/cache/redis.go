@@ -44,7 +44,7 @@ func (r *RedisTableCache) GetCachedTable(key string) (*domain.CurrentTableSessio
 	err = json.Unmarshal([]byte(data), &table)
 	if err != nil {
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: fmt.Errorf("pare json session: %w", err),
 		}
 	}
@@ -56,7 +56,7 @@ func (r *RedisTableCache) SetCachedTable(key string, table *domain.CurrentTableS
 	data, err := json.Marshal(table)
 	if err != nil {
 		return &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: fmt.Errorf("pare json session: %w", err),
 		}
 	}
@@ -104,7 +104,7 @@ func (r *RedisTableCache) GetCachedTableNumber(key string) (int32, *exceptions.C
 	parsedValue, err := strconv.ParseInt(data, 10, 32)
 	if err != nil {
 		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: fmt.Errorf("parese string to int32: %w", err),
 		}
 	}

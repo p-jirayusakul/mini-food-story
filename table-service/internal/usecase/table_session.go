@@ -76,7 +76,7 @@ func (i *Implement) GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentT
 	sessionIDDecrypt, err := utils.DecryptSession(sessionIDEncrypt, []byte(i.config.SecretKey))
 	if err != nil {
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: fmt.Errorf("failed to get current session: %w", err),
 		}
 	}
@@ -117,7 +117,7 @@ func encryptSessionID(sessionID uuid.UUID, expiry time.Time, key string) (string
 
 	if err != nil {
 		return "", &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: fmt.Errorf("failed to encrypt session ID: %w", err),
 		}
 	}

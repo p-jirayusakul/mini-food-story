@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"errors"
 	"food-story/order-service/internal/domain"
+	"food-story/pkg/exceptions"
 	"food-story/shared/redis"
 	"github.com/google/uuid"
 	"strconv"
 )
 
 type RedisTableCacheInterface interface {
-	GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, error)
-	DeleteCachedTable(sessionID uuid.UUID) error
-	IsCachedTableExist(sessionID uuid.UUID) error
-	UpdateOrderID(sessionID uuid.UUID, orderID int64) error
+	GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError)
+	DeleteCachedTable(sessionID uuid.UUID) *exceptions.CustomError
+	IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError
+	UpdateOrderID(sessionID uuid.UUID, orderID int64) *exceptions.CustomError
 }
 
 type RedisTableCache struct {
@@ -26,49 +27,91 @@ func NewRedisTableCache(client *redis.RedisClient) *RedisTableCache {
 	}
 }
 
-func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, error) {
+func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError) {
 	data, err := r.client.Get(redis.KeyTable + sessionID.String())
 	if err != nil {
-		return nil, err
+		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
+			return nil, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: exceptions.ErrSessionNotFound,
+			}
+		}
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: err,
+		}
 	}
 
 	var table domain.CurrentTableSession
 	err = json.Unmarshal([]byte(data), &table)
 	if err != nil {
-		return nil, err
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: err,
+		}
 	}
 
 	return &table, nil
 }
 
-func (r *RedisTableCache) IsCachedTableExist(sessionID uuid.UUID) error {
+func (r *RedisTableCache) IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError {
 	_, err := r.client.Get(redis.KeyTable + sessionID.String())
 	if err != nil {
-		return err
+		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
+			return &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: exceptions.ErrSessionNotFound,
+			}
+		}
+
+		return &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: err,
+		}
 	}
 
 	return nil
 }
 
-func (r *RedisTableCache) DeleteCachedTable(sessionID uuid.UUID) error {
-	return r.client.Del(redis.KeyTable + sessionID.String())
+func (r *RedisTableCache) DeleteCachedTable(sessionID uuid.UUID) *exceptions.CustomError {
+	err := r.client.Del(redis.KeyTable + sessionID.String())
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: err,
+		}
+	}
+	return nil
 }
 
-func (r *RedisTableCache) UpdateOrderID(sessionID uuid.UUID, orderID int64) error {
+func (r *RedisTableCache) UpdateOrderID(sessionID uuid.UUID, orderID int64) *exceptions.CustomError {
 	key := redis.KeyTable + sessionID.String()
 
 	// ดึง TTL เดิม
 	oldTTL, err := r.client.TTL(key)
 	if err != nil {
-		return err
+		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
+			return &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: exceptions.ErrSessionNotFound,
+			}
+		}
+
+		return &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: err,
+		}
 	}
 	if oldTTL <= 0 {
-		return errors.New("session is expired")
+		return &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: errors.New("session is expired"),
+		}
 	}
 
-	table, err := r.GetCachedTable(sessionID)
-	if err != nil {
-		return err
+	table, getTableErr := r.GetCachedTable(sessionID)
+	if getTableErr != nil {
+		return getTableErr
 	}
 
 	orderIDStr := strconv.FormatInt(orderID, 10)
@@ -76,8 +119,19 @@ func (r *RedisTableCache) UpdateOrderID(sessionID uuid.UUID, orderID int64) erro
 
 	data, err := json.Marshal(table)
 	if err != nil {
-		return err
+		return &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: err,
+		}
 	}
 
-	return r.client.Set(key, string(data), oldTTL)
+	err = r.client.Set(key, string(data), oldTTL)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRCACHE,
+			Errors: err,
+		}
+	}
+
+	return nil
 }

@@ -26,10 +26,10 @@ type Implement struct {
 	config     config.Config
 	repository repository.Implement
 	cache      cache.RedisTableCacheInterface
-	queue      producer.OrderProducer
+	queue      producer.QueueProducerInterface
 }
 
-func NewUsecase(config config.Config, repository repository.Implement, cache cache.RedisTableCacheInterface, queue producer.OrderProducer) *Implement {
+func NewUsecase(config config.Config, repository repository.Implement, cache cache.RedisTableCacheInterface, queue producer.QueueProducerInterface) *Implement {
 	return &Implement{
 		config,
 		repository,

@@ -2,42 +2,47 @@ package usecase
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	"github.com/google/uuid"
 )
 
-func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, items []domain.OrderItems) (result int64, customError *exceptions.CustomError) {
-	sessionDetail, err := i.cache.GetCachedTable(sessionID)
-	if err != nil {
-		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
-			return 0, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: exceptions.ErrSessionNotFound,
-			}
-		}
+func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderItems []domain.OrderItems) (result int64, customError *exceptions.CustomError) {
 
+	if len(orderItems) == 0 {
 		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
+			Status: exceptions.ERRBUSSINESS,
+			Errors: fmt.Errorf("order items cannot be empty"),
 		}
+	}
+
+	if sessionID == uuid.Nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: fmt.Errorf("invalid table ID"),
+		}
+	}
+
+	sessionDetail, tableCacheErr := i.cache.GetCachedTable(sessionID)
+	if tableCacheErr != nil {
+		return 0, tableCacheErr
 	}
 
 	if sessionDetail.OrderID != nil {
 		orderID, err := utils.StrToInt64(*sessionDetail.OrderID)
 		if err != nil {
 			return 0, &exceptions.CustomError{
-				Status: exceptions.ERRUNKNOWN,
+				Status: exceptions.ERRSYSTEM,
 				Errors: err,
 			}
 		}
 
-		if len(items) > 0 {
-			customError := i.CreateOrderItems(ctx, sessionID, items)
-			if customError != nil {
-				return 0, customError
+		if len(orderItems) > 0 {
+			createErr := i.CreateOrderItems(ctx, sessionID, orderItems)
+			if createErr != nil {
+				return 0, createErr
 			}
 		}
 
@@ -47,7 +52,7 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, items 
 	payloadCreateOrder := domain.CreateOrder{
 		SessionID:  sessionID,
 		TableID:    sessionDetail.TableID,
-		OrderItems: items,
+		OrderItems: orderItems,
 	}
 
 	orderID, customError := i.repository.CreateOrder(ctx, payloadCreateOrder)
@@ -55,23 +60,19 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, items 
 		return 0, customError
 	}
 
-	err = i.cache.UpdateOrderID(sessionID, orderID)
-	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+	updateCacheErr := i.cache.UpdateOrderID(sessionID, orderID)
+	if updateCacheErr != nil {
+		return 0, updateCacheErr
 	}
 
-	// public message to kafka
-	orderItems, customError := i.repository.GetOrderItems(ctx, orderID, sessionDetail.TableNumber)
-	if customError != nil {
-		return 0, customError
+	newOrderItems, getOrderItemsErr := i.repository.GetOrderItems(ctx, orderID, sessionDetail.TableNumber)
+	if getOrderItemsErr != nil {
+		return 0, getOrderItemsErr
 	}
 
-	customError = i.PublishOrderToQueue(orderItems)
-	if customError != nil {
-		return 0, customError
+	queueErr := i.PublishOrderToQueue(newOrderItems)
+	if queueErr != nil {
+		return 0, queueErr
 	}
 
 	return orderID, nil

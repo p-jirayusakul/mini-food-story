@@ -18,9 +18,9 @@ type Querier interface {
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
 	CreateTableStatus(ctx context.Context, arg CreateTableStatusParams) (int64, error)
-	GetOrCreateOrderSequence(ctx context.Context, orderDate pgtype.Date) (int32, error)
 	GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error)
 	GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderItemsByIDRow, error)
+	GetOrderSequence(ctx context.Context, orderDate pgtype.Date) (int32, error)
 	GetOrderStatusPreparing(ctx context.Context) (int64, error)
 	GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetOrderWithItemsRow, error)
 	GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error)

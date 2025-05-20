@@ -17,7 +17,7 @@ func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, i
 	orderID, err := utils.StrToInt64(*tableSession.OrderID)
 	if err != nil {
 		return &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: err,
 		}
 	}
@@ -48,7 +48,7 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUI
 	orderID, err := utils.StrToInt64(*tableSession.OrderID)
 	if err != nil {
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: err,
 		}
 	}
@@ -65,7 +65,7 @@ func (i *Implement) GetCurrentOderItemsByID(ctx context.Context, sessionID uuid.
 	orderID, err := utils.StrToInt64(*tableSession.OrderID)
 	if err != nil {
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: err,
 		}
 	}

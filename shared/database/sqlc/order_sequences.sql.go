@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const getOrCreateOrderSequence = `-- name: GetOrCreateOrderSequence :one
+const getOrderSequence = `-- name: GetOrderSequence :one
 INSERT INTO public.order_sequences (order_date, current_number)
 VALUES ($1::date, 1)
 ON CONFLICT (order_date) DO UPDATE
@@ -19,8 +19,8 @@ ON CONFLICT (order_date) DO UPDATE
 RETURNING current_number
 `
 
-func (q *Queries) GetOrCreateOrderSequence(ctx context.Context, orderDate pgtype.Date) (int32, error) {
-	row := q.db.QueryRow(ctx, getOrCreateOrderSequence, orderDate)
+func (q *Queries) GetOrderSequence(ctx context.Context, orderDate pgtype.Date) (int32, error) {
+	row := q.db.QueryRow(ctx, getOrderSequence, orderDate)
 	var current_number int32
 	err := row.Scan(&current_number)
 	return current_number, err

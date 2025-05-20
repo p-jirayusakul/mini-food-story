@@ -80,7 +80,7 @@ func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchO
 		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
 		if err != nil {
 			return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-				Status: exceptions.ERRUNKNOWN,
+				Status: exceptions.ERRSYSTEM,
 				Errors: err,
 			}
 		}
@@ -131,7 +131,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
 		if err != nil {
 			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRUNKNOWN,
+				Status: exceptions.ERRSYSTEM,
 				Errors: err,
 			}
 		}
@@ -188,7 +188,7 @@ func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID
 	createdAt, err := utils.PgTimestampToThaiISO8601(items.CreatedAt)
 	if err != nil {
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: err,
 		}
 	}

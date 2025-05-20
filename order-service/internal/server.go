@@ -79,7 +79,9 @@ func New() *FiberServer {
 
 	// connect to kafka
 	brokers := strings.Split(configApp.KafkaBrokers, ",")
-	kafkaClient, err := producer.NewOrderProducer(brokers)
+	configSarama := sarama.NewConfig()
+	configSarama.Producer.Return.Successes = true
+	producerSarama, err := sarama.NewSyncProducer(brokers, configSarama)
 	if err != nil {
 		panic(err)
 	}
@@ -106,13 +108,13 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, kafkaClient)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, producerSarama)
 
 	return &FiberServer{
 		App:           app,
 		db:            dbConn,
 		redis:         redisConn,
-		kafkaProducer: kafkaClient.Producer,
+		kafkaProducer: producerSarama,
 	}
 }
 
@@ -120,10 +122,12 @@ func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
 	return dbConn.Ping(ctx) == nil
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, kafkaClient *producer.OrderProducer) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, producerSarama sarama.SyncProducer) {
+
+	orderQueue := producer.NewQueue(producerSarama)
 	orderCache := cache.NewRedisTableCache(redisConn)
 	orderRepo := repository.NewRepo(configApp, store, snowflakeNode)
-	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache, *kafkaClient)
+	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache, orderQueue)
 	orderhd.NewHTTPHandler(router, orderUseCase, validator, configApp)
 }
 

@@ -16,6 +16,8 @@ var (
 	ErrSessionExpired       = errors.New("session expired")
 	ErrFailedToReadSession  = errors.New("failed to read session")
 	ErrCtxCanceledOrTimeout = errors.New("request cancelled or timeout")
+	ErrOrderNotFound        = errors.New("order not found")
+	ErrOrderItemsNotFound   = errors.New("order items not found")
 )
 
 const (

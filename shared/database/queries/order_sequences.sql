@@ -1,4 +1,4 @@
--- name: GetOrCreateOrderSequence :one
+-- name: GetOrderSequence :one
 INSERT INTO public.order_sequences (order_date, current_number)
 VALUES (sqlc.arg(order_date)::date, 1)
 ON CONFLICT (order_date) DO UPDATE

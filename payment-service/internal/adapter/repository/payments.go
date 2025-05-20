@@ -72,7 +72,7 @@ func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionI
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
 			return &exceptions.CustomError{
 				Status: exceptions.ERRNOTFOUND,
-				Errors: errors.New("order not found"),
+				Errors: exceptions.ErrOrderNotFound,
 			}
 		}
 

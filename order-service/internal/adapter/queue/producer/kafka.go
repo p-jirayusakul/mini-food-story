@@ -7,22 +7,22 @@ import (
 	"github.com/IBM/sarama"
 )
 
+type QueueProducerInterface interface {
+	PublishOrder(item domain.OrderItems) error
+}
 type OrderProducer struct {
 	Producer sarama.SyncProducer
 }
 
-func NewOrderProducer(brokers []string) (*OrderProducer, error) {
-	config := sarama.NewConfig()
-	config.Producer.Return.Successes = true
-	producer, err := sarama.NewSyncProducer(brokers, config)
-	if err != nil {
-		return nil, err
+func NewQueue(producer sarama.SyncProducer) *OrderProducer {
+	return &OrderProducer{
+		producer,
 	}
-	return &OrderProducer{Producer: producer}, nil
 }
 
-func (p *OrderProducer) PublishOrder(item domain.OrderItems) error {
+var _ QueueProducerInterface = (*OrderProducer)(nil)
 
+func (p *OrderProducer) PublishOrder(item domain.OrderItems) error {
 	message, err := json.Marshal(item)
 	if err != nil {
 		return err

@@ -16,35 +16,37 @@ import (
 
 func (i *Implement) CreateOrderItems(ctx context.Context, items []domain.OrderItems, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
 
-	orderItems, customError := i.BuildPayloadOrderItems(ctx, items)
+	if len(items) == 0 {
+		return nil, nil
+	}
+
+	orderItems, buildParamError := i.buildPayloadOrderItems(ctx, items)
+	if buildParamError != nil {
+		return nil, buildParamError
+	}
+
+	_, err := i.repository.CreateOrderItems(ctx, orderItems)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to create order items: %w", err),
+		}
+	}
+
+	var orderItemsID []int64
+	for _, item := range orderItems {
+		orderItemsID = append(orderItemsID, item.ID)
+	}
+
+	result, customError = i.GetOderItemsGroupID(ctx, orderItemsID, tableNumber)
 	if customError != nil {
-		return
+		return nil, customError
 	}
 
-	if len(orderItems) > 0 {
-		_, err := i.repository.CreateOrderItems(ctx, orderItems)
-		if err != nil {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRREPOSITORY,
-				Errors: fmt.Errorf("failed to create order items: %w", err),
-			}
-		}
-
-		var orderItemsID []int64
-		for _, item := range orderItems {
-			orderItemsID = append(orderItemsID, item.ID)
-		}
-
-		result, customError = i.GetOderItemsGroupID(ctx, orderItemsID, tableNumber)
-		if customError != nil {
-			return nil, customError
-		}
-
-	}
 	return
 }
 
-func (i *Implement) BuildPayloadOrderItems(ctx context.Context, items []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
+func (i *Implement) buildPayloadOrderItems(ctx context.Context, items []domain.OrderItems) ([]database.CreateOrderItemsParams, *exceptions.CustomError) {
 	var orderItems []database.CreateOrderItemsParams
 	for _, item := range items {
 		product, err := i.repository.GetProductByID(ctx, item.ProductID)
@@ -102,7 +104,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
 		if err != nil {
 			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRUNKNOWN,
+				Status: exceptions.ERRSYSTEM,
 				Errors: err,
 			}
 		}
@@ -149,7 +151,7 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, tab
 		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
 		if err != nil {
 			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRUNKNOWN,
+				Status: exceptions.ERRSYSTEM,
 				Errors: err,
 			}
 		}
@@ -202,7 +204,7 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 	createdAt, err := utils.PgTimestampToThaiISO8601(items.CreatedAt)
 	if err != nil {
 		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRUNKNOWN,
+			Status: exceptions.ERRSYSTEM,
 			Errors: err,
 		}
 	}
@@ -237,7 +239,7 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
 		if err != nil {
 			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRUNKNOWN,
+				Status: exceptions.ERRSYSTEM,
 				Errors: err,
 			}
 		}
@@ -313,7 +315,7 @@ func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int6
 		createdAt, err := utils.PgTimestampToThaiISO8601(v.CreatedAt)
 		if err != nil {
 			return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-				Status: exceptions.ERRUNKNOWN,
+				Status: exceptions.ERRSYSTEM,
 				Errors: err,
 			}
 		}

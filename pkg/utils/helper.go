@@ -17,6 +17,7 @@ import (
 	"log/slog"
 	"math"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -264,7 +265,12 @@ func PgTimestampToThaiISO8601(ts pgtype.Timestamptz) (string, error) {
 
 	t := ts.Time
 
-	loc, err := time.LoadLocation("Asia/Bangkok")
+	timeZone := "Asia/Bangkok"
+	if os.Getenv("TZ") != "" {
+		timeZone = os.Getenv("TZ")
+	}
+
+	loc, err := time.LoadLocation(timeZone)
 	if err != nil {
 		return "", err
 	}
@@ -285,4 +291,13 @@ func CalculateTotalPages(totalItems int64, pageSize int64) int64 {
 	}
 
 	return int64(math.Ceil(float64(totalItems) / float64(pageSize)))
+}
+
+func IsValidTimeZone(timeZone string) bool {
+	if timeZone == "" {
+		slog.Error("timeZone is empty")
+		return false
+	}
+	_, err := time.LoadLocation(timeZone)
+	return err == nil
 }
