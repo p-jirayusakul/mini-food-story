@@ -1,6 +1,3 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
 name: Go
 
 on:
@@ -23,49 +20,59 @@ jobs:
       - name: Configure Workspace and Install Dependencies
         run: |
           go work init
-          go work use ./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service
-          cd menu-service && go mod tidy && go mod download
-          cd kitchen-service && go mod tidy && go mod download
-          cd payment-service && go mod tidy && go mod download
-          cd table-service && go mod tidy && go mod download
-          cd order-service && go mod tidy && go mod download
+          go work use ./pkg ./shared
+          if [ -d ./menu-service ]; then cd ./menu-service && go mod tidy && go mod download && cd ..; fi
+          if [ -d ./kitchen-service ]; then cd ./kitchen-service && go mod tidy && go mod download && cd ..; fi
+          if [ -d ./payment-service ]; then cd ./payment-service && go mod tidy && go mod download && cd ..; fi
+          if [ -d ./table-service ]; then cd ./table-service && go mod tidy && go mod download && cd ..; fi
+          if [ -d ./order-service ]; then cd ./order-service && go mod tidy && go mod download && cd ..; fi
 
       - name: Build Menu Service
+        if: ${{ exists('menu-service') }}
         working-directory: ./menu-service
         run: go build -o app cmd/main.go
 
-      - name: Build Table Service
-        working-directory: ./table-service
-        run: go build -o app cmd/main.go
-
-      - name: Build Order Service
-        working-directory: ./order-service
-        run: go build -o app cmd/main.go
-
       - name: Build Kitchen Service
+        if: ${{ exists('kitchen-service') }}
         working-directory: ./kitchen-service
         run: go build -o app cmd/main.go
 
       - name: Build Payment Service
+        if: ${{ exists('payment-service') }}
         working-directory: ./payment-service
         run: go build -o app cmd/main.go
 
+      - name: Build Table Service
+        if: ${{ exists('table-service') }}
+        working-directory: ./table-service
+        run: go build -o app cmd/main.go
+
+      - name: Build Order Service
+        if: ${{ exists('order-service') }}
+        working-directory: ./order-service
+        run: go build -o app cmd/main.go
+
       - name: Run Tests for Menu Service
+        if: ${{ exists('menu-service') }}
         working-directory: ./menu-service
         run: go test -v ./...
 
-      - name: Run Tests for Table Service
-        working-directory: ./table-service
-        run: go test -v ./...
-
-      - name: Run Tests for Order Service
-        working-directory: ./order-service
-        run: go test -v ./...
-
       - name: Run Tests for Kitchen Service
+        if: ${{ exists('kitchen-service') }}
         working-directory: ./kitchen-service
         run: go test -v ./...
 
       - name: Run Tests for Payment Service
+        if: ${{ exists('payment-service') }}
         working-directory: ./payment-service
+        run: go test -v ./...
+
+      - name: Run Tests for Table Service
+        if: ${{ exists('table-service') }}
+        working-directory: ./table-service
+        run: go test -v ./...
+
+      - name: Run Tests for Order Service
+        if: ${{ exists('order-service') }}
+        working-directory: ./order-service
         run: go test -v ./...
