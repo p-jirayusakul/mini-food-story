@@ -12,38 +12,69 @@ env:
   MODULES: "./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service"
 
 jobs:
-  golangci-lint-and-test:
+  detect-modules:
     runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set-modules.outputs.modules }}
     steps:
-      # Checkout repository
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      # Set up Go environment
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      # Configure workspace and download dependencies
       - name: Configure Workspace and Install Dependencies
         run: |
           go work init
           go work use ${{ env.MODULES }}
-          for module in ${{ env.MODULES }}; do
-            cd $module
-            go mod tidy
-            go mod download
-            cd ..
-          done
 
-      # Run golangci-lint
-      - name: Run GolangCI-Lint
+      - id: set-modules
+        run:
+          echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
+
+  golangci-lint:
+    needs: detect-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
+    outputs:
+      modules: ${{ needs.detect-modules.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Configure Workspace and Install Dependencies
+        run: |
+          go work init
+          go work use ./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service
+          cd ${{ matrix.modules }} && go mod tidy && go mod download
+
+      - name: golangci-lint ${{ matrix.modules }}
         uses: golangci/golangci-lint-action@v8
         with:
           version: ${{ env.GOLANGCI_LINT_VERSION }}
+          working-directory: ${{ matrix.modules }}
 
-      # Run tests for each module
+  test:
+    needs: golangci-lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        modules: ${{ fromJSON(needs.golangci-lint.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Configure Workspace and Install Dependencies
+        run: |
+          go work init
+          go work use ${{ env.MODULES }}
+          cd ${{ matrix.modules }} && go mod tidy && go mod download
+
       - name: Run Tests
         run: |
           for module in ${{ env.MODULES }}; do
@@ -55,7 +86,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: golangci-lint-and-test
+    needs: test
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
