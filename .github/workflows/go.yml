@@ -39,7 +39,7 @@ jobs:
       - name: Filter full module paths
         id: filter
         run: |
-          ALL_PATHS=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')"
+          ALL_PATHS=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')
           
           CHANGED=${{ steps.detect.outputs.changed }}
           
