@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       modules: ${{ steps.set-modules.outputs.modules }}
-      ignore-modules: ${{ steps.set-ignore-modules.outputs.ignore-modules }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
@@ -32,10 +31,6 @@ jobs:
       - id: set-modules
         run:
           echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
-
-      - id: set-ignore-modules
-        run:
-          echo "ignore-modules=$(go list -m -json all | jq -s '[.[] | select(.Dir | test("shared|pkg") | not) | .Dir]' -c)" >> $GITHUB_OUTPUT
 
   golangci-lint:
     needs: detect-modules
@@ -65,9 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        modules: ${{ fromJSON(needs.detect-modules.outputs.ignore-modules) }}
-    outputs:
-      modules: ${{ needs.detect-modules.outputs.ignore-modules }}
+        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
@@ -90,7 +83,7 @@ jobs:
     needs: [ golangci-lint, test ]
     strategy:
       matrix:
-        modules: ${{ fromJSON(needs.test.outputs.modules) }}
+        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
