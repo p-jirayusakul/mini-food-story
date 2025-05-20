@@ -49,6 +49,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    needs: test # ให้ job `build` ทำงานหลังจาก `test`
     steps:
       - uses: actions/checkout@v4
 
