@@ -28,51 +28,41 @@ jobs:
           if [ -d ./order-service ]; then cd ./order-service && go mod tidy && go mod download && cd ..; fi
 
       - name: Build Menu Service
-        if: ${{ exists('menu-service') }}
         working-directory: ./menu-service
         run: go build -o app cmd/main.go
 
       - name: Build Kitchen Service
-        if: ${{ exists('kitchen-service') }}
         working-directory: ./kitchen-service
         run: go build -o app cmd/main.go
 
       - name: Build Payment Service
-        if: ${{ exists('payment-service') }}
         working-directory: ./payment-service
         run: go build -o app cmd/main.go
 
       - name: Build Table Service
-        if: ${{ exists('table-service') }}
         working-directory: ./table-service
         run: go build -o app cmd/main.go
 
       - name: Build Order Service
-        if: ${{ exists('order-service') }}
         working-directory: ./order-service
         run: go build -o app cmd/main.go
 
       - name: Run Tests for Menu Service
-        if: ${{ exists('menu-service') }}
         working-directory: ./menu-service
         run: go test -v ./...
 
       - name: Run Tests for Kitchen Service
-        if: ${{ exists('kitchen-service') }}
         working-directory: ./kitchen-service
         run: go test -v ./...
 
       - name: Run Tests for Payment Service
-        if: ${{ exists('payment-service') }}
         working-directory: ./payment-service
         run: go test -v ./...
 
       - name: Run Tests for Table Service
-        if: ${{ exists('table-service') }}
         working-directory: ./table-service
         run: go test -v ./...
 
       - name: Run Tests for Order Service
-        if: ${{ exists('order-service') }}
         working-directory: ./order-service
         run: go test -v ./...
