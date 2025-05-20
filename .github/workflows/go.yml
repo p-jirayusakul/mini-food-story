@@ -12,99 +12,149 @@ env:
   MODULES: "./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service"
 
 jobs:
-  detect-modules:
+  filter-modules:
     runs-on: ubuntu-latest
     outputs:
-      modules: ${{ steps.set-modules.outputs.modules }}
+        modules: ${{ steps.filter.outputs.modules }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Configure Workspace and Install Dependencies
-        run: |
-          go work init
-          go work use ${{ env.MODULES }}
-
-      - id: set-modules
-        run:
-          echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
-
-  golangci-lint:
-    needs: detect-modules
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Configure Workspace and Install Dependencies
-        run: |
-          go work init
-          go work use ${{ env.MODULES }}
-          cd ${{ matrix.modules }} && go mod tidy && go mod download
-
-      - name: golangci-lint ${{ matrix.modules }}
-        uses: golangci/golangci-lint-action@v8
-        with:
-          version: ${{ env.GOLANGCI_LINT_VERSION }}
-          working-directory: ${{ matrix.modules }}
-
-  test:
-    needs: detect-modules
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
-    outputs:
-      modules: ${{ steps.set-modules.outputs.modules }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v4
-        with:
-          go-version: ${{ env.GO_VERSION }}
-
-      - name: Configure Workspace and Install Dependencies
-        run: |
-          go work init
-          go work use ${{ env.MODULES }}
-          cd ${{ matrix.modules }} && go mod tidy && go mod download
-
-      - name: Run Tests
-        run: |
-          cd ${{ matrix.modules }}
-          go test -v ./...
-
-      - id: set-modules
-        run:
-          echo "modules=$(go list -m -json all | jq -s '[.[] | select(.Dir | test("shared|pkg") | not) | .Dir]' -c)" >> $GITHUB_OUTPUT
-
-  build:
-    runs-on: ubuntu-latest
-    needs: [ golangci-lint, test ]
-    strategy:
-      matrix:
-        modules: ${{ fromJSON(needs.test.outputs.modules) }}
-    steps:
-      - name: Checkout Repository
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version: '1.24.2'
 
-      - name: Configure Workspace and Install Dependencies
+      - name: Get changed modules
+        id: detect
         run: |
-          go work init
-          go work use ${{ env.MODULES }}
-          cd ${{ matrix.modules }} && go mod tidy && go mod download
+          git fetch origin main
+          CHANGED=$(git diff --name-only origin/main...HEAD \
+            | grep -E '^(menu-service|order-service|payment-service|kitchen-service|table-service)/' \
+            | cut -d/ -f1 \
+            | sort -u \
+            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
 
-      - name: Build
+      - name: Filter full module paths
+        id: filter
         run: |
-          cd ${{ matrix.modules }}
-          go build -o app cmd/main.go
+          # Get all module paths as JSON array
+          ALL_PATHS=$(go list -m -json all | jq -rc '[.[] | select(.Dir != null) | .Dir]')
+          
+          # Changed service names from previous step
+          CHANGED=${{ steps.detect.outputs.changed }}
+          
+          # Filter ALL_PATHS by CHANGED
+          FILTERED=$(jq -cn \
+            --argjson all "$ALL_PATHS" \
+            --argjson changed "$CHANGED" '
+            $all | map(select([ $changed[] | "mini-food-sotry/" + . ] | any(. as $c | contains($c))))
+          ')
+          
+          echo "modules=$FILTERED" >> $GITHUB_OUTPUT
+
+  debug-job:
+    needs: filter-modules
+    runs-on: ubuntu-latest
+    steps:
+      - name: Debug Output (เรียกดู Output ของงานก่อนหน้า)
+        run: |
+          echo "Modules from previous job: ${{ needs.filter-modules.outputs.modules }}"
+
+#  detect-modules:
+#    runs-on: ubuntu-latest
+#    outputs:
+#      modules: ${{ steps.set-modules.outputs.modules }}
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-go@v4
+#        with:
+#          go-version: ${{ env.GO_VERSION }}
+#
+#      - name: Configure Workspace and Install Dependencies
+#        run: |
+#          go work init
+#          go work use ${{ env.MODULES }}
+#
+#      - id: set-modules
+#        run:
+#          echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
+#
+#  golangci-lint:
+#    needs: detect-modules
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-go@v4
+#        with:
+#          go-version: ${{ env.GO_VERSION }}
+#      - name: Configure Workspace and Install Dependencies
+#        run: |
+#          go work init
+#          go work use ${{ env.MODULES }}
+#          cd ${{ matrix.modules }} && go mod tidy && go mod download
+#
+#      - name: golangci-lint ${{ matrix.modules }}
+#        uses: golangci/golangci-lint-action@v8
+#        with:
+#          version: ${{ env.GOLANGCI_LINT_VERSION }}
+#          working-directory: ${{ matrix.modules }}
+#
+#  test:
+#    needs: detect-modules
+#    runs-on: ubuntu-latest
+#    strategy:
+#      matrix:
+#        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
+#    outputs:
+#      modules: ${{ steps.set-modules.outputs.modules }}
+#    steps:
+#      - uses: actions/checkout@v4
+#      - uses: actions/setup-go@v4
+#        with:
+#          go-version: ${{ env.GO_VERSION }}
+#
+#      - name: Configure Workspace and Install Dependencies
+#        run: |
+#          go work init
+#          go work use ${{ env.MODULES }}
+#          cd ${{ matrix.modules }} && go mod tidy && go mod download
+#
+#      - name: Run Tests
+#        run: |
+#          cd ${{ matrix.modules }}
+#          go test -v ./...
+#
+#      - id: set-modules
+#        run:
+#          echo "modules=$(go list -m -json all | jq -s '[.[] | select(.Dir | test("shared|pkg") | not) | .Dir]' -c)" >> $GITHUB_OUTPUT
+#
+#  build:
+#    runs-on: ubuntu-latest
+#    needs: [ golangci-lint, test ]
+#    strategy:
+#      matrix:
+#        modules: ${{ fromJSON(needs.test.outputs.modules) }}
+#    steps:
+#      - name: Checkout Repository
+#        uses: actions/checkout@v4
+#
+#      - name: Set up Go
+#        uses: actions/setup-go@v4
+#        with:
+#          go-version: ${{ env.GO_VERSION }}
+#
+#      - name: Configure Workspace and Install Dependencies
+#        run: |
+#          go work init
+#          go work use ${{ env.MODULES }}
+#          cd ${{ matrix.modules }} && go mod tidy && go mod download
+#
+#      - name: Build
+#        run: |
+#          cd ${{ matrix.modules }}
+#          go build -o app cmd/main.go
