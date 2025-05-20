@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
@@ -11,15 +12,12 @@ import (
 func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, items []domain.OrderItems) (customError *exceptions.CustomError) {
 	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
-		return
+		return customError
 	}
 
-	orderID, err := utils.StrToInt64(*tableSession.OrderID)
-	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: err,
-		}
+	orderID, convertErr := convertOrderID(*tableSession.OrderID)
+	if convertErr != nil {
+		return convertErr
 	}
 
 	for index := range items {
@@ -42,41 +40,35 @@ func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, i
 func (i *Implement) GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUID) (result []*domain.CurrentOrderItems, customError *exceptions.CustomError) {
 	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
-		return
+		return nil, customError
 	}
 
-	orderID, err := utils.StrToInt64(*tableSession.OrderID)
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: err,
-		}
+	orderID, convertErr := convertOrderID(*tableSession.OrderID)
+	if convertErr != nil {
+		return nil, convertErr
 	}
 
-	return i.repository.GetCurrentOrderItems(ctx, orderID, tableSession.TableNumber)
+	return i.repository.GetCurrentOrderItems(ctx, orderID)
 }
 
-func (i *Implement) GetCurrentOderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
 	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
-		return
+		return nil, customError
 	}
 
-	orderID, err := utils.StrToInt64(*tableSession.OrderID)
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: err,
-		}
+	orderID, convertErr := convertOrderID(*tableSession.OrderID)
+	if convertErr != nil {
+		return nil, convertErr
 	}
 
-	return i.repository.GetOderItemsByID(ctx, orderID, orderItemsID, tableSession.TableNumber)
+	return i.repository.GetCurrentOrderItemsByID(ctx, orderID, orderItemsID)
 }
 
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
 	orderID, customError := i.GetOrderIDFromSession(sessionID)
 	if customError != nil {
-		return
+		return customError
 	}
 
 	payload.OrderID = orderID
@@ -86,4 +78,23 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.U
 
 func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
 	return i.repository.SearchOrderItemsIncomplete(ctx, orderID, payload)
+}
+
+func convertOrderID(orderID string) (int64, *exceptions.CustomError) {
+	result, err := utils.StrToInt64(orderID)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: err,
+		}
+	}
+
+	if result == 0 {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: errors.New("invalid order ID"),
+		}
+	}
+
+	return result, nil
 }

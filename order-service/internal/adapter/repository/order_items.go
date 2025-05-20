@@ -13,6 +13,23 @@ import (
 	"strings"
 )
 
+type OrderItemsRow interface {
+	GetID() int64
+	GetOrderID() int64
+	GetOrderNumber() string
+	GetProductID() int64
+	GetStatusID() int64
+	GetStatusName() string
+	GetStatusNameEN() string
+	GetStatusCode() string
+	GetProductName() string
+	GetProductNameEN() string
+	GetPrice() pgtype.Numeric
+	GetQuantity() int32
+	GetNote() pgtype.Text
+	GetCreatedAt() pgtype.Timestamptz
+}
+
 func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []domain.OrderItems, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
 
 	validationError := validationOrderItems(orderItems)
@@ -123,37 +140,35 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, tableNumbe
 		}
 	}
 
-	result = make([]*domain.OrderItems, len(orderItems))
-	for index, item := range orderItems {
-		createdAt, timeErr := utils.PgTimestampToThaiISO8601(item.CreatedAt)
-		if timeErr != nil {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRSYSTEM,
-				Errors: timeErr,
-			}
-		}
+	return transformOrderItemsResults(orderItems, tableNumber), nil
+}
 
-		result[index] = &domain.OrderItems{
-			ID:            item.ID,
-			OrderID:       item.OrderID,
-			OrderNumber:   item.OrderNumber,
-			ProductID:     item.ProductID,
-			StatusID:      item.StatusID,
-			TableNumber:   tableNumber,
-			StatusName:    item.StatusName,
-			StatusNameEN:  item.StatusNameEN,
-			StatusCode:    item.StatusCode,
-			ProductName:   item.ProductName,
-			ProductNameEN: item.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(item.Price),
-			Quantity:      item.Quantity,
-			Note:          utils.PgTextToStringPtr(item.Note),
-			CreatedAt:     createdAt,
-		}
+func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
 
+	if len(orderItemsID) == 0 {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: fmt.Errorf("order items id cannot be empty"),
+		}
 	}
 
-	return
+	orderItems, repoErr := i.repository.GetOrderWithItemsGroupID(ctx, orderItemsID)
+	if repoErr != nil || orderItems == nil {
+		msg := fmt.Sprintf("order items is nil")
+		status := exceptions.ERRNOTFOUND
+
+		if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
+			status = exceptions.ERRREPOSITORY
+			msg = fmt.Sprintf("failed to get order items: %v", repoErr)
+		}
+
+		return nil, &exceptions.CustomError{
+			Status: status,
+			Errors: fmt.Errorf(msg),
+		}
+	}
+
+	return transformOrderItemsResults(orderItems, tableNumber), nil
 }
 
 func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64) (result []*domain.CurrentOrderItems, customError *exceptions.CustomError) {
@@ -207,7 +222,7 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64) (re
 	return
 }
 
-func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
 
 	orderItemsExistsErr := i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
 	if orderItemsExistsErr != nil {
@@ -233,11 +248,11 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 		}
 	}
 
-	createdAt, timeErr := utils.PgTimestampToThaiISO8601(orderItem.CreatedAt)
-	if timeErr != nil {
+	createdAt, sysErr := utils.PgTimestampToThaiISO8601(orderItem.CreatedAt)
+	if sysErr != nil {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRSYSTEM,
-			Errors: timeErr,
+			Errors: sysErr,
 		}
 	}
 
@@ -254,55 +269,6 @@ func (i *Implement) GetOderItemsByID(ctx context.Context, orderID, orderItemsID 
 		Note:          utils.PgTextToStringPtr(orderItem.Note),
 		CreatedAt:     createdAt,
 	}, nil
-}
-
-func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int64, tableNumber int32) (result []*domain.OrderItems, customError *exceptions.CustomError) {
-
-	orderItems, repoErr := i.repository.GetOrderWithItemsGroupID(ctx, orderItemsID)
-	if repoErr != nil || orderItems == nil {
-		msg := fmt.Sprintf("order items is nil")
-		status := exceptions.ERRNOTFOUND
-
-		if repoErr != nil && !errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
-			status = exceptions.ERRREPOSITORY
-			msg = fmt.Sprintf("failed to get order items: %v", repoErr)
-		}
-
-		return nil, &exceptions.CustomError{
-			Status: status,
-			Errors: fmt.Errorf(msg),
-		}
-	}
-
-	result = make([]*domain.OrderItems, len(orderItems))
-	for index, item := range orderItems {
-		createdAt, err := utils.PgTimestampToThaiISO8601(item.CreatedAt)
-		if err != nil {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRSYSTEM,
-				Errors: err,
-			}
-		}
-
-		result[index] = &domain.OrderItems{
-			ID:            item.ID,
-			OrderID:       item.OrderID,
-			OrderNumber:   item.OrderNumber,
-			ProductID:     item.ProductID,
-			StatusID:      item.StatusID,
-			TableNumber:   tableNumber,
-			StatusName:    item.StatusName,
-			StatusNameEN:  item.StatusNameEN,
-			StatusCode:    item.StatusCode,
-			ProductName:   item.ProductName,
-			ProductNameEN: item.ProductNameEN,
-			Price:         utils.PgNumericToFloat64(item.Price),
-			Quantity:      item.Quantity,
-			Note:          utils.PgTextToStringPtr(item.Note),
-			CreatedAt:     createdAt,
-		}
-	}
-	return
 }
 
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload domain.OrderItemsStatus) (customError *exceptions.CustomError) {
@@ -413,4 +379,29 @@ func validationOrderItems(items []domain.OrderItems) *exceptions.CustomError {
 		}
 	}
 	return nil
+}
+
+func transformOrderItemsResults[T OrderItemsRow](results []T, tableNumber int32) []*domain.OrderItems {
+	data := make([]*domain.OrderItems, len(results))
+	for index, row := range results {
+		createdAt, _ := utils.PgTimestampToThaiISO8601(row.GetCreatedAt())
+		data[index] = &domain.OrderItems{
+			ID:            row.GetID(),
+			OrderID:       row.GetOrderID(),
+			OrderNumber:   row.GetOrderNumber(),
+			ProductID:     row.GetProductID(),
+			StatusID:      row.GetStatusID(),
+			TableNumber:   tableNumber,
+			StatusName:    row.GetStatusName(),
+			StatusNameEN:  row.GetStatusNameEN(),
+			StatusCode:    row.GetStatusCode(),
+			ProductName:   row.GetProductName(),
+			ProductNameEN: row.GetProductNameEN(),
+			Price:         utils.PgNumericToFloat64(row.GetPrice()),
+			Quantity:      row.GetQuantity(),
+			Note:          utils.PgTextToStringPtr(row.GetNote()),
+			CreatedAt:     createdAt,
+		}
+	}
+	return data
 }
