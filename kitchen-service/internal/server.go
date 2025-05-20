@@ -21,8 +21,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"strings"
 	"time"
-
-	dbcfg "food-story/shared/config"
 )
 
 const EnvFile = ".env"
@@ -65,7 +63,7 @@ func New() *FiberServer {
 	app.Use(middleware.LogHandler())
 
 	// connect to database
-	configDB := dbcfg.InitDBConfig(EnvFile)
+	configDB := config.InitDBConfig(EnvFile)
 	dbConn, err := configDB.ConnectToDatabase()
 	if err != nil {
 		panic(err)

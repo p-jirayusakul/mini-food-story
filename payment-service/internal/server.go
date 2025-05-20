@@ -17,8 +17,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
-
-	dbcfg "food-story/shared/config"
 )
 
 const EnvFile = ".env"
@@ -60,7 +58,7 @@ func New() *FiberServer {
 	app.Use(middleware.LogHandler())
 
 	// connect to database
-	configDB := dbcfg.InitDBConfig(EnvFile)
+	configDB := config.InitDBConfig(EnvFile)
 	dbConn, err := configDB.ConnectToDatabase()
 	if err != nil {
 		panic(err)

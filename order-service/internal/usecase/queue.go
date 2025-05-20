@@ -24,7 +24,7 @@ func (i *Implement) PublishOrderToQueue(orderItems []*shareModel.OrderItems) *ex
 	for _, v := range orderItems {
 		err := i.queue.PublishOrder(*v)
 		if err != nil {
-			slog.Error("failed to publish order to queue: ", err, " order items: ", v)
+			slog.Error("failed to publish order to queue: ", " order items: ", err)
 			continue
 		}
 	}

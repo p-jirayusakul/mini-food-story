@@ -107,8 +107,8 @@ func GenerateRefCode() string {
 	now := time.Now()
 	datePart := now.Format("20060102")
 
-	rand.Seed(time.Now().UnixNano())
-	randomPart := rand.Intn(900000) + 100000
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randomPart := r.Intn(900000) + 100000
 
 	return fmt.Sprintf("PAY-%s-%d", datePart, randomPart)
 }
