@@ -25,11 +25,47 @@ jobs:
           go work init
           go work use ./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service
           cd menu-service && go mod tidy && go mod download
+          cd kitchen-service && go mod tidy && go mod download
+          cd payment-service && go mod tidy && go mod download
+          cd table-service && go mod tidy && go mod download
+          cd order-service && go mod tidy && go mod download
 
-      - name: Build Application
+      - name: Build Menu Service
         working-directory: ./menu-service
         run: go build -o app cmd/main.go
 
-      - name: Run Tests
+      - name: Build Table Service
+        working-directory: ./table-service
+        run: go build -o app cmd/main.go
+
+      - name: Build Order Service
+        working-directory: ./order-service
+        run: go build -o app cmd/main.go
+
+      - name: Build Kitchen Service
+        working-directory: ./kitchen-service
+        run: go build -o app cmd/main.go
+
+      - name: Build Payment Service
+        working-directory: ./payment-service
+        run: go build -o app cmd/main.go
+
+      - name: Run Tests for Menu Service
         working-directory: ./menu-service
+        run: go test -v ./...
+
+      - name: Run Tests for Table Service
+        working-directory: ./table-service
+        run: go test -v ./...
+
+      - name: Run Tests for Order Service
+        working-directory: ./order-service
+        run: go test -v ./...
+
+      - name: Run Tests for Kitchen Service
+        working-directory: ./kitchen-service
+        run: go test -v ./...
+
+      - name: Run Tests for Payment Service
+        working-directory: ./payment-service
         run: go test -v ./...
