@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       modules: ${{ steps.set-modules.outputs.modules }}
-      ignore-modules: ${{ steps.set-ignore-modules.outputs.modules }}
+      ignore-modules: ${{ steps.set-ignore-modules.outputs.ignore-modules }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v4
@@ -35,7 +35,7 @@ jobs:
 
       - id: set-ignore-modules
         run:
-          echo "modules=$(go list -m -json all | jq -s '[.[] | select(.Dir | test("shared|pkg") | not) | .Dir]' -c)" >> $GITHUB_OUTPUT
+          echo "ignore-modules=$(go list -m -json all | jq -s '[.[] | select(.Dir | test("shared|pkg") | not) | .Dir]' -c)" >> $GITHUB_OUTPUT
 
   golangci-lint:
     needs: detect-modules
