@@ -30,22 +30,19 @@ jobs:
         run: |
           git fetch origin main
           CHANGED=$(git diff --name-only origin/main...HEAD \
-            | grep -E '^(menu-service|order-service|payment-service|kitchen-service|table-service)/' \
-            | cut -d/ -f1 \
-            | sort -u \
-            | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          | grep -E '^(menu-service|payment-service|kitchen-service|order-service|table-service|pkg|shared)/' \
+          | cut -d/ -f1 \
+          | sort -u \
+          | jq -R -s -c 'split("\n") | map(select(length > 0))')
           echo "changed=$CHANGED" >> $GITHUB_OUTPUT
 
       - name: Filter full module paths
         id: filter
         run: |
-          # Get all module paths as JSON array
-          ALL_PATHS=$(go list -m -json all | jq -rc '[.[] | select(.Dir != null) | .Dir]')
+          ALL_PATHS=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')"
           
-          # Changed service names from previous step
           CHANGED=${{ steps.detect.outputs.changed }}
           
-          # Filter ALL_PATHS by CHANGED
           FILTERED=$(jq -cn \
             --argjson all "$ALL_PATHS" \
             --argjson changed "$CHANGED" '
