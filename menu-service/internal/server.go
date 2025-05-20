@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"food-story/menu-service/internal/adapter/cache"
 	menuhd "food-story/menu-service/internal/adapter/http"
 	"food-story/menu-service/internal/adapter/repository"
@@ -106,6 +107,8 @@ func New() *FiberServer {
 		},
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
+
+	fmt.Println("test change")
 
 	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
 	return &FiberServer{

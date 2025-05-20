@@ -9,7 +9,6 @@ on:
 env:
   GO_VERSION: stable
   GOLANGCI_LINT_VERSION: v2.1
-  EXCLUDED_BUILD_MODULES: "./pkg|./shared"
   MODULES: "./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service"
 
 jobs:
@@ -30,7 +29,13 @@ jobs:
 
       - id: set-modules
         run:
-          echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
+          echo "modules=$(git diff --name-only origin/main...HEAD \
+          | grep -E '^(kitchen-service|menu-service|order-service|payment-service|table-service|pkg|shared)/' \
+          | cut -d/ -f1 \
+          | sort -u \
+          | xargs -I{} realpath {} \
+          | jq -R -s -c 'split("\n") | map(select(length > 0))')"
+#          echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
 
   golangci-lint:
     needs: detect-modules
