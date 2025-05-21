@@ -124,7 +124,7 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 
 	orderQueue := producer.NewQueue(producerSarama)
 	orderCache := cache.NewRedisTableCache(redisConn)
-	orderRepo := repository.NewRepo(configApp, store, snowflakeNode)
+	orderRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache, orderQueue)
 	orderhd.NewHTTPHandler(router, orderUseCase, validator, configApp)
 }

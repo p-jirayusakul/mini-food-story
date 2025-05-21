@@ -23,7 +23,7 @@ func (i *Implement) IsOrderWithItemsExists(ctx context.Context, orderID, orderIt
 	if !isExist {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRNOTFOUND,
-			Errors: fmt.Errorf("order item not found"),
+			Errors: exceptions.ErrOrderItemsNotFound,
 		}
 	}
 

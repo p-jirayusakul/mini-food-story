@@ -9,9 +9,9 @@ import (
 	"food-story/pkg/utils"
 	"food-story/shared/config"
 	database "food-story/shared/database/sqlc"
-	mockdb "food-story/shared/mock/database"
-	mockcache "food-story/shared/mock/menu/cache"
-	mocksnowflake "food-story/shared/mock/snowflake"
+	"food-story/shared/mock/cache/menu"
+	"food-story/shared/mock/database"
+	"food-story/shared/mock/shared"
 	"github.com/jackc/pgx/v5/pgtype"
 
 	"github.com/stretchr/testify/require"
@@ -86,7 +86,7 @@ func TestListTask(t *testing.T) {
 		},
 	}
 
-	cfg := config.Config{}
+	cfg := mockshared.MockupConfig()
 	for i := range testCases {
 		tc := testCases[i]
 
@@ -96,7 +96,7 @@ func TestListTask(t *testing.T) {
 
 			store := mockdb.NewMockStore(ctrl)
 			redis := mockcache.NewMockRedisTableCacheInterface(ctrl)
-			node := mocksnowflake.NewMockSnowflakeInterface(ctrl)
+			node := mockshared.NewMockSnowflakeInterface(ctrl)
 
 			tc.buildStubs(store)
 			repo := repository.NewRepository(cfg, store, node)
@@ -189,7 +189,7 @@ func TestGetProductByID(t *testing.T) {
 
 			store := mockdb.NewMockStore(ctrl)
 			redis := mockcache.NewMockRedisTableCacheInterface(ctrl)
-			node := mocksnowflake.NewMockSnowflakeInterface(ctrl)
+			node := mockshared.NewMockSnowflakeInterface(ctrl)
 
 			tc.buildStubs(store)
 			repo := repository.NewRepository(cfg, store, node)

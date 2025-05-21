@@ -38,7 +38,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (int64
 }
 
 const getOrderByID = `-- name: GetOrderByID :one
-SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN", mos.code as "statusCode"
+SELECT o.id, o.session_id as "sessionID", o.table_id as "tableID", t.table_number as "tableNumber", o.status_id as "statusID", mos.name as "statusName", mos.name_en as "statusNameEN", mos.code as "statusCode"
 FROM public.orders as o
 JOIN public.md_order_statuses as mos ON o.status_id = mos.id
 JOIN public.tables as t ON o.table_id = t.id
@@ -46,15 +46,14 @@ WHERE o.id = $1::bigint
 `
 
 type GetOrderByIDRow struct {
-	ID            int64       `json:"id"`
-	SessionID     pgtype.UUID `json:"sessionID"`
-	TableID       int64       `json:"tableID"`
-	TableNumber   int32       `json:"tableNumber"`
-	TableNumber_2 int32       `json:"tableNumber_2"`
-	StatusID      int64       `json:"statusID"`
-	StatusName    string      `json:"statusName"`
-	StatusNameEN  string      `json:"statusNameEN"`
-	StatusCode    string      `json:"statusCode"`
+	ID           int64       `json:"id"`
+	SessionID    pgtype.UUID `json:"sessionID"`
+	TableID      int64       `json:"tableID"`
+	TableNumber  int32       `json:"tableNumber"`
+	StatusID     int64       `json:"statusID"`
+	StatusName   string      `json:"statusName"`
+	StatusNameEN string      `json:"statusNameEN"`
+	StatusCode   string      `json:"statusCode"`
 }
 
 func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error) {
@@ -65,7 +64,6 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow,
 		&i.SessionID,
 		&i.TableID,
 		&i.TableNumber,
-		&i.TableNumber_2,
 		&i.StatusID,
 		&i.StatusName,
 		&i.StatusNameEN,

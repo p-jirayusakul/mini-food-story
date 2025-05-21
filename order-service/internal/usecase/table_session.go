@@ -2,9 +2,9 @@ package usecase
 
 import (
 	"errors"
-	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
+	shareModel "food-story/shared/model"
 	"github.com/google/uuid"
 )
 
@@ -32,21 +32,21 @@ func (i *Implement) GetOrderIDFromSession(sessionID uuid.UUID) (result int64, cu
 	return orderID, nil
 }
 
-func (i *Implement) GetCurrentTableSession(sessionID uuid.UUID) (result domain.CurrentTableSession, customError *exceptions.CustomError) {
+func (i *Implement) GetCurrentTableSession(sessionID uuid.UUID) (result shareModel.CurrentTableSession, customError *exceptions.CustomError) {
 	session, tableCacheErr := i.cache.GetCachedTable(sessionID)
 	if tableCacheErr != nil {
-		return domain.CurrentTableSession{}, tableCacheErr
+		return shareModel.CurrentTableSession{}, tableCacheErr
 	}
 
 	if session == nil {
-		return domain.CurrentTableSession{}, &exceptions.CustomError{
+		return shareModel.CurrentTableSession{}, &exceptions.CustomError{
 			Status: exceptions.ERRNOTFOUND,
 			Errors: errors.New("session not found"),
 		}
 	}
 
 	if session.OrderID == nil {
-		return domain.CurrentTableSession{}, &exceptions.CustomError{
+		return shareModel.CurrentTableSession{}, &exceptions.CustomError{
 			Status: exceptions.ERRNOTFOUND,
 			Errors: exceptions.ErrOrderNotFound,
 		}

@@ -222,33 +222,27 @@ func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int6
 	searchParams := buildSearchOrderItemsIncompleteParams(orderID, search)
 
 	var (
-		searchResult  []*database.SearchOrderItemsIsNotFinalRow
-		searchErr     *exceptions.CustomError
-		totalItems    int64
-		totalItemsErr *exceptions.CustomError
+		searchResult []*database.SearchOrderItemsIsNotFinalRow
+		totalItems   int64
 	)
 
+	// parallel search
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
-		searchResult, searchErr = i.fetchOrderItemsNotFinal(ctx, searchParams)
+		searchResult, customError = i.fetchOrderItemsNotFinal(ctx, searchParams)
 	}()
-
 	go func() {
 		defer wg.Done()
-		totalItems, totalItemsErr = i.fetchTotalItems(ctx, searchParams)
+		totalItems, customError = i.fetchTotalItems(ctx, searchParams)
 	}()
 
 	wg.Wait()
 
-	if searchErr != nil {
-		return domain.SearchOrderItemsResult{}, searchErr
-	}
-
-	if totalItemsErr != nil {
-		return domain.SearchOrderItemsResult{}, totalItemsErr
+	if customError != nil {
+		return domain.SearchOrderItemsResult{}, customError
 	}
 
 	return domain.SearchOrderItemsResult{

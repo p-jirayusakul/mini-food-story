@@ -134,7 +134,7 @@ func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.Redis
 
 func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
 	tableCache := cache.NewRedisTableCache(redisConn)
-	tableRepo := repository.NewRepo(configApp, store, snowflakeNode)
+	tableRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	tableUseCase := usecase.NewUsecase(configApp, *tableRepo, tableCache)
 	tablehd.NewHTTPHandler(router, tableUseCase, validator)
 }

@@ -3,15 +3,15 @@ package cache
 import (
 	"encoding/json"
 	"errors"
-	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
+	shareModel "food-story/shared/model"
 	"food-story/shared/redis"
 	"github.com/google/uuid"
 	"strconv"
 )
 
 type RedisTableCacheInterface interface {
-	GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError)
+	GetCachedTable(sessionID uuid.UUID) (*shareModel.CurrentTableSession, *exceptions.CustomError)
 	DeleteCachedTable(sessionID uuid.UUID) *exceptions.CustomError
 	IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError
 	UpdateOrderID(sessionID uuid.UUID, orderID int64) *exceptions.CustomError
@@ -27,7 +27,7 @@ func NewRedisTableCache(client *redis.RedisClient) *RedisTableCache {
 	}
 }
 
-func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError) {
+func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*shareModel.CurrentTableSession, *exceptions.CustomError) {
 	data, err := r.client.Get(redis.KeyTable + sessionID.String())
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
@@ -42,7 +42,7 @@ func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTa
 		}
 	}
 
-	var table domain.CurrentTableSession
+	var table shareModel.CurrentTableSession
 	err = json.Unmarshal([]byte(data), &table)
 	if err != nil {
 		return nil, &exceptions.CustomError{

@@ -7,6 +7,7 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
+	shareModel "food-story/shared/model"
 	"food-story/table-service/internal/domain"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -33,7 +34,7 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 	return nil
 }
 
-func (i *Implement) GetTableSession(ctx context.Context, sessionID uuid.UUID) (*domain.CurrentTableSession, *exceptions.CustomError) {
+func (i *Implement) GetTableSession(ctx context.Context, sessionID uuid.UUID) (*shareModel.CurrentTableSession, *exceptions.CustomError) {
 
 	data, err := i.repository.GetTableSession(ctx, utils.UUIDToPgUUID(sessionID))
 	if err != nil {
@@ -49,7 +50,7 @@ func (i *Implement) GetTableSession(ctx context.Context, sessionID uuid.UUID) (*
 		}
 	}
 
-	result := domain.CurrentTableSession{
+	result := shareModel.CurrentTableSession{
 		SessionID:   sessionID,
 		TableID:     data.TableID,
 		TableNumber: data.TableNumber,

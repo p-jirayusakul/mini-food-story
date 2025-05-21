@@ -12,7 +12,7 @@ type Implement struct {
 	snowflakeID snowflakeid.SnowflakeInterface
 }
 
-func NewRepo(config config.Config, repository database.Store, snowflakeID snowflakeid.SnowflakeInterface) *Implement {
+func NewRepository(config config.Config, repository database.Store, snowflakeID snowflakeid.SnowflakeInterface) *Implement {
 	return &Implement{
 		config,
 		repository,

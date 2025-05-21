@@ -31,12 +31,13 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderI
 		return 0, tableCacheErr
 	}
 
+	// if already have order ID, then create order items
 	if sessionDetail.OrderID != nil {
-		orderID, err := utils.StrToInt64(*sessionDetail.OrderID)
-		if err != nil {
+		orderID, sysErr := utils.StrToInt64(*sessionDetail.OrderID)
+		if sysErr != nil {
 			return 0, &exceptions.CustomError{
 				Status: exceptions.ERRSYSTEM,
-				Errors: err,
+				Errors: sysErr,
 			}
 		}
 
@@ -50,6 +51,7 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderI
 		return orderID, nil
 	}
 
+	// if not have order ID, then create order
 	payloadCreateOrder := domain.CreateOrder{
 		SessionID:  sessionID,
 		TableID:    sessionDetail.TableID,

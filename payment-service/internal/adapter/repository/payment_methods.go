@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"food-story/payment-service/internal/domain"
 	"food-story/pkg/exceptions"
@@ -17,7 +18,10 @@ func (i *Implement) ListPaymentMethods(ctx context.Context) (result []*domain.Pa
 	}
 
 	if data == nil {
-		return nil, nil
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: errors.New("no data found"),
+		}
 	}
 
 	result = make([]*domain.PaymentMethod, len(data))

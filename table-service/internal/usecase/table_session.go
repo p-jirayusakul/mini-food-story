@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
+	shareModel "food-story/shared/model"
 	"food-story/shared/redis"
 	"food-story/table-service/internal/domain"
 	"github.com/google/uuid"
@@ -48,7 +49,7 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 	}
 
 	key := redis.KeyTable + sessionID.String()
-	customError = i.cache.SetCachedTable(key, &domain.CurrentTableSession{
+	customError = i.cache.SetCachedTable(key, &shareModel.CurrentTableSession{
 		SessionID:   sessionID,
 		TableID:     payload.TableID,
 		TableNumber: tableNumber,
@@ -72,7 +73,7 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 	return i.config.FrontendURL + "?s=" + encryptedSessionID, nil
 }
 
-func (i *Implement) GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentTableSession, *exceptions.CustomError) {
+func (i *Implement) GetCurrentSession(sessionIDEncrypt string) (*shareModel.CurrentTableSession, *exceptions.CustomError) {
 	sessionIDDecrypt, err := utils.DecryptSession(sessionIDEncrypt, []byte(i.config.SecretKey))
 	if err != nil {
 		return nil, &exceptions.CustomError{

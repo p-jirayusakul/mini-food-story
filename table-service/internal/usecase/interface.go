@@ -4,6 +4,7 @@ import (
 	"context"
 	"food-story/pkg/exceptions"
 	"food-story/shared/config"
+	shareModel "food-story/shared/model"
 	"food-story/table-service/internal/adapter/cache"
 	"food-story/table-service/internal/adapter/repository"
 	"food-story/table-service/internal/domain"
@@ -17,7 +18,7 @@ type UseCase interface {
 	SearchTableByFilters(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
 	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError)
 	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError)
-	GetCurrentSession(sessionIDEncrypt string) (*domain.CurrentTableSession, *exceptions.CustomError)
+	GetCurrentSession(sessionIDEncrypt string) (*shareModel.CurrentTableSession, *exceptions.CustomError)
 }
 
 type Implement struct {

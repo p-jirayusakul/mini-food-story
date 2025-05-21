@@ -5,16 +5,16 @@ import (
 	"errors"
 	"fmt"
 	"food-story/pkg/exceptions"
+	shareModel "food-story/shared/model"
 	"food-story/shared/redis"
-	"food-story/table-service/internal/domain"
 	"github.com/google/uuid"
 	"strconv"
 	"time"
 )
 
 type RedisTableCacheInterface interface {
-	GetCachedTable(key string) (*domain.CurrentTableSession, *exceptions.CustomError)
-	SetCachedTable(key string, table *domain.CurrentTableSession, ttl time.Duration) *exceptions.CustomError
+	GetCachedTable(key string) (*shareModel.CurrentTableSession, *exceptions.CustomError)
+	SetCachedTable(key string, table *shareModel.CurrentTableSession, ttl time.Duration) *exceptions.CustomError
 	DeleteCachedTable(key string) *exceptions.CustomError
 	IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError
 	SetCachedTableNumber(key string, tableNumber int32, ttl time.Duration) *exceptions.CustomError
@@ -31,7 +31,7 @@ func NewRedisTableCache(client *redis.RedisClient) *RedisTableCache {
 	}
 }
 
-func (r *RedisTableCache) GetCachedTable(key string) (*domain.CurrentTableSession, *exceptions.CustomError) {
+func (r *RedisTableCache) GetCachedTable(key string) (*shareModel.CurrentTableSession, *exceptions.CustomError) {
 	data, err := r.client.Get(key)
 	if err != nil {
 		return nil, &exceptions.CustomError{
@@ -40,7 +40,7 @@ func (r *RedisTableCache) GetCachedTable(key string) (*domain.CurrentTableSessio
 		}
 	}
 
-	var table domain.CurrentTableSession
+	var table shareModel.CurrentTableSession
 	err = json.Unmarshal([]byte(data), &table)
 	if err != nil {
 		return nil, &exceptions.CustomError{
@@ -52,7 +52,7 @@ func (r *RedisTableCache) GetCachedTable(key string) (*domain.CurrentTableSessio
 	return &table, nil
 }
 
-func (r *RedisTableCache) SetCachedTable(key string, table *domain.CurrentTableSession, ttl time.Duration) *exceptions.CustomError {
+func (r *RedisTableCache) SetCachedTable(key string, table *shareModel.CurrentTableSession, ttl time.Duration) *exceptions.CustomError {
 	data, err := json.Marshal(table)
 	if err != nil {
 		return &exceptions.CustomError{

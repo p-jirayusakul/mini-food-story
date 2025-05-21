@@ -89,7 +89,10 @@ func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Statu
 	}
 
 	if data == nil {
-		return nil, nil
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: errors.New("table status not found"),
+		}
 	}
 
 	result = make([]*domain.Status, len(data))
