@@ -20,4 +20,4 @@ SET status='failed'::payment_status, paid_at=NULL, updated_at=NOW()
 WHERE id=sqlc.arg(id)::bigint;
 
 -- name: GetPaymentOrderIDByTransaction :one
-SELECT order_id FROM public.payments WHERE transaction_id =sqlc.arg(transaction_id)::text LIMIT 1;
+SELECT order_id as "orderID" FROM public.payments WHERE transaction_id =sqlc.arg(transaction_id)::text LIMIT 1;

@@ -973,31 +973,31 @@ func (mr *MockStoreMockRecorder) UpdateTablesStatus(ctx, arg any) *gomock.Call {
 }
 
 // UpdateTablesStatusAvailable mocks base method.
-func (m *MockStore) UpdateTablesStatusAvailable(ctx context.Context, dollar_1 pgtype.Int8) error {
+func (m *MockStore) UpdateTablesStatusAvailable(ctx context.Context, id int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTablesStatusAvailable", ctx, dollar_1)
+	ret := m.ctrl.Call(m, "UpdateTablesStatusAvailable", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateTablesStatusAvailable indicates an expected call of UpdateTablesStatusAvailable.
-func (mr *MockStoreMockRecorder) UpdateTablesStatusAvailable(ctx, dollar_1 any) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateTablesStatusAvailable(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusAvailable", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusAvailable), ctx, dollar_1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusAvailable", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusAvailable), ctx, id)
 }
 
 // UpdateTablesStatusDisabled mocks base method.
-func (m *MockStore) UpdateTablesStatusDisabled(ctx context.Context, dollar_1 pgtype.Int8) error {
+func (m *MockStore) UpdateTablesStatusDisabled(ctx context.Context, id int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTablesStatusDisabled", ctx, dollar_1)
+	ret := m.ctrl.Call(m, "UpdateTablesStatusDisabled", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateTablesStatusDisabled indicates an expected call of UpdateTablesStatusDisabled.
-func (mr *MockStoreMockRecorder) UpdateTablesStatusDisabled(ctx, dollar_1 any) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateTablesStatusDisabled(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusDisabled", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusDisabled), ctx, dollar_1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusDisabled", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusDisabled), ctx, id)
 }
 
 // UpdateTablesStatusOccupied mocks base method.
@@ -1029,15 +1029,15 @@ func (mr *MockStoreMockRecorder) UpdateTablesStatusOrdered(ctx, id any) *gomock.
 }
 
 // UpdateTablesStatusReserved mocks base method.
-func (m *MockStore) UpdateTablesStatusReserved(ctx context.Context, dollar_1 pgtype.Int8) error {
+func (m *MockStore) UpdateTablesStatusReserved(ctx context.Context, id int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTablesStatusReserved", ctx, dollar_1)
+	ret := m.ctrl.Call(m, "UpdateTablesStatusReserved", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UpdateTablesStatusReserved indicates an expected call of UpdateTablesStatusReserved.
-func (mr *MockStoreMockRecorder) UpdateTablesStatusReserved(ctx, dollar_1 any) *gomock.Call {
+func (mr *MockStoreMockRecorder) UpdateTablesStatusReserved(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusReserved", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusReserved), ctx, dollar_1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusReserved", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusReserved), ctx, id)
 }

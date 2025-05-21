@@ -44,14 +44,14 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (i
 }
 
 const getPaymentOrderIDByTransaction = `-- name: GetPaymentOrderIDByTransaction :one
-SELECT order_id FROM public.payments WHERE transaction_id =$1::text LIMIT 1
+SELECT order_id as "orderID" FROM public.payments WHERE transaction_id =$1::text LIMIT 1
 `
 
 func (q *Queries) GetPaymentOrderIDByTransaction(ctx context.Context, transactionID string) (int64, error) {
 	row := q.db.QueryRow(ctx, getPaymentOrderIDByTransaction, transactionID)
-	var order_id int64
-	err := row.Scan(&order_id)
-	return order_id, err
+	var orderID int64
+	err := row.Scan(&orderID)
+	return orderID, err
 }
 
 const updateStatusPaymentFail = `-- name: UpdateStatusPaymentFail :exec

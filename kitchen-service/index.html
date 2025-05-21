@@ -55,7 +55,7 @@
 
             ordersDiv.insertAdjacentHTML("afterbegin", orderHTML);
         } catch (err) {
-            console.error("Invalid message format:", event.data);
+            console.log(`Exception while doing something: ${err}`);
         }
     };
 

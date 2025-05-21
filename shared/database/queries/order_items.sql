@@ -8,7 +8,7 @@ SELECT id, order_id, product_id, status_id, product_name, product_name_en, price
 FROM public.order_items WHERE id = $1;
 
 -- name: IsOrderItemsExist :one
-SELECT COUNT(id) > 0
+SELECT COUNT(id) > 0 as "isExist"
 FROM public.order_items WHERE id = $1;
 
 -- name: UpdateOrderItemsStatus :exec
@@ -22,6 +22,6 @@ SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' L
 WHERE id = sqlc.arg(id)::bigint;
 
 -- name: GetTotalAmountToPayForServedItems :one
-SELECT SUM(price * quantity) AS total_amount
+SELECT SUM(price * quantity) AS "totalAmount"
 FROM public.order_items
 WHERE order_id = $1 AND status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1);

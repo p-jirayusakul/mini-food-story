@@ -105,4 +105,4 @@ FROM public.products as p
 WHERE p.id = sqlc.arg(id)::bigint AND p.is_available IS TRUE LIMIT 1;
 
 -- name: IsProductExists :one
-SELECT count(*) > 0 FROM public.products WHERE id = $1;
+SELECT count(*) > 0 as "isExists" FROM public.products WHERE id = $1;

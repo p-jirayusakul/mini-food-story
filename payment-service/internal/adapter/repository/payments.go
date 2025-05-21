@@ -13,6 +13,8 @@ import (
 	"time"
 )
 
+const FailToGetTotalAmount = "failed to fetch amount order: %w"
+
 func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, customError *exceptions.CustomError) {
 
 	var note pgtype.Text
@@ -25,7 +27,7 @@ func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain
 	if err != nil {
 		return "", &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch table status: %w", err),
+			Errors: fmt.Errorf(FailToGetTotalAmount, err),
 		}
 	}
 
@@ -44,7 +46,7 @@ func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain
 	if err != nil {
 		return "", &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch table status: %w", err),
+			Errors: fmt.Errorf("failed to create payment: %w", err),
 		}
 	}
 
@@ -86,7 +88,7 @@ func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionI
 	if err != nil {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch table status: %w", err),
+			Errors: fmt.Errorf(FailToGetTotalAmount, err),
 		}
 	}
 	err = i.repository.UpdateOrderStatusCompletedAndAmount(ctx, database.UpdateOrderStatusCompletedAndAmountParams{

@@ -5,7 +5,7 @@ VALUES(sqlc.arg(id)::bigint, sqlc.arg(order_number)::varchar, sqlc.arg(session_i
 RETURNING id;
 
 -- name: IsOrderExist :one
-SELECT COUNT(id) > 0
+SELECT COUNT(id) > 0 as "isExist"
 FROM public.orders WHERE id = $1;
 
 -- name: GetOrderByID :one
@@ -106,7 +106,7 @@ WHERE  DATE(oi.created_at) = CURRENT_DATE
     );
 
 -- name: GetTableNumberOrderByID :one
-SELECT t.table_number
+SELECT t.table_number as "tableNumber"
 FROM public.orders o
          JOIN public.tables t ON o.table_id = t.id
 WHERE o.id = sqlc.arg(order_id)::bigint LIMIT 1;
@@ -180,7 +180,7 @@ WHERE oi.id = ANY(sqlc.arg(order_items_id)::bigint[])
 order by oi.id DESC;
 
 -- name: IsOrderWithItemsExists :one
-SELECT COUNT(*) > 0
+SELECT COUNT(*) > 0 as "isExists"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
 WHERE o.id = sqlc.arg(order_id)::bigint AND oi.id = sqlc.arg(order_items_id)::bigint LIMIT 1;

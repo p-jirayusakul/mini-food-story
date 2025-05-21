@@ -31,18 +31,18 @@ func (q *Queries) CreateTable(ctx context.Context, arg CreateTableParams) (int64
 }
 
 const getTableNumber = `-- name: GetTableNumber :one
-SELECT table_number FROM public.tables WHERE id = $1
+SELECT table_number as "tableNumber" FROM public.tables WHERE id = $1
 `
 
 func (q *Queries) GetTableNumber(ctx context.Context, id int64) (int32, error) {
 	row := q.db.QueryRow(ctx, getTableNumber, id)
-	var table_number int32
-	err := row.Scan(&table_number)
-	return table_number, err
+	var tableNumber int32
+	err := row.Scan(&tableNumber)
+	return tableNumber, err
 }
 
 const getTotalPageQuickSearchTables = `-- name: GetTotalPageQuickSearchTables :one
-SELECT COUNT(*)
+SELECT COUNT(*) as "totalItems"
 FROM public.tables t
          INNER JOIN public.md_table_statuses s ON t.status_id = s.id
 WHERE t.seats >= $1::integer AND s.code = 'AVAILABLE'
@@ -50,9 +50,9 @@ WHERE t.seats >= $1::integer AND s.code = 'AVAILABLE'
 
 func (q *Queries) GetTotalPageQuickSearchTables(ctx context.Context, numberOfPeople int32) (int64, error) {
 	row := q.db.QueryRow(ctx, getTotalPageQuickSearchTables, numberOfPeople)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+	var totalItems int64
+	err := row.Scan(&totalItems)
+	return totalItems, err
 }
 
 const getTotalPageSearchTables = `-- name: GetTotalPageSearchTables :one
@@ -82,26 +82,26 @@ func (q *Queries) GetTotalPageSearchTables(ctx context.Context, arg GetTotalPage
 }
 
 const isTableAvailableOrReserved = `-- name: IsTableAvailableOrReserved :one
-SELECT COUNT(id) > 0 FROM public.tables WHERE id = $1::bigint
+SELECT COUNT(id) > 0 as "isAvailable" FROM public.tables WHERE id = $1::bigint
 AND (status_id = (select id from public.md_table_statuses WHERE code = 'AVAILABLE') OR status_id = (select id from public.md_table_statuses WHERE code = 'RESERVED'))
 `
 
 func (q *Queries) IsTableAvailableOrReserved(ctx context.Context, id int64) (bool, error) {
 	row := q.db.QueryRow(ctx, isTableAvailableOrReserved, id)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isAvailable bool
+	err := row.Scan(&isAvailable)
+	return isAvailable, err
 }
 
 const isTableExists = `-- name: IsTableExists :one
-SELECT COUNT(id) > 0 FROM public.tables WHERE id = $1
+SELECT COUNT(id) > 0 as "isExists" FROM public.tables WHERE id = $1
 `
 
 func (q *Queries) IsTableExists(ctx context.Context, id int64) (bool, error) {
 	row := q.db.QueryRow(ctx, isTableExists, id)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isExists bool
+	err := row.Scan(&isExists)
+	return isExists, err
 }
 
 const quickSearchTables = `-- name: QuickSearchTables :many
@@ -302,22 +302,22 @@ func (q *Queries) UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatus
 const updateTablesStatusAvailable = `-- name: UpdateTablesStatusAvailable :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'AVAILABLE'), updated_at = NOW()
-WHERE id=$1
+WHERE id=$1::bigint
 `
 
-func (q *Queries) UpdateTablesStatusAvailable(ctx context.Context, dollar_1 pgtype.Int8) error {
-	_, err := q.db.Exec(ctx, updateTablesStatusAvailable, dollar_1)
+func (q *Queries) UpdateTablesStatusAvailable(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusAvailable, id)
 	return err
 }
 
 const updateTablesStatusDisabled = `-- name: UpdateTablesStatusDisabled :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'DISABLED'), updated_at = NOW()
-WHERE id=$1
+WHERE id=$1::bigint
 `
 
-func (q *Queries) UpdateTablesStatusDisabled(ctx context.Context, dollar_1 pgtype.Int8) error {
-	_, err := q.db.Exec(ctx, updateTablesStatusDisabled, dollar_1)
+func (q *Queries) UpdateTablesStatusDisabled(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusDisabled, id)
 	return err
 }
 
@@ -346,10 +346,10 @@ func (q *Queries) UpdateTablesStatusOrdered(ctx context.Context, id int64) error
 const updateTablesStatusReserved = `-- name: UpdateTablesStatusReserved :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'RESERVED'), updated_at = NOW()
-WHERE id=$1
+WHERE id=$1::bigint
 `
 
-func (q *Queries) UpdateTablesStatusReserved(ctx context.Context, dollar_1 pgtype.Int8) error {
-	_, err := q.db.Exec(ctx, updateTablesStatusReserved, dollar_1)
+func (q *Queries) UpdateTablesStatusReserved(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusReserved, id)
 	return err
 }

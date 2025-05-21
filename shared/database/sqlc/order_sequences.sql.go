@@ -16,12 +16,12 @@ INSERT INTO public.order_sequences (order_date, current_number)
 VALUES ($1::date, 1)
 ON CONFLICT (order_date) DO UPDATE
     SET current_number = order_sequences.current_number + 1
-RETURNING current_number
+RETURNING current_number as "currentNumber"
 `
 
 func (q *Queries) GetOrderSequence(ctx context.Context, orderDate pgtype.Date) (int32, error) {
 	row := q.db.QueryRow(ctx, getOrderSequence, orderDate)
-	var current_number int32
-	err := row.Scan(&current_number)
-	return current_number, err
+	var currentNumber int32
+	err := row.Scan(&currentNumber)
+	return currentNumber, err
 }

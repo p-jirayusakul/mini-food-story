@@ -14,6 +14,8 @@ import (
 	"sync"
 )
 
+const FailedToGetOrderItems = "failed to get order items: %w"
+
 func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []shareModel.OrderItems) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
 
 	validationError := validationOrderItems(orderItems)
@@ -52,7 +54,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []
 	if orderID <= 0 {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRBUSSINESS,
-			Errors: fmt.Errorf("order id or table number cannot be empty"),
+			Errors: exceptions.ErrOrderRequired,
 		}
 	}
 
@@ -65,7 +67,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []
 	if repoErr != nil {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", repoErr),
+			Errors: fmt.Errorf(FailedToGetOrderItems, repoErr),
 		}
 	}
 
@@ -92,7 +94,7 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", repoErr),
+			Errors: fmt.Errorf(FailedToGetOrderItems, repoErr),
 		}
 	}
 
@@ -104,7 +106,7 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64) (re
 	if orderID <= 0 {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRBUSSINESS,
-			Errors: fmt.Errorf("order id cannot be empty"),
+			Errors: exceptions.ErrOrderRequired,
 		}
 	}
 
@@ -117,7 +119,7 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64) (re
 	if repoErr != nil {
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", repoErr),
+			Errors: fmt.Errorf(FailedToGetOrderItems, repoErr),
 		}
 	}
 
@@ -171,7 +173,7 @@ func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, orderID, order
 
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", repoErr),
+			Errors: fmt.Errorf(FailedToGetOrderItems, repoErr),
 		}
 	}
 

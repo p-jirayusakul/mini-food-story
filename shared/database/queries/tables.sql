@@ -4,7 +4,7 @@ VALUES ($1, $2, (SELECT id FROM public.md_table_statuses WHERE code = 'DISABLED'
 RETURNING id;
 
 -- name: GetTableNumber :one
-SELECT table_number FROM public.tables WHERE id = $1;
+SELECT table_number as "tableNumber" FROM public.tables WHERE id = $1;
 
 -- name: UpdateTables :exec
 UPDATE public.tables
@@ -12,10 +12,10 @@ SET table_number=$2, seats=$3, updated_at = NOW()
 WHERE id=$1;
 
 -- name: IsTableExists :one
-SELECT COUNT(id) > 0 FROM public.tables WHERE id = $1;
+SELECT COUNT(id) > 0 as "isExists" FROM public.tables WHERE id = $1;
 
 -- name: IsTableAvailableOrReserved :one
-SELECT COUNT(id) > 0 FROM public.tables WHERE id = sqlc.arg(id)::bigint
+SELECT COUNT(id) > 0 as "isAvailable" FROM public.tables WHERE id = sqlc.arg(id)::bigint
 AND (status_id = (select id from public.md_table_statuses WHERE code = 'AVAILABLE') OR status_id = (select id from public.md_table_statuses WHERE code = 'RESERVED'));
 
 -- name: UpdateTablesStatus :exec
@@ -31,17 +31,17 @@ WHERE id=sqlc.arg(id)::bigint;
 -- name: UpdateTablesStatusAvailable :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'AVAILABLE'), updated_at = NOW()
-WHERE id=$1;
+WHERE id=sqlc.arg(id)::bigint;
 
 -- name: UpdateTablesStatusReserved :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'RESERVED'), updated_at = NOW()
-WHERE id=$1;
+WHERE id=sqlc.arg(id)::bigint;
 
 -- name: UpdateTablesStatusDisabled :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'DISABLED'), updated_at = NOW()
-WHERE id=$1;
+WHERE id=sqlc.arg(id)::bigint;
 
 -- name: UpdateTablesStatusOccupied :exec
 UPDATE public.tables
@@ -121,7 +121,7 @@ ORDER BY CASE
 OFFSET sqlc.arg(page_number) LIMIT sqlc.arg(page_size);
 
 -- name: GetTotalPageQuickSearchTables :one
-SELECT COUNT(*)
+SELECT COUNT(*) as "totalItems"
 FROM public.tables t
          INNER JOIN public.md_table_statuses s ON t.status_id = s.id
 WHERE t.seats >= sqlc.arg(number_of_people)::integer AND s.code = 'AVAILABLE';

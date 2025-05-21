@@ -166,14 +166,14 @@ func (q *Queries) GetTotalPageSearchProducts(ctx context.Context, arg GetTotalPa
 }
 
 const isProductExists = `-- name: IsProductExists :one
-SELECT count(*) > 0 FROM public.products WHERE id = $1
+SELECT count(*) > 0 as "isExists" FROM public.products WHERE id = $1
 `
 
 func (q *Queries) IsProductExists(ctx context.Context, id int64) (bool, error) {
 	row := q.db.QueryRow(ctx, isProductExists, id)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isExists bool
+	err := row.Scan(&isExists)
+	return isExists, err
 }
 
 const searchProducts = `-- name: SearchProducts :many

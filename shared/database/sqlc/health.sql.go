@@ -23,12 +23,12 @@ func (q *Queries) GetTimeNow(ctx context.Context) (pgtype.Timestamptz, error) {
 }
 
 const health = `-- name: Health :one
-SELECT 1
+SELECT 1 as "healthy"
 `
 
 func (q *Queries) Health(ctx context.Context) (int32, error) {
 	row := q.db.QueryRow(ctx, health)
-	var column_1 int32
-	err := row.Scan(&column_1)
-	return column_1, err
+	var healthy int32
+	err := row.Scan(&healthy)
+	return healthy, err
 }

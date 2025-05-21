@@ -4,12 +4,12 @@ INSERT INTO public.table_session
 VALUES($1, $2, $3, $4, 'active', NOW(), $5, NULL);
 
 -- name: IsTableSessionExists :one
-SELECT COUNT(session_id) > 0
+SELECT COUNT(session_id) > 0 as "isExists"
 FROM public.table_session
 WHERE session_id = sqlc.arg(sessionID)::uuid;
 
 -- name: IsTableSessionActive :one
-SELECT COUNT(session_id) > 0
+SELECT COUNT(session_id) > 0 as "isExists"
 FROM public.table_session
 WHERE session_id = sqlc.arg(sessionID)::uuid
   AND status = 'active';

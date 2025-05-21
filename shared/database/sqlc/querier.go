@@ -72,11 +72,11 @@ type Querier interface {
 	UpdateStatusPaymentPaidByTransactionID(ctx context.Context, transactionID string) error
 	UpdateTables(ctx context.Context, arg UpdateTablesParams) error
 	UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error
-	UpdateTablesStatusAvailable(ctx context.Context, dollar_1 pgtype.Int8) error
-	UpdateTablesStatusDisabled(ctx context.Context, dollar_1 pgtype.Int8) error
+	UpdateTablesStatusAvailable(ctx context.Context, id int64) error
+	UpdateTablesStatusDisabled(ctx context.Context, id int64) error
 	UpdateTablesStatusOccupied(ctx context.Context, id int64) error
 	UpdateTablesStatusOrdered(ctx context.Context, id int64) error
-	UpdateTablesStatusReserved(ctx context.Context, dollar_1 pgtype.Int8) error
+	UpdateTablesStatusReserved(ctx context.Context, id int64) error
 }
 
 var _ Querier = (*Queries)(nil)

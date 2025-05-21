@@ -298,7 +298,7 @@ func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []i
 }
 
 const getTableNumberOrderByID = `-- name: GetTableNumberOrderByID :one
-SELECT t.table_number
+SELECT t.table_number as "tableNumber"
 FROM public.orders o
          JOIN public.tables t ON o.table_id = t.id
 WHERE o.id = $1::bigint LIMIT 1
@@ -306,9 +306,9 @@ WHERE o.id = $1::bigint LIMIT 1
 
 func (q *Queries) GetTableNumberOrderByID(ctx context.Context, orderID int64) (int32, error) {
 	row := q.db.QueryRow(ctx, getTableNumberOrderByID, orderID)
-	var table_number int32
-	err := row.Scan(&table_number)
-	return table_number, err
+	var tableNumber int32
+	err := row.Scan(&tableNumber)
+	return tableNumber, err
 }
 
 const getTotalSearchOrderItems = `-- name: GetTotalSearchOrderItems :one
@@ -373,15 +373,15 @@ func (q *Queries) GetTotalSearchOrderItemsIsNotFinal(ctx context.Context, arg Ge
 }
 
 const isOrderExist = `-- name: IsOrderExist :one
-SELECT COUNT(id) > 0
+SELECT COUNT(id) > 0 as "isExist"
 FROM public.orders WHERE id = $1
 `
 
 func (q *Queries) IsOrderExist(ctx context.Context, id int64) (bool, error) {
 	row := q.db.QueryRow(ctx, isOrderExist, id)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isExist bool
+	err := row.Scan(&isExist)
+	return isExist, err
 }
 
 const isOrderItemsNotFinal = `-- name: IsOrderItemsNotFinal :one
@@ -400,7 +400,7 @@ func (q *Queries) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (bool
 }
 
 const isOrderWithItemsExists = `-- name: IsOrderWithItemsExists :one
-SELECT COUNT(*) > 0
+SELECT COUNT(*) > 0 as "isExists"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
 WHERE o.id = $1::bigint AND oi.id = $2::bigint LIMIT 1
@@ -413,9 +413,9 @@ type IsOrderWithItemsExistsParams struct {
 
 func (q *Queries) IsOrderWithItemsExists(ctx context.Context, arg IsOrderWithItemsExistsParams) (bool, error) {
 	row := q.db.QueryRow(ctx, isOrderWithItemsExists, arg.OrderID, arg.OrderItemsID)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isExists bool
+	err := row.Scan(&isExists)
+	return isExists, err
 }
 
 const searchOrderItems = `-- name: SearchOrderItems :many

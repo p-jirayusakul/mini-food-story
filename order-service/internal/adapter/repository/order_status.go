@@ -18,7 +18,7 @@ func (i *Implement) IsOrderStatusExist(ctx context.Context, statusCode string) (
 	if !isStatusExist {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRNOTFOUND,
-			Errors: fmt.Errorf("order status not found"),
+			Errors: exceptions.ErrOrderNotFound,
 		}
 	}
 

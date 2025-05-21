@@ -32,14 +32,14 @@ func (q *Queries) IsOrderStatusExist(ctx context.Context, code string) (bool, er
 }
 
 const isOrderStatusFinal = `-- name: IsOrderStatusFinal :one
-SELECT COUNT(id) > 0 FROM public.md_order_statuses WHERE code = $1::varchar AND is_final IS TRUE LIMIT 1
+SELECT COUNT(id) > 0 as "isFinal" FROM public.md_order_statuses WHERE code = $1::varchar AND is_final IS TRUE LIMIT 1
 `
 
 func (q *Queries) IsOrderStatusFinal(ctx context.Context, code string) (bool, error) {
 	row := q.db.QueryRow(ctx, isOrderStatusFinal, code)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isFinal bool
+	err := row.Scan(&isFinal)
+	return isFinal, err
 }
 
 const listOrderStatus = `-- name: ListOrderStatus :many

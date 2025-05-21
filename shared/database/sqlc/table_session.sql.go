@@ -73,7 +73,7 @@ func (q *Queries) GetTableSession(ctx context.Context, sessionid pgtype.UUID) (*
 }
 
 const isTableSessionActive = `-- name: IsTableSessionActive :one
-SELECT COUNT(session_id) > 0
+SELECT COUNT(session_id) > 0 as "isExists"
 FROM public.table_session
 WHERE session_id = $1::uuid
   AND status = 'active'
@@ -81,22 +81,22 @@ WHERE session_id = $1::uuid
 
 func (q *Queries) IsTableSessionActive(ctx context.Context, sessionid pgtype.UUID) (bool, error) {
 	row := q.db.QueryRow(ctx, isTableSessionActive, sessionid)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isExists bool
+	err := row.Scan(&isExists)
+	return isExists, err
 }
 
 const isTableSessionExists = `-- name: IsTableSessionExists :one
-SELECT COUNT(session_id) > 0
+SELECT COUNT(session_id) > 0 as "isExists"
 FROM public.table_session
 WHERE session_id = $1::uuid
 `
 
 func (q *Queries) IsTableSessionExists(ctx context.Context, sessionid pgtype.UUID) (bool, error) {
 	row := q.db.QueryRow(ctx, isTableSessionExists, sessionid)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isExists bool
+	err := row.Scan(&isExists)
+	return isExists, err
 }
 
 const updateStatusCloseTableSession = `-- name: UpdateStatusCloseTableSession :exec

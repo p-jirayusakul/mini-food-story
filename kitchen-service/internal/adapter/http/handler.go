@@ -9,6 +9,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+const ResGetOrderItemsMsg = "get order items success"
+
 func (s *Handler) SearchOrderItems(c *fiber.Ctx) error {
 	body := new(SearchOrderItems)
 	if err := c.QueryParser(body); err != nil {
@@ -39,7 +41,7 @@ func (s *Handler) SearchOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseOK(c, "get order items success", result)
+	return middleware.ResponseOK(c, ResGetOrderItemsMsg, result)
 }
 
 func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
@@ -53,7 +55,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseOK(c, "get order items success", result)
+	return middleware.ResponseOK(c, ResGetOrderItemsMsg, result)
 }
 
 func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
@@ -67,7 +69,7 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseOK(c, "get order items success", result)
+	return middleware.ResponseOK(c, ResGetOrderItemsMsg, result)
 }
 
 func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {

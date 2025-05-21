@@ -59,28 +59,28 @@ func (q *Queries) GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderIte
 }
 
 const getTotalAmountToPayForServedItems = `-- name: GetTotalAmountToPayForServedItems :one
-SELECT SUM(price * quantity) AS total_amount
+SELECT SUM(price * quantity) AS "totalAmount"
 FROM public.order_items
 WHERE order_id = $1 AND status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1)
 `
 
 func (q *Queries) GetTotalAmountToPayForServedItems(ctx context.Context, orderID int64) (pgtype.Numeric, error) {
 	row := q.db.QueryRow(ctx, getTotalAmountToPayForServedItems, orderID)
-	var total_amount pgtype.Numeric
-	err := row.Scan(&total_amount)
-	return total_amount, err
+	var totalAmount pgtype.Numeric
+	err := row.Scan(&totalAmount)
+	return totalAmount, err
 }
 
 const isOrderItemsExist = `-- name: IsOrderItemsExist :one
-SELECT COUNT(id) > 0
+SELECT COUNT(id) > 0 as "isExist"
 FROM public.order_items WHERE id = $1
 `
 
 func (q *Queries) IsOrderItemsExist(ctx context.Context, id int64) (bool, error) {
 	row := q.db.QueryRow(ctx, isOrderItemsExist, id)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isExist bool
+	err := row.Scan(&isExist)
+	return isExist, err
 }
 
 const updateOrderItemsStatus = `-- name: UpdateOrderItemsStatus :exec

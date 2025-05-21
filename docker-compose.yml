@@ -142,7 +142,7 @@ services:
       - ./shared/database/migrations:/migrations
     command: [
       "-path", "/migrations",
-      "-database", "postgres://postgres:1234@psql_bp:5432/food_story?sslmode=disable&search_path=public",
+      "-database", "postgres://${DB_USERNAME}:${DB_PASSWORD}@psql_bp:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}",
       "up"
     ]
     depends_on:
