@@ -108,7 +108,6 @@ func New() *FiberServer {
 	}))
 
 	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, producerSarama)
-
 	return &FiberServer{
 		App:           app,
 		db:            dbConn,
