@@ -132,14 +132,15 @@ func TestCreateOrder(t *testing.T) {
 				db.EXPECT().IsOrderExist(gomock.Any(), orderIDInt).Times(1).Return(true, nil)
 				db.EXPECT().GetOrderWithItems(gomock.Any(), orderIDInt).Times(1).Return(mockupData, nil)
 
-				var orderItems []*shareModel.OrderItems
-				orderItems = mockshared.MockOrderItemsPt()
+				var orderItems = mockshared.MockOrderItemsPt()
 				sort.Slice(orderItems, func(i, j int) bool {
 					return orderItems[i].ID < orderItems[j].ID
 				})
+
 				for _, v := range orderItems {
 					queue.EXPECT().PublishOrder(*v).Times(1).Return(nil)
 				}
+
 			},
 			checkResponse: func(t *testing.T, result int64, customError *exceptions.CustomError) {
 				require.Nil(t, customError)
