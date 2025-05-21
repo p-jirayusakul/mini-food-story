@@ -385,7 +385,7 @@ func (q *Queries) IsOrderExist(ctx context.Context, id int64) (bool, error) {
 }
 
 const isOrderItemsNotFinal = `-- name: IsOrderItemsNotFinal :one
-SELECT COUNT(*) > 0
+SELECT COUNT(*) > 0 as "isNotFinal"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
@@ -394,9 +394,9 @@ WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
 
 func (q *Queries) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (bool, error) {
 	row := q.db.QueryRow(ctx, isOrderItemsNotFinal, orderID)
-	var column_1 bool
-	err := row.Scan(&column_1)
-	return column_1, err
+	var isNotFinal bool
+	err := row.Scan(&isNotFinal)
+	return isNotFinal, err
 }
 
 const isOrderWithItemsExists = `-- name: IsOrderWithItemsExists :one

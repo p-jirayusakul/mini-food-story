@@ -250,7 +250,7 @@ WHERE o.id = sqlc.arg(order_id)::bigint AND (mos.code != 'SERVED' AND mos.code !
     );
 
 -- name: IsOrderItemsNotFinal :one
-SELECT COUNT(*) > 0
+SELECT COUNT(*) > 0 as "isNotFinal"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
