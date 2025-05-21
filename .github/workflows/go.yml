@@ -31,7 +31,7 @@ jobs:
           git fetch origin main
           echo "Detecting changed folders..."
           CHANGED=$(git diff --name-only origin/main...HEAD | grep -E '^(menu-service|payment-service|kitchen-service|order-service|table-service|pkg|shared)/' | cut -d/ -f1 | sort -u | uniq | jq -R . | jq -s .)
-          echo "Changed folders: CHANGED"
+          echo "Changed folders: $CHANGED"
           echo "changed=CHANGED" >> $GITHUB_OUTPUT
 
       - name: Filter full module paths
