@@ -113,7 +113,7 @@ func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
 
 func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, hub *websockethub.Hub) {
 
-	kitchenRepo := repository.NewRepo(configApp, store, snowflakeNode)
+	kitchenRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	kitchenUseCase := usecase.NewUsecase(configApp, *kitchenRepo)
 	kitchenhd.NewHTTPHandler(router, kitchenUseCase, validator, configApp)
 
