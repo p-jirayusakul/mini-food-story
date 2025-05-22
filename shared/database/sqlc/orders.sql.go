@@ -252,9 +252,9 @@ SELECT o.id  AS "orderID",
        oi.created_at,
        t.table_number as "tableNumber"
 FROM public.orders o
+         JOIN public.tables t ON o.table_id = t.id
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
-         JOIN public.tables t ON o.table_id = t.table_number
 WHERE o.id = $1::bigint AND oi.id = $2::bigint LIMIT 1
 `
 

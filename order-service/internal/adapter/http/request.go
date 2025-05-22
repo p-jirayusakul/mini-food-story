@@ -19,9 +19,6 @@ type SearchOrderItemsIncomplete struct {
 	OrderByType string   `query:"orderType" validate:"omitempty,oneof=asc desc"`
 }
 
-type SearchOrderItems struct {
-	PageNumber  int64  `query:"pageNumber"`
-	PageSize    int64  `query:"pageSize"`
-	OrderBy     string `query:"orderBy" validate:"omitempty,oneof=id tableNumber statusCode productName quantity"`
-	OrderByType string `query:"orderType" validate:"omitempty,oneof=asc desc"`
+type SearchCurrentOrderItems struct {
+	PageNumber int64 `query:"pageNumber"`
 }

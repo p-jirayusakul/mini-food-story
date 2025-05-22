@@ -38,18 +38,18 @@ func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, i
 	return
 }
 
-func (i *Implement) GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUID, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+func (i *Implement) GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUID, pageNumber int64) (result domain.SearchCurrentOrderItemsResult, customError *exceptions.CustomError) {
 	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
-		return domain.SearchOrderItemsResult{}, customError
+		return domain.SearchCurrentOrderItemsResult{}, customError
 	}
 
 	orderID, convertErr := convertOrderID(*tableSession.OrderID)
 	if convertErr != nil {
-		return domain.SearchOrderItemsResult{}, convertErr
+		return domain.SearchCurrentOrderItemsResult{}, convertErr
 	}
 
-	return i.repository.GetCurrentOrderItems(ctx, orderID, search)
+	return i.repository.GetCurrentOrderItems(ctx, orderID, pageNumber)
 }
 
 func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {

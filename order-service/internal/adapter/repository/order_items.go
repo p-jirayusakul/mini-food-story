@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"food-story/order-service/internal/domain"
+	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
@@ -101,11 +102,10 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 	return shareModel.TransformOrderItemsResults(orderItems), nil
 }
 
-func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
-	searchParams := buildSearchOrderItemsParams(orderID, search)
+func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, pageNumber int64) (result domain.SearchCurrentOrderItemsResult, customError *exceptions.CustomError) {
 
 	if orderID <= 0 {
-		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
+		return domain.SearchCurrentOrderItemsResult{}, &exceptions.CustomError{
 			Status: exceptions.ERRBUSSINESS,
 			Errors: exceptions.ErrOrderRequired,
 		}
@@ -113,7 +113,7 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, sea
 
 	customError = i.IsOrderExist(ctx, orderID)
 	if customError != nil {
-		return domain.SearchOrderItemsResult{}, customError
+		return domain.SearchCurrentOrderItemsResult{}, customError
 	}
 
 	var (
@@ -125,12 +125,13 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, sea
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
+	pageSize, pageNumber := utils.CalculatePageSizeAndNumber(common.DefaultPageSize, pageNumber)
 	go func() {
 		defer wg.Done()
 		searchResult, customError = i.fetchOrderWithItems(ctx, database.GetOrderWithItemsParams{
 			OrderID:    orderID,
-			Pagesize:   searchParams.PageSize,
-			Pagenumber: searchParams.PageNumber,
+			Pagesize:   pageSize,
+			Pagenumber: pageNumber,
 		})
 	}()
 	go func() {
@@ -141,22 +142,35 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, sea
 	wg.Wait()
 
 	if customError != nil {
-		return domain.SearchOrderItemsResult{}, customError
+		return domain.SearchCurrentOrderItemsResult{}, customError
 	}
 
-	return domain.SearchOrderItemsResult{
+	data := make([]*domain.CurrentOrderItems, len(searchResult))
+	for index, row := range searchResult {
+		createdAt, _ := utils.PgTimestampToThaiISO8601(row.GetCreatedAt())
+		data[index] = &domain.CurrentOrderItems{
+			ID:            row.GetID(),
+			ProductID:     row.GetProductID(),
+			StatusName:    row.GetStatusName(),
+			StatusNameEN:  row.GetStatusNameEN(),
+			StatusCode:    row.GetStatusCode(),
+			ProductName:   row.GetProductName(),
+			ProductNameEN: row.GetProductNameEN(),
+			Price:         utils.PgNumericToFloat64(row.GetPrice()),
+			Quantity:      row.GetQuantity(),
+			Note:          utils.PgTextToStringPtr(row.GetNote()),
+			CreatedAt:     createdAt,
+		}
+	}
+
+	return domain.SearchCurrentOrderItemsResult{
 		TotalItems: totalItems,
-		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
-		Data:       shareModel.TransformOrderItemsResults(searchResult),
+		TotalPages: utils.CalculateTotalPages(totalItems, pageSize),
+		Data:       data,
 	}, nil
 }
 
 func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
-
-	orderItemsExistsErr := i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
-	if orderItemsExistsErr != nil {
-		return nil, orderItemsExistsErr
-	}
 
 	orderItem, repoErr := i.repository.GetOrderWithItemsByID(ctx, database.GetOrderWithItemsByIDParams{
 		OrderID:      orderID,

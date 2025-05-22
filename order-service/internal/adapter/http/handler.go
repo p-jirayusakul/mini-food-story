@@ -2,7 +2,6 @@ package http
 
 import (
 	"food-story/order-service/internal/domain"
-	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
@@ -108,7 +107,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 		return err
 	}
 
-	body := new(SearchOrderItems)
+	body := new(SearchCurrentOrderItems)
 	if errValidate := c.QueryParser(body); errValidate != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, errValidate.Error())
 	}
@@ -117,13 +116,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	payload := domain.SearchOrderItems{
-		OrderBy:    body.OrderBy,
-		PageSize:   int64(common.DefaultPageSize),
-		PageNumber: body.PageNumber,
-	}
-
-	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, payload)
+	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, body.PageNumber)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}

@@ -30,3 +30,9 @@ type SearchOrderItemsResult struct {
 	TotalPages int64                    `json:"totalPages"`
 	Data       []*shareModel.OrderItems `json:"data"`
 }
+
+type SearchCurrentOrderItemsResult struct {
+	TotalItems int64                `json:"totalItems"`
+	TotalPages int64                `json:"totalPages"`
+	Data       []*CurrentOrderItems `json:"data"`
+}
