@@ -176,6 +176,21 @@ func (mr *MockStoreMockRecorder) GetOrderItemsByID(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderItemsByID", reflect.TypeOf((*MockStore)(nil).GetOrderItemsByID), ctx, id)
 }
 
+// GetOrderItemsByOrderID mocks base method.
+func (m *MockStore) GetOrderItemsByOrderID(ctx context.Context, orderID int64) ([]*database.GetOrderItemsByOrderIDRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderItemsByOrderID", ctx, orderID)
+	ret0, _ := ret[0].([]*database.GetOrderItemsByOrderIDRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderItemsByOrderID indicates an expected call of GetOrderItemsByOrderID.
+func (mr *MockStoreMockRecorder) GetOrderItemsByOrderID(ctx, orderID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderItemsByOrderID", reflect.TypeOf((*MockStore)(nil).GetOrderItemsByOrderID), ctx, orderID)
+}
+
 // GetOrderSequence mocks base method.
 func (m *MockStore) GetOrderSequence(ctx context.Context, orderDate pgtype.Date) (int32, error) {
 	m.ctrl.T.Helper()
@@ -207,18 +222,18 @@ func (mr *MockStoreMockRecorder) GetOrderStatusPreparing(ctx any) *gomock.Call {
 }
 
 // GetOrderWithItems mocks base method.
-func (m *MockStore) GetOrderWithItems(ctx context.Context, orderID int64) ([]*database.GetOrderWithItemsRow, error) {
+func (m *MockStore) GetOrderWithItems(ctx context.Context, arg database.GetOrderWithItemsParams) ([]*database.GetOrderWithItemsRow, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetOrderWithItems", ctx, orderID)
+	ret := m.ctrl.Call(m, "GetOrderWithItems", ctx, arg)
 	ret0, _ := ret[0].([]*database.GetOrderWithItemsRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetOrderWithItems indicates an expected call of GetOrderWithItems.
-func (mr *MockStoreMockRecorder) GetOrderWithItems(ctx, orderID any) *gomock.Call {
+func (mr *MockStoreMockRecorder) GetOrderWithItems(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderWithItems", reflect.TypeOf((*MockStore)(nil).GetOrderWithItems), ctx, orderID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderWithItems", reflect.TypeOf((*MockStore)(nil).GetOrderWithItems), ctx, arg)
 }
 
 // GetOrderWithItemsByID mocks base method.
@@ -369,6 +384,21 @@ func (m *MockStore) GetTotalAmountToPayForServedItems(ctx context.Context, order
 func (mr *MockStoreMockRecorder) GetTotalAmountToPayForServedItems(ctx, orderID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalAmountToPayForServedItems", reflect.TypeOf((*MockStore)(nil).GetTotalAmountToPayForServedItems), ctx, orderID)
+}
+
+// GetTotalItemOrderWithItems mocks base method.
+func (m *MockStore) GetTotalItemOrderWithItems(ctx context.Context, orderID int64) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTotalItemOrderWithItems", ctx, orderID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTotalItemOrderWithItems indicates an expected call of GetTotalItemOrderWithItems.
+func (mr *MockStoreMockRecorder) GetTotalItemOrderWithItems(ctx, orderID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTotalItemOrderWithItems", reflect.TypeOf((*MockStore)(nil).GetTotalItemOrderWithItems), ctx, orderID)
 }
 
 // GetTotalPageQuickSearchTables mocks base method.
