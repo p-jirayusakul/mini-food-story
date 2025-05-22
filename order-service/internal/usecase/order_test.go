@@ -49,7 +49,7 @@ func TestCreateOrder(t *testing.T) {
 		//OrderID:     oderID,
 	}
 
-	var mockupData []*database.GetOrderWithItemsRow
+	var mockupData []*database.GetOrderItemsByOrderIDRow
 	var createOrderTx []database.CreateOrderItemsParams
 	for _, item := range mockupOrderItems {
 
@@ -68,7 +68,7 @@ func TestCreateOrder(t *testing.T) {
 
 		layout := time.RFC3339
 		convertedTime, _ := time.Parse(layout, item.CreatedAt)
-		mockupData = append(mockupData, &database.GetOrderWithItemsRow{
+		mockupData = append(mockupData, &database.GetOrderItemsByOrderIDRow{
 			OrderID:       item.OrderID,
 			OrderNumber:   item.OrderNumber,
 			ID:            item.ID,
@@ -130,7 +130,7 @@ func TestCreateOrder(t *testing.T) {
 				cache.EXPECT().UpdateOrderID(sessionID, orderIDInt).Times(1).Return(nil)
 
 				db.EXPECT().IsOrderExist(gomock.Any(), orderIDInt).Times(1).Return(true, nil)
-				db.EXPECT().GetOrderWithItems(gomock.Any(), orderIDInt).Times(1).Return(mockupData, nil)
+				db.EXPECT().GetOrderItemsByOrderID(gomock.Any(), orderIDInt).Times(1).Return(mockupData, nil)
 
 				var orderItems = mockshared.MockOrderItemsPt()
 				sort.Slice(orderItems, func(i, j int) bool {
