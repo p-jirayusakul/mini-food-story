@@ -19,8 +19,8 @@ func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchO
 	return i.repository.SearchOrderItems(ctx, payload)
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
-	return i.repository.GetOrderItems(ctx, orderID)
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+	return i.repository.GetOrderItems(ctx, orderID, search)
 }
 
 func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *shareModel.OrderItems, customError *exceptions.CustomError) {

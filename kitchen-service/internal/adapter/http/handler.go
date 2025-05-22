@@ -50,7 +50,21 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.GetOrderItems(c.Context(), orderID)
+	body := new(SearchOrderItems)
+	if err := c.QueryParser(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	payload := domain.SearchOrderItems{
+		PageSize:   body.PageSize,
+		PageNumber: body.PageNumber,
+	}
+
+	result, customError := s.useCase.GetOrderItems(c.Context(), orderID, payload)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}

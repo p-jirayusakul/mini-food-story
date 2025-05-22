@@ -68,7 +68,7 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderI
 		return 0, updateCacheErr
 	}
 
-	newOrderItems, getOrderItemsErr := i.repository.GetOrderItems(ctx, orderID)
+	newOrderItems, getOrderItemsErr := i.repository.GetOrderItemsByOrderID(ctx, orderID)
 	if getOrderItemsErr != nil {
 		return 0, getOrderItemsErr
 	}

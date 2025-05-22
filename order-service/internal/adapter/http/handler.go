@@ -2,6 +2,7 @@ package http
 
 import (
 	"food-story/order-service/internal/domain"
+	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
@@ -107,7 +108,22 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 		return err
 	}
 
-	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID)
+	body := new(SearchOrderItems)
+	if errValidate := c.QueryParser(body); errValidate != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, errValidate.Error())
+	}
+
+	if err = s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	payload := domain.SearchOrderItems{
+		OrderBy:    body.OrderBy,
+		PageSize:   int64(common.DefaultPageSize),
+		PageNumber: body.PageNumber,
+	}
+
+	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, payload)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -135,14 +151,9 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 }
 
 func (s *Handler) UpdateOrderItemsStatusCancelled(c *fiber.Ctx) error {
-	sessionIDData := c.Get("X-Session-Id")
-	if sessionIDData == "" {
-		return middleware.ResponseError(fiber.StatusBadRequest, "session id is required")
-	}
-
-	sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(s.config.SecretKey))
+	sessionID, err := getSession(c)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return err
 	}
 
 	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))

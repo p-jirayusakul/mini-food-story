@@ -111,6 +111,30 @@ FROM public.orders o
          JOIN public.tables t ON o.table_id = t.id
 WHERE o.id = sqlc.arg(order_id)::bigint LIMIT 1;
 
+
+-- name: GetOrderItemsByOrderID :many
+SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
+       oi.id AS "id",
+       oi.product_id as "productID",
+       oi.product_name as "productName",
+       oi.product_name_en as "productNameEN",
+       oi.quantity,
+       (oi.price * oi.quantity) as "price",
+       oi.status_id as "statusID",
+       mos.name as "statusName",
+       mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
+       oi.note as "note",
+       oi.created_at,
+       t.table_number as "tableNumber"
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE o.id = sqlc.arg(order_id)::bigint
+order by oi.id DESC;
+
 -- name: GetOrderWithItems :many
 SELECT o.id  AS "orderID",
        o.order_number as "orderNumber",
@@ -132,7 +156,16 @@ JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
 JOIN public.tables t ON o.table_id = t.id
 WHERE o.id = sqlc.arg(order_id)::bigint
-order by oi.id DESC;
+order by oi.id DESC
+OFFSET sqlc.arg(pageNumber) LIMIT sqlc.arg(pageSize);
+
+-- name: GetTotalItemOrderWithItems :one
+SELECT COUNT(*)
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE o.id = sqlc.arg(order_id)::bigint;
 
 -- name: GetOrderWithItemsByID :one
 SELECT o.id  AS "orderID",

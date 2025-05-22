@@ -72,6 +72,84 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow,
 	return &i, err
 }
 
+const getOrderItemsByOrderID = `-- name: GetOrderItemsByOrderID :many
+SELECT o.id  AS "orderID",
+       o.order_number as "orderNumber",
+       oi.id AS "id",
+       oi.product_id as "productID",
+       oi.product_name as "productName",
+       oi.product_name_en as "productNameEN",
+       oi.quantity,
+       (oi.price * oi.quantity) as "price",
+       oi.status_id as "statusID",
+       mos.name as "statusName",
+       mos.name_en as "statusNameEN",
+       mos.code as "statusCode",
+       oi.note as "note",
+       oi.created_at,
+       t.table_number as "tableNumber"
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE o.id = $1::bigint
+order by oi.id DESC
+`
+
+type GetOrderItemsByOrderIDRow struct {
+	OrderID       int64              `json:"orderID"`
+	OrderNumber   string             `json:"orderNumber"`
+	ID            int64              `json:"id"`
+	ProductID     int64              `json:"productID"`
+	ProductName   string             `json:"productName"`
+	ProductNameEN string             `json:"productNameEN"`
+	Quantity      int32              `json:"quantity"`
+	Price         pgtype.Numeric     `json:"price"`
+	StatusID      int64              `json:"statusID"`
+	StatusName    string             `json:"statusName"`
+	StatusNameEN  string             `json:"statusNameEN"`
+	StatusCode    string             `json:"statusCode"`
+	Note          pgtype.Text        `json:"note"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	TableNumber   int32              `json:"tableNumber"`
+}
+
+func (q *Queries) GetOrderItemsByOrderID(ctx context.Context, orderID int64) ([]*GetOrderItemsByOrderIDRow, error) {
+	rows, err := q.db.Query(ctx, getOrderItemsByOrderID, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*GetOrderItemsByOrderIDRow{}
+	for rows.Next() {
+		var i GetOrderItemsByOrderIDRow
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.OrderNumber,
+			&i.ID,
+			&i.ProductID,
+			&i.ProductName,
+			&i.ProductNameEN,
+			&i.Quantity,
+			&i.Price,
+			&i.StatusID,
+			&i.StatusName,
+			&i.StatusNameEN,
+			&i.StatusCode,
+			&i.Note,
+			&i.CreatedAt,
+			&i.TableNumber,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getOrderWithItems = `-- name: GetOrderWithItems :many
 SELECT o.id  AS "orderID",
        o.order_number as "orderNumber",
@@ -94,7 +172,14 @@ JOIN public.md_order_statuses mos ON oi.status_id = mos.id
 JOIN public.tables t ON o.table_id = t.id
 WHERE o.id = $1::bigint
 order by oi.id DESC
+OFFSET $2 LIMIT $3
 `
+
+type GetOrderWithItemsParams struct {
+	OrderID    int64 `json:"order_id"`
+	Pagenumber int64 `json:"pagenumber"`
+	Pagesize   int64 `json:"pagesize"`
+}
 
 type GetOrderWithItemsRow struct {
 	OrderID       int64              `json:"orderID"`
@@ -114,8 +199,8 @@ type GetOrderWithItemsRow struct {
 	TableNumber   int32              `json:"tableNumber"`
 }
 
-func (q *Queries) GetOrderWithItems(ctx context.Context, orderID int64) ([]*GetOrderWithItemsRow, error) {
-	rows, err := q.db.Query(ctx, getOrderWithItems, orderID)
+func (q *Queries) GetOrderWithItems(ctx context.Context, arg GetOrderWithItemsParams) ([]*GetOrderWithItemsRow, error) {
+	rows, err := q.db.Query(ctx, getOrderWithItems, arg.OrderID, arg.Pagenumber, arg.Pagesize)
 	if err != nil {
 		return nil, err
 	}
@@ -309,6 +394,22 @@ func (q *Queries) GetTableNumberOrderByID(ctx context.Context, orderID int64) (i
 	var tableNumber int32
 	err := row.Scan(&tableNumber)
 	return tableNumber, err
+}
+
+const getTotalItemOrderWithItems = `-- name: GetTotalItemOrderWithItems :one
+SELECT COUNT(*)
+FROM public.orders o
+         JOIN public.order_items oi ON oi.order_id = o.id
+         JOIN public.md_order_statuses mos ON oi.status_id = mos.id
+         JOIN public.tables t ON o.table_id = t.id
+WHERE o.id = $1::bigint
+`
+
+func (q *Queries) GetTotalItemOrderWithItems(ctx context.Context, orderID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, getTotalItemOrderWithItems, orderID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const getTotalSearchOrderItems = `-- name: GetTotalSearchOrderItems :one

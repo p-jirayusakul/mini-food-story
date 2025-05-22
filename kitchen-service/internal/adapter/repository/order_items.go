@@ -119,21 +119,77 @@ func (i *Implement) fetchSearchOrderTotalItems(ctx context.Context, params datab
 	return totalItems, nil
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
-	customError = i.IsOrderExist(ctx, orderID)
-	if customError != nil {
-		return nil, customError
-	}
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+	searchParams := buildSearchOrderItemsParams(search)
 
-	items, err := i.repository.GetOrderWithItems(ctx, orderID)
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", err),
+	if orderID <= 0 {
+		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: exceptions.ErrOrderRequired,
 		}
 	}
 
-	return shareModel.TransformOrderItemsResults(items), nil
+	customError = i.IsOrderExist(ctx, orderID)
+	if customError != nil {
+		return domain.SearchOrderItemsResult{}, customError
+	}
+
+	var (
+		searchResult []*database.GetOrderWithItemsRow
+		totalItems   int64
+	)
+
+	// parallel search
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		searchResult, customError = i.fetchOrderWithItems(ctx, database.GetOrderWithItemsParams{
+			OrderID:    orderID,
+			Pagesize:   searchParams.PageSize,
+			Pagenumber: searchParams.PageNumber,
+		})
+	}()
+	go func() {
+		defer wg.Done()
+		totalItems, customError = i.fetchTotalOrderWithItems(ctx, orderID)
+	}()
+
+	wg.Wait()
+
+	if customError != nil {
+		return domain.SearchOrderItemsResult{}, customError
+	}
+
+	return domain.SearchOrderItemsResult{
+		TotalItems: totalItems,
+		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
+		Data:       shareModel.TransformOrderItemsResults(searchResult),
+	}, nil
+}
+
+func (i *Implement) fetchOrderWithItems(ctx context.Context, params database.GetOrderWithItemsParams) ([]*database.GetOrderWithItemsRow, *exceptions.CustomError) {
+	result, err := i.repository.GetOrderWithItems(ctx, params)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch order items not final: %w", err),
+		}
+	}
+	return result, nil
+}
+
+func (i *Implement) fetchTotalOrderWithItems(ctx context.Context, orderID int64) (int64, *exceptions.CustomError) {
+	totalItems, err := i.repository.GetTotalItemOrderWithItems(ctx, orderID)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to fetch total items: %w", err),
+		}
+	}
+
+	return totalItems, nil
 }
 
 func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *shareModel.OrderItems, customError *exceptions.CustomError) {
