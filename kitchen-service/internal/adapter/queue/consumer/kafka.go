@@ -32,7 +32,7 @@ func (c *Consumer) ConsumeClaim(session sarama.ConsumerGroupSession, claim saram
 	return nil
 }
 
-func StartConsumer(ctx context.Context, topics []string, client sarama.ConsumerGroup, websocketHub *websocket.Hub) {
+func Run(ctx context.Context, topics []string, client sarama.ConsumerGroup, websocketHub *websocket.Hub) {
 	consumer := Consumer{
 		Ready:        make(chan bool),
 		WebSocketHub: websocketHub,

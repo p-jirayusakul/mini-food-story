@@ -13,7 +13,7 @@ type SearchOrderItems struct {
 }
 
 type SearchOrderItemsResult struct {
-	TotalItems int64                    `json:"totalItems"`
-	TotalPages int64                    `json:"totalPages"`
+	TotalItems int64                    `json:"totalItems" example:"10"`
+	TotalPages int64                    `json:"totalPages" example:"1"`
 	Data       []*shareModel.OrderItems `json:"data"`
 }

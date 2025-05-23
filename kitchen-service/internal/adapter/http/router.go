@@ -36,7 +36,7 @@ func (s *Handler) setupRoutes() {
 	group.Get("/:id<int>/items", s.GetOrderItems)
 	group.Get("/:id<int>/items/:orderItemsID<int>", s.GetOrderItemsByID)
 
-	group.Patch("/:id<int>/items/:orderItemsID<int>/status/served", s.UpdateOrderItemsStatusServed)
-	group.Patch("/:id<int>/items/:orderItemsID<int>/status/cancelled", s.UpdateOrderItemsStatusCancelled)
+	group.Patch("/:id<int>/items/:orderItemsID<int>/status/serve", s.UpdateOrderItemsStatusServe)
+	group.Patch("/:id<int>/items/:orderItemsID<int>/status/cancel", s.UpdateOrderItemsStatusCancel)
 
 }

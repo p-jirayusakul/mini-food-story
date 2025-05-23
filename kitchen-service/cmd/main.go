@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"food-story/kitchen-service/internal"
 	"food-story/kitchen-service/internal/adapter/queue/consumer"
+	"food-story/pkg/common"
+	"food-story/shared/config"
 	"food-story/shared/kafka"
 	"log"
-	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
-	_ "github.com/joho/godotenv/autoload"
+	"food-story/kitchen-service/docs"
 )
 
 func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.CancelFunc, done chan bool) {
@@ -32,20 +34,15 @@ func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	// close database
-	fiberServer.CloseDB()
-	log.Println("Database closed")
-
 	// close consumer
-	if err := fiberServer.KafkaClient.Close(); err != nil {
+	if err := fiberServer.KafkaConsumer.Close(); err != nil {
 		log.Printf("close consumer error: %v", err)
 	}
 	cancelConsumer()
 	log.Println("Kafka Consumer closed")
 
-	// close websocket hub
-	fiberServer.CloseWebsocketHub()
-	log.Println("Websocket Hub closed")
+	// close database
+	fiberServer.CloseAllConnection()
 
 	if err := fiberServer.App.ShutdownWithContext(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
@@ -60,19 +57,20 @@ func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.
 func main() {
 
 	server := internal.New()
+	port, _ := strconv.Atoi(server.Config.AppPort)
+	initSwagger(server.Config)
 
 	// start websocket hub
 	go server.WebsocketHub.Run()
 
 	// เริ่มต้น Kafka Consumer
 	ctxConsumer, cancelConsumer := context.WithCancel(context.Background())
-	go consumer.StartConsumer(ctxConsumer, []string{kafka.OrderItemsCreatedTopic}, server.KafkaClient, server.WebsocketHub)
+	go consumer.Run(ctxConsumer, []string{kafka.OrderItemsCreatedTopic}, server.KafkaConsumer, server.WebsocketHub)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
 	go func() {
-		port, _ := strconv.Atoi(os.Getenv("APP_PORT"))
 		err := server.App.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {
 			panic(fmt.Sprintf("http server error: %s", err))
@@ -84,4 +82,26 @@ func main() {
 
 	<-done
 	log.Println("Graceful shutdown complete.")
+}
+
+func initSwagger(cfg config.Config) {
+	port, _ := strconv.Atoi(cfg.AppPort)
+	host := fmt.Sprintf("localhost:%d", port)
+
+	// programmatically set swagger info
+	docs.SwaggerInfo.Title = "Kitchen Service API"
+	docs.SwaggerInfo.Description = "REST API for managing restaurant kitchen operations, including order item processing, status updates and kitchen notifications"
+	docs.SwaggerInfo.Version = "1.0.0"
+	docs.SwaggerInfo.BasePath = cfg.BaseURL
+
+	// dynamically set swagger info
+	docs.SwaggerInfo.Host = host
+	if strings.ToUpper(cfg.AppEnv) != common.DefaultAppEnv {
+		docs.SwaggerInfo.Host = host // e.g. api.example.com
+	}
+
+	docs.SwaggerInfo.Schemes = []string{"http"}
+	if strings.ToUpper(cfg.AppEnv) != common.DefaultAppEnv {
+		docs.SwaggerInfo.Schemes = []string{"http"} // e.g. https
+	}
 }
