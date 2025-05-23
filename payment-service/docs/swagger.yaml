@@ -1,0 +1,190 @@
+definitions:
+  food-story_payment-service_internal_domain.PaymentMethod:
+    properties:
+      code:
+        example: PROMPTPAY
+        type: string
+      id:
+        example: "1921144250070732800"
+        type: string
+      name:
+        example: พร้อมเพย์
+        type: string
+      nameEN:
+        example: PromptPay
+        type: string
+    type: object
+  internal_adapter_http.CallbackPayment:
+    properties:
+      transactionID:
+        example: e88ac32b-c940-4102-a51f-c7a2e7ed6622
+        type: string
+    required:
+    - transactionID
+    type: object
+  internal_adapter_http.Payment:
+    properties:
+      methodID:
+        example: "1923732004537372675"
+        type: string
+      note:
+        example: lorem ipsum
+        type: string
+      orderID:
+        example: "1921144250070732800"
+        type: string
+    required:
+    - methodID
+    - orderID
+    type: object
+  internal_adapter_http.createResponse:
+    properties:
+      transactionID:
+        example: e88ac32b-c940-4102-a51f-c7a2e7ed6622
+        type: string
+    type: object
+  middleware.ErrorResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: something went wrong
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  middleware.SuccessResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: do something completed
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    post:
+      consumes:
+      - application/json
+      description: Create a new payment transaction for an order
+      parameters:
+      - description: Payment transaction details
+        in: body
+        name: payment
+        required: true
+        schema:
+          $ref: '#/definitions/internal_adapter_http.Payment'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_adapter_http.createResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Create payment transaction
+      tags:
+      - Payment
+  /callback:
+    post:
+      consumes:
+      - application/json
+      description: Process callback for payment transaction
+      parameters:
+      - description: Payment callback details
+        in: body
+        name: callback
+        required: true
+        schema:
+          $ref: '#/definitions/internal_adapter_http.CallbackPayment'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/middleware.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Handle payment transaction callback
+      tags:
+      - Payment
+  /methods:
+    get:
+      consumes:
+      - application/json
+      description: Get list of available payment methods
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/food-story_payment-service_internal_domain.PaymentMethod'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: List payment methods
+      tags:
+      - Payment
+swagger: "2.0"

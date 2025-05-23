@@ -1,26 +1,26 @@
 package http
 
 type Table struct {
-	TableNumber int32 `json:"tableNumber" validate:"required,gte=1"`
-	Seats       int32 `json:"seats" validate:"required,gte=1"`
+	TableNumber int32 `json:"tableNumber" validate:"required,gte=1" example:"1"`
+	Seats       int32 `json:"seats" validate:"required,gte=1" example:"5"`
 }
 
 type updateTableStatus struct {
-	StatusID string `json:"statusID" validate:"required"`
+	StatusID string `json:"statusID" validate:"required" example:"1919968486671519744"`
 }
 
 type TableSession struct {
-	TableID        string `json:"tableID" validate:"required"`
-	NumberOfPeople int32  `json:"numberOfPeople" validate:"required,gte=1"`
+	TableID        string `json:"tableID" validate:"required" example:"1923564209627467776"`
+	NumberOfPeople int32  `json:"numberOfPeople" validate:"required,gte=1" example:"3"`
 }
 
 type SearchTable struct {
-	PageNumber     int64    `query:"pageNumber"`
-	PageSize       int64    `query:"pageSize"`
-	Search         string   `query:"search" validate:"omitempty,no_special_char,max=255"`
-	Seats          string   `query:"seats" validate:"omitempty,no_special_char,max=255"`
-	NumberOfPeople int32    `query:"numberOfPeople"`
-	Status         []string `query:"status"`
-	OrderBy        string   `query:"orderBy" validate:"omitempty,oneof=id tableNumber seats status"`
-	OrderByType    string   `query:"orderType" validate:"omitempty,oneof=asc desc"`
+	PageNumber     int64    `query:"pageNumber" example:"1"`
+	PageSize       int64    `query:"pageSize" example:"10"`
+	Search         string   `query:"search" validate:"omitempty,no_special_char,max=255" example:"1"`
+	Seats          string   `query:"seats" validate:"omitempty,no_special_char,max=255" example:"5"`
+	NumberOfPeople int32    `query:"numberOfPeople" example:"3"`
+	Status         []string `query:"status" example:"1919968486671519744"`
+	OrderBy        string   `query:"orderBy" validate:"omitempty,oneof=id tableNumber seats status" example:"id"`
+	OrderByType    string   `query:"orderType" validate:"omitempty,oneof=asc desc" example:"asc"`
 }

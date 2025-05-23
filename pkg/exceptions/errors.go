@@ -18,6 +18,7 @@ var (
 	ErrOrderRequired       = errors.New("order cannot be empty")
 	ErrOrderItemsNotFound  = errors.New("order items not found")
 	ErrOrderItemsRequired  = errors.New("order items cannot be empty")
+	ErrProductNotFound     = errors.New("product not found")
 )
 
 const (

@@ -3,12 +3,13 @@ package middleware
 import (
 	"food-story/pkg/common"
 	"os"
+	"strings"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-func LogHandler() func(*fiber.Ctx) error {
+func LogHandler(basePath string) func(*fiber.Ctx) error {
 
 	timeZone := "Asia/Bangkok"
 	if os.Getenv("TZ") != "" {
@@ -17,7 +18,17 @@ func LogHandler() func(*fiber.Ctx) error {
 
 	return logger.New(logger.Config{
 		Next: func(c *fiber.Ctx) bool {
-			return (c.Path() == common.BasePath+common.LivenessEndpoint) || (c.Path() == common.BasePath+common.ReadinessEndpoint)
+			path := c.Path()
+			switch {
+			case path == basePath+common.LivenessEndpoint:
+				return true
+			case path == basePath+common.ReadinessEndpoint:
+				return true
+			case strings.Contains(path, basePath+common.SwaggerEndpoint):
+				return true
+			default:
+				return false
+			}
 		},
 		Format:     "${time} | ${latency} | ${ip}:${port} -  ${status} ${method} ${path} | ${error}\n",
 		TimeFormat: "2006/01/02 15:04:05",

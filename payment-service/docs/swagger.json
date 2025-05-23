@@ -1,0 +1,295 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/": {
+            "post": {
+                "description": "Create a new payment transaction for an order",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Create payment transaction",
+                "parameters": [
+                    {
+                        "description": "Payment transaction details",
+                        "name": "payment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_adapter_http.Payment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/internal_adapter_http.createResponse"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/callback": {
+            "post": {
+                "description": "Process callback for payment transaction",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "Handle payment transaction callback",
+                "parameters": [
+                    {
+                        "description": "Payment callback details",
+                        "name": "callback",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_adapter_http.CallbackPayment"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/methods": {
+            "get": {
+                "description": "Get list of available payment methods",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Payment"
+                ],
+                "summary": "List payment methods",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/middleware.SuccessResponse"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/food-story_payment-service_internal_domain.PaymentMethod"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/middleware.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "food-story_payment-service_internal_domain.PaymentMethod": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string",
+                    "example": "PROMPTPAY"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "1921144250070732800"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "พร้อมเพย์"
+                },
+                "nameEN": {
+                    "type": "string",
+                    "example": "PromptPay"
+                }
+            }
+        },
+        "internal_adapter_http.CallbackPayment": {
+            "type": "object",
+            "required": [
+                "transactionID"
+            ],
+            "properties": {
+                "transactionID": {
+                    "type": "string",
+                    "example": "e88ac32b-c940-4102-a51f-c7a2e7ed6622"
+                }
+            }
+        },
+        "internal_adapter_http.Payment": {
+            "type": "object",
+            "required": [
+                "methodID",
+                "orderID"
+            ],
+            "properties": {
+                "methodID": {
+                    "type": "string",
+                    "example": "1923732004537372675"
+                },
+                "note": {
+                    "type": "string",
+                    "example": "lorem ipsum"
+                },
+                "orderID": {
+                    "type": "string",
+                    "example": "1921144250070732800"
+                }
+            }
+        },
+        "internal_adapter_http.createResponse": {
+            "type": "object",
+            "properties": {
+                "transactionID": {
+                    "type": "string",
+                    "example": "e88ac32b-c940-4102-a51f-c7a2e7ed6622"
+                }
+            }
+        },
+        "middleware.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "something went wrong"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "error"
+                }
+            }
+        },
+        "middleware.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object"
+                },
+                "message": {
+                    "type": "string",
+                    "example": "do something completed"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                }
+            }
+        }
+    }
+}

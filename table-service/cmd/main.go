@@ -3,15 +3,17 @@ package main
 import (
 	"context"
 	"fmt"
+	"food-story/pkg/common"
+	"food-story/shared/config"
 	"food-story/table-service/internal"
 	"log"
-	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
-	_ "github.com/joho/godotenv/autoload"
+	"food-story/table-service/docs"
 )
 
 func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
@@ -46,12 +48,14 @@ func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
 func main() {
 
 	server := internal.New()
+	port, _ := strconv.Atoi(server.Config.AppPort)
+
+	initSwagger(server.Config)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
 	go func() {
-		port, _ := strconv.Atoi(os.Getenv("PORT"))
 		err := server.App.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {
 			panic(fmt.Sprintf("http server error: %s", err))
@@ -64,4 +68,26 @@ func main() {
 	// Wait for the graceful shutdown to complete
 	<-done
 	log.Println("Graceful shutdown complete.")
+}
+
+func initSwagger(cfg config.Config) {
+	port, _ := strconv.Atoi(cfg.AppPort)
+	host := fmt.Sprintf("localhost:%d", port)
+
+	// programmatically set swagger info
+	docs.SwaggerInfo.Title = "Table Service API"
+	docs.SwaggerInfo.Description = "REST API for managing restaurant tables, including table reservations, table status and seating capacity"
+	docs.SwaggerInfo.Version = "1.0.0"
+	docs.SwaggerInfo.BasePath = cfg.BaseURL
+
+	// dynamically set swagger info
+	docs.SwaggerInfo.Host = host
+	if strings.ToUpper(cfg.AppEnv) != common.DefaultAppEnv {
+		docs.SwaggerInfo.Host = host // e.g. api.example.com
+	}
+
+	docs.SwaggerInfo.Schemes = []string{"http"}
+	if strings.ToUpper(cfg.AppEnv) != common.DefaultAppEnv {
+		docs.SwaggerInfo.Schemes = []string{"http"} // e.g. https
+	}
 }

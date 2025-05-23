@@ -17,50 +17,68 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
-	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/swagger"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
+	"log/slog"
 	"strings"
-	"time"
 )
 
 const EnvFile = ".env"
+const ServiceName = "kitchen-service"
+
+func (s *FiberServer) CloseAllConnection() {
+	if s.db != nil {
+		s.db.Close()
+		log.Println("Database closed")
+	}
+
+	if s.WebsocketHub != nil {
+		s.WebsocketHub.Shutdown()
+		log.Println("WebsocketHub closed")
+	}
+
+	if s.clientKafka != nil {
+		err := s.clientKafka.Close()
+		if err != nil {
+			log.Fatal(err)
+			return
+		}
+		log.Println("Kafka Client closed")
+	}
+
+}
 
 type FiberServer struct {
-	App          *fiber.App
-	db           *pgxpool.Pool
-	WebsocketHub *websockethub.Hub
-	KafkaClient  sarama.ConsumerGroup
+	App           *fiber.App
+	Config        config.Config
+	KafkaConsumer sarama.ConsumerGroup
+	WebsocketHub  *websockethub.Hub
+
+	db          *pgxpool.Pool
+	clientKafka sarama.Client
 }
 
 func New() *FiberServer {
 	configApp := config.InitConfig(EnvFile)
+	configApp.BaseURL = common.BasePath + "/kitchen"
 	app := fiber.New(fiber.Config{
-		ServerHeader:             "kitchen-service",
-		AppName:                  "kitchen-service",
+		ServerHeader:             ServiceName,
+		AppName:                  ServiceName,
 		ErrorHandler:             middleware.HandleError,
 		EnableSplittingOnParsers: true,
 		JSONEncoder:              json.Marshal,
 		JSONDecoder:              json.Unmarshal,
 	})
 
-	// add rate limit
-	app.Use(limiter.New(limiter.Config{
-		Max:        100,
-		Expiration: 1 * time.Minute,
-		LimitReached: func(_ *fiber.Ctx) error {
-			return fiber.NewError(fiber.StatusTooManyRequests, "Too Many Requests")
-		},
-	}))
-
 	// add custom CORS
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization, Connection",
-		AllowMethods: "GET, PUT, POST, PATCH, DELETE, OPTIONS",
-	}))
+	app.Use(cors.New(middleware.DefaultCorsConfig()))
 
 	// add log handler
-	app.Use(middleware.LogHandler())
+	app.Use(middleware.LogHandler(configApp.BaseURL))
+
+	// add log handler
+	app.Use(middleware.LogHandler(configApp.BaseURL))
 
 	// connect to database
 	configDB := config.InitDBConfig(EnvFile)
@@ -74,7 +92,11 @@ func New() *FiberServer {
 	hub := websockethub.NewHub()
 
 	// init kafka
-	kafkaClient := initKafka(configApp)
+	brokers := strings.Split(configApp.KafkaBrokers, ",")
+	consumerClient, clientKafka, err := kafka.InitConsumer(kafka.Group, brokers)
+	if err != nil {
+		panic(err)
+	}
 
 	// Create a new Node with a Node number of 1
 	node := snowflakeid.CreateSnowflakeNode(1)
@@ -84,7 +106,10 @@ func New() *FiberServer {
 	validator := middleware.NewCustomValidator()
 
 	// init router
-	apiV1 := app.Group(common.BasePath)
+	apiV1 := app.Group(configApp.BaseURL)
+
+	// init swagger endpoint
+	apiV1.Get(common.SwaggerEndpoint+"/*", swagger.HandlerDefault)
 
 	// add healthcheck
 	apiV1.Use(healthcheck.New(healthcheck.Config{
@@ -93,22 +118,37 @@ func New() *FiberServer {
 		},
 		LivenessEndpoint: common.LivenessEndpoint,
 		ReadinessProbe: func(c *fiber.Ctx) bool {
-			return readinessDatabase(c.Context(), dbConn)
+			return readiness(c.Context(), dbConn, clientKafka)
 		},
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
 	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, hub)
 	return &FiberServer{
-		App:          app,
-		db:           dbConn,
-		WebsocketHub: hub,
-		KafkaClient:  kafkaClient,
+		App:           app,
+		Config:        configApp,
+		WebsocketHub:  hub,
+		KafkaConsumer: consumerClient,
+
+		db:          dbConn,
+		clientKafka: clientKafka,
 	}
 }
 
-func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
-	return dbConn.Ping(ctx) == nil
+func readiness(ctx context.Context, dbConn *pgxpool.Pool, clientKafka sarama.Client) bool {
+	dbErr := dbConn.Ping(ctx)
+	if dbErr != nil {
+		slog.Error("ping database", "error: ", dbErr)
+		return false
+	}
+
+	_, kafkaErr := clientKafka.Topics()
+	if kafkaErr != nil {
+		slog.Error("ping kafka", "error: ", kafkaErr)
+		return false
+	}
+
+	return true
 }
 
 func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, hub *websockethub.Hub) {
@@ -118,18 +158,4 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 	kitchenhd.NewHTTPHandler(router, kitchenUseCase, validator, configApp)
 
 	websockethub.NewWSHandler(router, configApp, hub)
-}
-
-func (s *FiberServer) CloseDB() {
-	s.db.Close()
-}
-
-func (s *FiberServer) CloseWebsocketHub() {
-	s.WebsocketHub.Shutdown()
-}
-
-func initKafka(configApp config.Config) sarama.ConsumerGroup {
-	brokers := strings.Split(configApp.KafkaBrokers, ",")
-	client := kafka.InitConsumer(kafka.Group, brokers)
-	return client
 }

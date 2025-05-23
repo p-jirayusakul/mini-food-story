@@ -27,7 +27,7 @@ func NewHTTPHandler(
 }
 
 func (s *Handler) setupRoutes() {
-	group := s.router.Group("/payments")
+	group := s.router.Group("/")
 
 	group.Post("/", s.CreatePaymentTransaction)
 	group.Post("/callback", s.CallbackPaymentTransaction)

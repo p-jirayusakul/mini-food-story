@@ -59,7 +59,7 @@ func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Produ
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
 			return nil, &exceptions.CustomError{
 				Status: exceptions.ERRNOTFOUND,
-				Errors: errors.New("product not found"),
+				Errors: exceptions.ErrProductNotFound,
 			}
 		}
 		return nil, &exceptions.CustomError{

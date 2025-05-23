@@ -4,14 +4,16 @@ import (
 	"context"
 	"fmt"
 	"food-story/payment-service/internal"
+	"food-story/pkg/common"
+	"food-story/shared/config"
 	"log"
-	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
-	_ "github.com/joho/godotenv/autoload"
+	"food-story/payment-service/docs"
 )
 
 func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
@@ -30,9 +32,8 @@ func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// close database
-	fiberServer.CloseDB()
-	log.Println("Database closed")
+	// close all connection
+	fiberServer.CloseAllConnection()
 
 	if err := fiberServer.App.ShutdownWithContext(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
@@ -47,12 +48,13 @@ func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
 func main() {
 
 	server := internal.New()
+	port, _ := strconv.Atoi(server.Config.AppPort)
+	initSwagger(server.Config)
 
 	// Create a done channel to signal when the shutdown is complete
 	done := make(chan bool, 1)
 
 	go func() {
-		port, _ := strconv.Atoi(os.Getenv("PORT"))
 		err := server.App.Listen(fmt.Sprintf(":%d", port))
 		if err != nil {
 			panic(fmt.Sprintf("http server error: %s", err))
@@ -65,4 +67,26 @@ func main() {
 	// Wait for the graceful shutdown to complete
 	<-done
 	log.Println("Graceful shutdown complete.")
+}
+
+func initSwagger(cfg config.Config) {
+	port, _ := strconv.Atoi(cfg.AppPort)
+	host := fmt.Sprintf("localhost:%d", port)
+
+	// programmatically set swagger info
+	docs.SwaggerInfo.Title = "Payment Service API"
+	docs.SwaggerInfo.Description = "REST API for managing payment transactions and payment methods for restaurant orders"
+	docs.SwaggerInfo.Version = "1.0.0"
+	docs.SwaggerInfo.BasePath = cfg.BaseURL
+
+	// dynamically set swagger info
+	docs.SwaggerInfo.Host = host
+	if strings.ToUpper(cfg.AppEnv) != common.DefaultAppEnv {
+		docs.SwaggerInfo.Host = host // e.g. api.example.com
+	}
+
+	docs.SwaggerInfo.Schemes = []string{"http"}
+	if strings.ToUpper(cfg.AppEnv) != common.DefaultAppEnv {
+		docs.SwaggerInfo.Schemes = []string{"http"} // e.g. https
+	}
 }

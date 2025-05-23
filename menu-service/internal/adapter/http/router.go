@@ -33,7 +33,7 @@ func NewHTTPHandler(
 }
 
 func (s *Handler) setupRoutes() {
-	group := s.router.Group("/menu", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID)
+	group := s.router.Group("/", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID)
 
 	group.Get("", s.SearchMenu)
 	group.Get("/:id<int>", s.GetProductByID)

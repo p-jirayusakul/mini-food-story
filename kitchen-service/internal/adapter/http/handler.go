@@ -2,6 +2,7 @@ package http
 
 import (
 	"food-story/kitchen-service/internal/domain"
+	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
@@ -11,6 +12,25 @@ import (
 
 const ResGetOrderItemsMsg = "get order items success"
 
+// SearchOrderItems godoc
+// @Summary Search order items
+// @Description Search order items with filters
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param pageNumber query int false "Page number" minimum(1)
+// @Param pageSize query int false "Page size" minimum(1)
+// @Param search query string false "Search by name" maxLength(255)
+// @Param statusCode query []string false "Filter by status codes" Enums(PENDING, PROCESSING, SERVED, CANCELLED)
+// @Param tableNumber query []string false "Filter by table numbers"
+// @Param orderBy query string false "Order by field" Enums(id,tableNumber,statusCode,productName,quantity)
+// @Param orderType query string false "Order direction" Enums(asc,desc)
+// @Success 200 {object} middleware.SuccessResponse{data=domain.SearchOrderItemsResult}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /orders/search/items [get]
 func (s *Handler) SearchOrderItems(c *fiber.Ctx) error {
 	body := new(SearchOrderItems)
 	if err := c.QueryParser(body); err != nil {
@@ -44,13 +64,27 @@ func (s *Handler) SearchOrderItems(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, ResGetOrderItemsMsg, result)
 }
 
+// GetOrderItems godoc
+// @Summary Get order items for specific order
+// @Description Get order items by order ID with pagination
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param id path int true "Order ID"
+// @Param pageNumber query int false "Page number" minimum(1)
+// @Success 200 {object} middleware.SuccessResponse{data=domain.SearchOrderItemsResult}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /orders/{id}/items [get]
 func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	body := new(SearchOrderItems)
+	body := new(SearchOrderItemsByOrderID)
 	if err := c.QueryParser(body); err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -60,7 +94,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 	}
 
 	payload := domain.SearchOrderItems{
-		PageSize:   body.PageSize,
+		PageSize:   common.DefaultPageSize,
 		PageNumber: body.PageNumber,
 	}
 
@@ -72,6 +106,21 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, ResGetOrderItemsMsg, result)
 }
 
+// GetOrderItemsByID godoc
+// @Summary Get specific order item
+// @Description Get order item by order ID and order item ID
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param id path int true "Order ID"
+// @Param orderItemsID path int true "Order Item ID"
+// @Success 200 {object} middleware.SuccessResponse{data=model.OrderItems}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 404 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /orders/{id}/items/{orderItemsID} [get]
 func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 	orderItemsID, orderID, err := handleParams(c)
 	if err != nil {
@@ -86,7 +135,22 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, ResGetOrderItemsMsg, result)
 }
 
-func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
+// UpdateOrderItemsStatusServe godoc
+// @Summary Update order item status to serv
+// @Description Update status of specific order item to serv
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param id path int true "Order ID"
+// @Param orderItemsID path int true "Order Item ID"
+// @Success 200 {object} middleware.SuccessResponse
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 404 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /orders/{id}/items/{orderItemsID}/status/serve [patch]
+func (s *Handler) UpdateOrderItemsStatusServe(c *fiber.Ctx) error {
 	orderItemsID, orderID, err := handleParams(c)
 	if err != nil {
 		return err
@@ -104,7 +168,22 @@ func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "update order item status served success", nil)
 }
 
-func (s *Handler) UpdateOrderItemsStatusCancelled(c *fiber.Ctx) error {
+// UpdateOrderItemsStatusCancel godoc
+// @Summary Update order item status to cancel
+// @Description Update status of specific order item to cancel
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param id path int true "Order ID"
+// @Param orderItemsID path int true "Order Item ID"
+// @Success 200 {object} middleware.SuccessResponse
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 404 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /orders/{id}/items/{orderItemsID}/status/cancel [patch]
+func (s *Handler) UpdateOrderItemsStatusCancel(c *fiber.Ctx) error {
 	orderItemsID, orderID, err := handleParams(c)
 	if err != nil {
 		return err

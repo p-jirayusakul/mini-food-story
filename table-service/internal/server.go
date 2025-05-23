@@ -9,6 +9,7 @@ import (
 	"food-story/shared/database/sqlc"
 	"food-story/shared/redis"
 	"food-story/shared/snowflakeid"
+	_ "food-story/table-service/docs"
 	"food-story/table-service/internal/adapter/cache"
 	tablehd "food-story/table-service/internal/adapter/http"
 	"food-story/table-service/internal/adapter/repository"
@@ -17,16 +18,18 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/swagger"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	"log/slog"
-	"time"
 )
 
 const EnvFile = ".env"
+const ServiceName = "table-service"
 
 type FiberServer struct {
-	App *fiber.App
+	App    *fiber.App
+	Config config.Config
 
 	db    *pgxpool.Pool
 	redis *redis.RedisClient
@@ -46,9 +49,11 @@ func (s *FiberServer) CloseAllConnection() {
 
 func New() *FiberServer {
 	configApp := config.InitConfig(EnvFile)
+	configApp.BaseURL = common.BasePath + "/tables"
+
 	app := fiber.New(fiber.Config{
-		ServerHeader:             "table-service",
-		AppName:                  "table-service",
+		ServerHeader:             ServiceName,
+		AppName:                  ServiceName,
 		ErrorHandler:             middleware.HandleError,
 		EnableSplittingOnParsers: true,
 		JSONEncoder:              json.Marshal,
@@ -56,23 +61,13 @@ func New() *FiberServer {
 	})
 
 	// add rate limit
-	app.Use(limiter.New(limiter.Config{
-		Max:        100,
-		Expiration: 1 * time.Minute,
-		LimitReached: func(_ *fiber.Ctx) error {
-			return fiber.NewError(fiber.StatusTooManyRequests, "Too Many Requests")
-		},
-	}))
+	app.Use(limiter.New(middleware.DefaultLimiter()))
 
 	// add custom CORS
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization, Connection",
-		AllowMethods: "GET, PUT, POST, PATCH, DELETE, OPTIONS",
-	}))
+	app.Use(cors.New(middleware.DefaultCorsConfig()))
 
 	// add log handler
-	app.Use(middleware.LogHandler())
+	app.Use(middleware.LogHandler(configApp.BaseURL))
 
 	// connect to database
 	configDB := config.InitDBConfig(EnvFile)
@@ -93,7 +88,10 @@ func New() *FiberServer {
 	validator := middleware.NewCustomValidator()
 
 	// init router
-	apiV1 := app.Group(common.BasePath)
+	apiV1 := app.Group(configApp.BaseURL)
+
+	// init swagger endpoint
+	apiV1.Get(common.SwaggerEndpoint+"/*", swagger.HandlerDefault)
 
 	// add healthcheck
 	apiV1.Use(healthcheck.New(healthcheck.Config{
@@ -110,9 +108,10 @@ func New() *FiberServer {
 	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
 
 	return &FiberServer{
-		App:   app,
-		db:    dbConn,
-		redis: redisConn,
+		App:    app,
+		Config: configApp,
+		db:     dbConn,
+		redis:  redisConn,
 	}
 }
 

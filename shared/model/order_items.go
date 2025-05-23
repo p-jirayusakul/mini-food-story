@@ -24,21 +24,21 @@ type OrderItemsRow interface {
 }
 
 type OrderItems struct {
-	ID            int64   `json:"id,string"`
-	OrderID       int64   `json:"orderID,string"`
-	OrderNumber   string  `json:"orderNumber"`
-	ProductID     int64   `json:"productID,string"`
-	StatusID      int64   `json:"statusID,string"`
-	TableNumber   int32   `json:"tableNumber"`
-	StatusName    string  `json:"statusName"`
-	StatusNameEN  string  `json:"statusNameEN"`
-	StatusCode    string  `json:"statusCode"`
-	ProductName   string  `json:"productName"`
-	ProductNameEN string  `json:"productNameEN"`
-	Price         float64 `json:"price"`
-	Quantity      int32   `json:"quantity"`
-	Note          *string `json:"note"`
-	CreatedAt     string  `json:"createdAt"`
+	ID            int64   `json:"id,string" example:"1920153361642950656"`
+	OrderID       int64   `json:"orderID,string" example:"1921828287366041600"`
+	OrderNumber   string  `json:"orderNumber" example:"FS-20250523-0001"`
+	ProductID     int64   `json:"productID,string" example:"1921822053405560832"`
+	StatusID      int64   `json:"statusID,string" example:"1921868485739155458"`
+	TableNumber   int32   `json:"tableNumber" example:"1"`
+	StatusName    string  `json:"statusName" example:"กำลังเตรียมอาหาร"`
+	StatusNameEN  string  `json:"statusNameEN" example:"Preparing"`
+	StatusCode    string  `json:"statusCode" example:"PREPARING"`
+	ProductName   string  `json:"productName" example:"ข้าวผัด"`
+	ProductNameEN string  `json:"productNameEN" example:"Fried rice"`
+	Price         float64 `json:"price" example:"60"`
+	Quantity      int32   `json:"quantity" example:"1"`
+	Note          *string `json:"note" example:"lorem ipsum"`
+	CreatedAt     string  `json:"createdAt" example:"2025-05-23T13:50:36+07:00"`
 }
 
 type OrderItemsStatus struct {

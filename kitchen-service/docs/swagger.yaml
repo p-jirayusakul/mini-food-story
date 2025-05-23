@@ -1,0 +1,366 @@
+definitions:
+  food-story_kitchen-service_internal_domain.SearchOrderItemsResult:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.OrderItems'
+        type: array
+      totalItems:
+        example: 10
+        type: integer
+      totalPages:
+        example: 1
+        type: integer
+    type: object
+  middleware.ErrorResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: something went wrong
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  middleware.SuccessResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: do something completed
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.OrderItems:
+    properties:
+      createdAt:
+        example: "2025-05-23T13:50:36+07:00"
+        type: string
+      id:
+        example: "1920153361642950656"
+        type: string
+      note:
+        example: lorem ipsum
+        type: string
+      orderID:
+        example: "1921828287366041600"
+        type: string
+      orderNumber:
+        example: FS-20250523-0001
+        type: string
+      price:
+        example: 60
+        type: number
+      productID:
+        example: "1921822053405560832"
+        type: string
+      productName:
+        example: ข้าวผัด
+        type: string
+      productNameEN:
+        example: Fried rice
+        type: string
+      quantity:
+        example: 1
+        type: integer
+      statusCode:
+        example: PREPARING
+        type: string
+      statusID:
+        example: "1921868485739155458"
+        type: string
+      statusName:
+        example: กำลังเตรียมอาหาร
+        type: string
+      statusNameEN:
+        example: Preparing
+        type: string
+      tableNumber:
+        example: 1
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /orders/{id}/items:
+    get:
+      consumes:
+      - application/json
+      description: Get order items by order ID with pagination
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Page number
+        in: query
+        minimum: 1
+        name: pageNumber
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/food-story_kitchen-service_internal_domain.SearchOrderItemsResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get order items for specific order
+      tags:
+      - Order
+  /orders/{id}/items/{orderItemsID}:
+    get:
+      consumes:
+      - application/json
+      description: Get order item by order ID and order item ID
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Order Item ID
+        in: path
+        name: orderItemsID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.OrderItems'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get specific order item
+      tags:
+      - Order
+  /orders/{id}/items/{orderItemsID}/status/cancel:
+    patch:
+      consumes:
+      - application/json
+      description: Update status of specific order item to cancel
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Order Item ID
+        in: path
+        name: orderItemsID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/middleware.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Update order item status to cancel
+      tags:
+      - Order
+  /orders/{id}/items/{orderItemsID}/status/serve:
+    patch:
+      consumes:
+      - application/json
+      description: Update status of specific order item to serv
+      parameters:
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Order Item ID
+        in: path
+        name: orderItemsID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/middleware.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Update order item status to serv
+      tags:
+      - Order
+  /orders/search/items:
+    get:
+      consumes:
+      - application/json
+      description: Search order items with filters
+      parameters:
+      - description: Page number
+        in: query
+        minimum: 1
+        name: pageNumber
+        type: integer
+      - description: Page size
+        in: query
+        minimum: 1
+        name: pageSize
+        type: integer
+      - description: Search by name
+        in: query
+        maxLength: 255
+        name: search
+        type: string
+      - collectionFormat: csv
+        description: Filter by status codes
+        in: query
+        items:
+          enum:
+          - PENDING
+          - PROCESSING
+          - SERVED
+          - CANCELLED
+          type: string
+        name: statusCode
+        type: array
+      - collectionFormat: csv
+        description: Filter by table numbers
+        in: query
+        items:
+          type: string
+        name: tableNumber
+        type: array
+      - description: Order by field
+        enum:
+        - id
+        - tableNumber
+        - statusCode
+        - productName
+        - quantity
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction
+        enum:
+        - asc
+        - desc
+        in: query
+        name: orderType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/food-story_kitchen-service_internal_domain.SearchOrderItemsResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Search order items
+      tags:
+      - Order
+swagger: "2.0"

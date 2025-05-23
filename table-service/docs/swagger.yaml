@@ -1,0 +1,535 @@
+definitions:
+  food-story_table-service_internal_domain.SearchTablesResult:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/food-story_table-service_internal_domain.Table'
+        type: array
+      totalItems:
+        example: 10
+        type: integer
+      totalPages:
+        example: 1
+        type: integer
+    type: object
+  food-story_table-service_internal_domain.Status:
+    properties:
+      code:
+        example: ORDERED
+        type: string
+      id:
+        example: "1921144250070732800"
+        type: string
+      name:
+        example: สั่งอาหารแล้ว
+        type: string
+      nameEN:
+        example: Ordered
+        type: string
+    type: object
+  food-story_table-service_internal_domain.Table:
+    properties:
+      id:
+        example: "1923564209627467776"
+        type: string
+      seats:
+        example: 5
+        type: integer
+      status:
+        example: สั่งอาหารแล้ว
+        type: string
+      statusEN:
+        example: Ordered
+        type: string
+      tableNumber:
+        example: 1
+        type: integer
+    type: object
+  internal_adapter_http.Table:
+    properties:
+      seats:
+        example: 5
+        minimum: 1
+        type: integer
+      tableNumber:
+        example: 1
+        minimum: 1
+        type: integer
+    required:
+    - seats
+    - tableNumber
+    type: object
+  internal_adapter_http.TableSession:
+    properties:
+      numberOfPeople:
+        example: 3
+        minimum: 1
+        type: integer
+      tableID:
+        example: "1923564209627467776"
+        type: string
+    required:
+    - numberOfPeople
+    - tableID
+    type: object
+  internal_adapter_http.createResponse:
+    properties:
+      id:
+        example: "1923564209627467776"
+        type: string
+    type: object
+  internal_adapter_http.createSessionResponse:
+    properties:
+      url:
+        example: http://localhost:3000?s=tYlC7uRGdaIT0-wDvCngv9qEWwM4Tdg4Jzoywe00fK2WhDqDHKCzqtybFDVgCPIGv1_isM3aXdb16KNGD4E-q2kewBRaVXZ5N7vgdi46Tc5po6_ZCHpFAT-Ei3xkKT0dL_f3Ruoiz9IzsnBhxlexXTEhKN9myrECimbKaDI=
+        type: string
+    type: object
+  internal_adapter_http.updateTableStatus:
+    properties:
+      statusID:
+        example: "1919968486671519744"
+        type: string
+    required:
+    - statusID
+    type: object
+  middleware.ErrorResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: something went wrong
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  middleware.SuccessResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: do something completed
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.CurrentTableSession:
+    properties:
+      orderID:
+        example: "1922535048335069184"
+        type: string
+      sessionID:
+        example: a9213539-b135-42cc-b714-60cfd1b099ec
+        type: string
+      startedAt:
+        example: "2025-05-23T11:59:50.010316+07:00"
+        type: string
+      status:
+        example: active
+        type: string
+      tableID:
+        example: "1920153361642950656"
+        type: string
+      tableNumber:
+        example: 1
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    get:
+      consumes:
+      - application/json
+      description: Search tables by filters like number of people, table number, seats,
+        and status
+      parameters:
+      - description: Number of people
+        in: query
+        name: numberOfPeople
+        type: integer
+      - description: Search by table number
+        in: query
+        name: search
+        type: string
+      - description: Filter by seats
+        in: query
+        name: seats
+        type: string
+      - collectionFormat: csv
+        description: Filter by status codes
+        in: query
+        items:
+          type: string
+        name: status
+        type: array
+      - description: Page number for pagination
+        in: query
+        name: pageNumber
+        type: integer
+      - description: Page size for pagination
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field (id, tableNumber, seats, status)
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc, desc)
+        in: query
+        name: orderByType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/food-story_table-service_internal_domain.SearchTablesResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Search table availability
+      tags:
+      - Table
+    post:
+      consumes:
+      - application/json
+      description: Create a new table with specified number and seats
+      parameters:
+      - description: Table details
+        in: body
+        name: table
+        required: true
+        schema:
+          $ref: '#/definitions/internal_adapter_http.Table'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_adapter_http.createResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Create new table
+      tags:
+      - Table
+  /{id}:
+    put:
+      consumes:
+      - application/json
+      description: Update table number and seats for existing table
+      parameters:
+      - description: Table ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Table details
+        in: body
+        name: table
+        required: true
+        schema:
+          $ref: '#/definitions/internal_adapter_http.Table'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/middleware.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Update table details
+      tags:
+      - Table
+  /{id}/status:
+    patch:
+      consumes:
+      - application/json
+      description: Update status for existing table
+      parameters:
+      - description: Table ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Table status details
+        in: body
+        name: status
+        required: true
+        schema:
+          $ref: '#/definitions/internal_adapter_http.updateTableStatus'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/middleware.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Update table status
+      tags:
+      - Table
+  /quick-search:
+    get:
+      consumes:
+      - application/json
+      description: Quickly search for available tables based on number of people
+      parameters:
+      - description: Number of people required
+        in: query
+        name: numberOfPeople
+        required: true
+        type: integer
+      - description: Page number for pagination
+        in: query
+        name: pageNumber
+        type: integer
+      - description: Page size for pagination
+        in: query
+        name: pageSize
+        type: integer
+      - description: Order by field (id, tableNumber, seats, status)
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc, desc)
+        in: query
+        name: orderByType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/food-story_table-service_internal_domain.SearchTablesResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Quick search for available tables
+      tags:
+      - Table
+  /session:
+    post:
+      consumes:
+      - application/json
+      description: Create a new session for a table with specified number of people
+      parameters:
+      - description: Table session details
+        in: body
+        name: table
+        required: true
+        schema:
+          $ref: '#/definitions/internal_adapter_http.TableSession'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/internal_adapter_http.createSessionResponse'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Create new table session
+      tags:
+      - Table
+  /session/current:
+    get:
+      consumes:
+      - application/json
+      description: Get details of the current active table session
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.CurrentTableSession'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get current table session
+      tags:
+      - Table
+  /status:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all available table statuses
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/food-story_table-service_internal_domain.Status'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get list of table status
+      tags:
+      - Table
+swagger: "2.0"

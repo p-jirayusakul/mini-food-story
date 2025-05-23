@@ -33,7 +33,7 @@
 <div id="orders"></div>
 
 <script>
-    const ws = new WebSocket("ws://localhost:8083/api/v1/ws/kitchen");
+    const ws = new WebSocket("ws://localhost:8083/api/v1/kitchen/ws/kitchen");
     const ordersDiv = document.getElementById("orders");
 
     ws.onmessage = function (event) {

@@ -34,16 +34,16 @@ func NewHTTPHandler(
 
 func (s *Handler) setupRoutes() {
 
-	withoutSession := s.router.Group("/orders")
+	withoutSession := s.router.Group("/")
 	withoutSession.Get("/:id<int>/items/status/incomplete", s.SearchOrderItemsInComplete)
 
-	group := s.router.Group("/orders", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID)
+	group := s.router.Group("/", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID)
 	group.Post("/current", s.CreateOrder)
 	group.Get("/current", s.GetOrderByID)
 	group.Post("/current/items", s.CreateOrderItems)
 	group.Get("/current/items", s.GetOrderItems)
 	group.Get("/current/items/:orderItemsID<int>", s.GetOrderItemsByID)
-	group.Patch("/current/items/:orderItemsID<int>/status/cancelled", s.UpdateOrderItemsStatusCancelled)
+	group.Patch("/current/items/:orderItemsID<int>/status/cancel", s.UpdateOrderItemsStatusCancel)
 
 }
 
