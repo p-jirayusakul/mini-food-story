@@ -1,0 +1,874 @@
+{
+	"info": {
+		"_postman_id": "d6b2c48a-1569-4925-83c1-c1189e3fd650",
+		"name": "mini-food-story",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "6440353"
+	},
+	"item": [
+		{
+			"name": "table",
+			"item": [
+				{
+					"name": "session",
+					"item": [
+						{
+							"name": "session",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 201\", function () {",
+											"    pm.expect(pm.response.code).to.equal(201);",
+											"    let token = pm.response.json().data.url.replace(\"http://localhost:3000?s=\", \"\");",
+											"    pm.environment.set(\"SESSION_TOKEN\", token);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"tableID\": \"1919971956241731584\",\n    \"numberOfPeople\": 3\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{API_TABLE}}/api/v1/tables/session",
+									"host": [
+										"{{API_TABLE}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"tables",
+										"session"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "session",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "X-Session-Id",
+										"value": "{{SESSION_TOKEN}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{API_TABLE}}/api/v1/tables/session/current",
+									"host": [
+										"{{API_TABLE}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"tables",
+										"session",
+										"current"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "list status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8080/api/v1/tables/status",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"v1",
+								"tables",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tableNumber\": 1,\n    \"seats\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_TABLE}}/api/v1/tables",
+							"host": [
+								"{{API_TABLE}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tables"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "search table",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_TABLE}}/api/v1/tables?search&seats&status&orderBy=id&orderType=asc&pageSize=10&pageNumber=1",
+							"host": [
+								"{{API_TABLE}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tables"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": null
+								},
+								{
+									"key": "seats",
+									"value": null
+								},
+								{
+									"key": "status",
+									"value": null
+								},
+								{
+									"key": "orderBy",
+									"value": "id"
+								},
+								{
+									"key": "orderType",
+									"value": "asc"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								},
+								{
+									"key": "pageNumber",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "quick-search table",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_TABLE}}/api/v1/tables/quick-search?numberOfPeople=1&orderBy=id&orderType=asc&pageSize=10&pageNumber=1",
+							"host": [
+								"{{API_TABLE}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tables",
+								"quick-search"
+							],
+							"query": [
+								{
+									"key": "numberOfPeople",
+									"value": "1"
+								},
+								{
+									"key": "orderBy",
+									"value": "id"
+								},
+								{
+									"key": "orderType",
+									"value": "asc"
+								},
+								{
+									"key": "pageSize",
+									"value": "10"
+								},
+								{
+									"key": "pageNumber",
+									"value": "1"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update table status",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"statusID\": \"1919968486671519744\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_TABLE}}/api/v1/tables/1923564209627467776/status",
+							"host": [
+								"{{API_TABLE}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tables",
+								"1923564209627467776",
+								"status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"tableNumber\": 4,\n    \"seats\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_TABLE}}/api/v1/tables/1919996486741921792",
+							"host": [
+								"{{API_TABLE}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tables",
+								"1919996486741921792"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "menu",
+			"item": [
+				{
+					"name": "category list",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:8081/api/v1/menu/category",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"menu",
+								"category"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "menu",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:8081/api/v1/menu?search=&categoryID=&pageNumber=&pageSize=&orderBy&orderType",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"menu"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "categoryID",
+									"value": ""
+								},
+								{
+									"key": "pageNumber",
+									"value": ""
+								},
+								{
+									"key": "pageSize",
+									"value": ""
+								},
+								{
+									"key": "orderBy",
+									"value": null
+								},
+								{
+									"key": "orderType",
+									"value": null
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "menu by id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:8081/api/v1/menu/1921828287366041600",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"menu",
+								"1921828287366041600"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "order",
+			"item": [
+				{
+					"name": "create order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"items\": [\n        {\n            \"productID\": \"1921828287366041600\",\n            \"quantity\": 2,\n            \"note\": null\n        },\n        {\n            \"productID\": \"1921822053405560832\",\n            \"quantity\": 1,\n            \"note\": null\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_ORDER}}/api/v1/orders/current",
+							"host": [
+								"{{API_ORDER}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"current"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get order by id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{API_ORDER}}/api/v1/orders/current",
+							"host": [
+								"{{API_ORDER}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"current"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create order items",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"items\": [\n        {\n            \"productID\": \"1921828287366041600\",\n            \"quantity\": 2,\n            \"note\": null\n        },\n        {\n            \"productID\": \"1921822053405560832\",\n            \"quantity\": 1,\n            \"note\": null\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_ORDER}}/api/v1/orders/current/items",
+							"host": [
+								"{{API_ORDER}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"current",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get order items",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{API_ORDER}}/api/v1/orders/current/items?pageNumber=3",
+							"host": [
+								"{{API_ORDER}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"current",
+								"items"
+							],
+							"query": [
+								{
+									"key": "pageNumber",
+									"value": "3"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get order items by id",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:8082/api/v1/orders/current/items/1922861025929990144",
+							"host": [
+								"localhost"
+							],
+							"port": "8082",
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"current",
+								"items",
+								"1922861025929990144"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "cancel order items",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "X-Session-Id",
+								"value": "{{SESSION_TOKEN}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{API_ORDER}}/api/v1/orders/current/items/1922535048335069184/status/cancelled",
+							"host": [
+								"{{API_ORDER}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"current",
+								"items",
+								"1922535048335069184",
+								"status",
+								"cancelled"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get order items incomplete",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_ORDER}}/api/v1/orders/1923938802137567232/items/status/incomplete?pageNumber=&pageSize=&search=&statusCode=&orderBy=&orderType=",
+							"host": [
+								"{{API_ORDER}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1923938802137567232",
+								"items",
+								"status",
+								"incomplete"
+							],
+							"query": [
+								{
+									"key": "pageNumber",
+									"value": ""
+								},
+								{
+									"key": "pageSize",
+									"value": ""
+								},
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "statusCode",
+									"value": ""
+								},
+								{
+									"key": "orderBy",
+									"value": ""
+								},
+								{
+									"key": "orderType",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "kitchen",
+			"item": [
+				{
+					"name": "search order items",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_KITCHEN}}/api/v1/orders/search/items?pageNumber&pageSize&search=&statusCode&tableNumber=&orderBy=&orderType=",
+							"host": [
+								"{{API_KITCHEN}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"search",
+								"items"
+							],
+							"query": [
+								{
+									"key": "pageNumber",
+									"value": null
+								},
+								{
+									"key": "pageSize",
+									"value": null
+								},
+								{
+									"key": "search",
+									"value": ""
+								},
+								{
+									"key": "statusCode",
+									"value": null
+								},
+								{
+									"key": "tableNumber",
+									"value": ""
+								},
+								{
+									"key": "orderBy",
+									"value": ""
+								},
+								{
+									"key": "orderType",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get order items by order id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_KITCHEN}}/api/v1/orders/1923938802137567232/items",
+							"host": [
+								"{{API_KITCHEN}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1923938802137567232",
+								"items"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get oder item by id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_KITCHEN}}/api/v1/orders/1923266282929524737/items/1923266295143337985",
+							"host": [
+								"{{API_KITCHEN}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1923266282929524737",
+								"items",
+								"1923266295143337985"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update order items served",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{API_KITCHEN}}/api/v1/orders/1923938802137567232/items/1923938802129178625/status/served",
+							"host": [
+								"{{API_KITCHEN}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1923938802137567232",
+								"items",
+								"1923938802129178625",
+								"status",
+								"served"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "update order items cancelled",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {
+							"raw": "{{API_KITCHEN}}/api/v1/orders/1923938802137567232/items/1923938802129178624/status/cancelled",
+							"host": [
+								"{{API_KITCHEN}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"orders",
+								"1923938802137567232",
+								"items",
+								"1923938802129178624",
+								"status",
+								"cancelled"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "payments",
+			"item": [
+				{
+					"name": "payment methods",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_PAYMENTS}}/api/v1/payments/methods",
+							"host": [
+								"{{API_PAYMENTS}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"methods"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create payment transaction",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"orderID\": \"1923938802137567232\",\n    \"methodID\": \"1923732004537372672\",\n    \"note\": null\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_PAYMENTS}}/api/v1/payments",
+							"host": [
+								"{{API_PAYMENTS}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "callback",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"transactionID\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{API_PAYMENTS}}/api/v1/payments/callback",
+							"host": [
+								"{{API_PAYMENTS}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"payments",
+								"callback"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

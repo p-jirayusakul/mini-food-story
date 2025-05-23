@@ -21,6 +21,7 @@ type Config struct {
 	KafkaBrokers         string `mapstructure:"KAFKA_BROKERS"`
 	TimeZone             string `mapstructure:"TZ"`
 	TableSessionDuration time.Duration
+	BaseURL              string
 }
 
 func InitConfig(envFile string) Config {

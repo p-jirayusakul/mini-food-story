@@ -98,159 +98,159 @@ services:
                kafka-console-producer --bootstrap-server kafka:29092 --topic users < /data/message.json'"
     networks:
       - mini_food_story
-
-  psql_bp:
-    image: postgres:17.5
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${DB_DATABASE}
-      POSTGRES_USER: ${DB_USERNAME}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      TZ: "Asia/Bangkok"
-    ports:
-      - "5432:5432"
-    volumes:
-      - psql_volume_bp:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    networks:
-      - mini_food_story
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin-container
-    environment:
-      PGADMIN_DEFAULT_EMAIL: user@domain.com
-      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD}
-    ports:
-      - "5050:80"
-    networks:
-      - mini_food_story
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
-
-  migrate:
-    image: migrate/migrate
-    container_name: my_migration
-    volumes:
-      - ./shared/database/migrations:/migrations
-    command: [
-      "-path", "/migrations",
-      "-database", "postgres://${DB_USERNAME}:${DB_PASSWORD}@psql_bp:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}",
-      "up"
-    ]
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-
-  table-service:
-    build:
-      context: ./
-      dockerfile: table-service/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-    environment:
-      <<: *common-env
-      PORT: 8080
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-
-    networks:
-      - mini_food_story
-
-  menu-service:
-    build:
-      context: ./
-      dockerfile: menu-service/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8081:8081"
-    environment:
-      <<: *common-env
-      PORT: 8081
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-
-  order-service:
-    build:
-      context: ./
-      dockerfile: order-service/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8082:8082"
-    environment:
-      <<: *common-env
-      PORT: 8082
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-
-  kitchen-service:
-    build:
-      context: ./
-      dockerfile: kitchen-service/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8083:8083"
-    environment:
-      <<: *common-env
-      PORT: 8083
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-
-  payment-service:
-    build:
-      context: ./
-      dockerfile: payment-service/Dockerfile
-    restart: unless-stopped
-    ports:
-      - "8084:8084"
-    environment:
-      <<: *common-env
-      PORT: 8084
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-
+#
+#  psql_bp:
+#    image: postgres:17.5
+#    restart: unless-stopped
+#    environment:
+#      POSTGRES_DB: ${DB_DATABASE}
+#      POSTGRES_USER: ${DB_USERNAME}
+#      POSTGRES_PASSWORD: ${DB_PASSWORD}
+#      TZ: "Asia/Bangkok"
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - psql_volume_bp:/var/lib/postgresql/data
+#    healthcheck:
+#      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME}" ]
+#      interval: 10s
+#      timeout: 5s
+#      retries: 3
+#    networks:
+#      - mini_food_story
+#
+#  pgadmin:
+#    image: dpage/pgadmin4
+#    container_name: pgadmin-container
+#    environment:
+#      PGADMIN_DEFAULT_EMAIL: user@domain.com
+#      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD}
+#    ports:
+#      - "5050:80"
+#    networks:
+#      - mini_food_story
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#    volumes:
+#      - pgadmin_data:/var/lib/pgadmin
+#
+#  migrate:
+#    image: migrate/migrate
+#    container_name: my_migration
+#    volumes:
+#      - ./shared/database/migrations:/migrations
+#    command: [
+#      "-path", "/migrations",
+#      "-database", "postgres://${DB_USERNAME}:${DB_PASSWORD}@psql_bp:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}",
+#      "up"
+#    ]
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#
+#  table-service:
+#    build:
+#      context: ./
+#      dockerfile: table-service/Dockerfile
+#    restart: unless-stopped
+#    ports:
+#      - "8080:8080"
+#    environment:
+#      <<: *common-env
+#      PORT: 8080
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#
+#    networks:
+#      - mini_food_story
+#
+#  menu-service:
+#    build:
+#      context: ./
+#      dockerfile: menu-service/Dockerfile
+#    restart: unless-stopped
+#    ports:
+#      - "8081:8081"
+#    environment:
+#      <<: *common-env
+#      PORT: 8081
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#
+#  order-service:
+#    build:
+#      context: ./
+#      dockerfile: order-service/Dockerfile
+#    restart: unless-stopped
+#    ports:
+#      - "8082:8082"
+#    environment:
+#      <<: *common-env
+#      PORT: 8082
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#
+#  kitchen-service:
+#    build:
+#      context: ./
+#      dockerfile: kitchen-service/Dockerfile
+#    restart: unless-stopped
+#    ports:
+#      - "8083:8083"
+#    environment:
+#      <<: *common-env
+#      PORT: 8083
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#
+#  payment-service:
+#    build:
+#      context: ./
+#      dockerfile: payment-service/Dockerfile
+#    restart: unless-stopped
+#    ports:
+#      - "8084:8084"
+#    environment:
+#      <<: *common-env
+#      PORT: 8084
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#
 volumes:
   dragonflydata:
-  psql_volume_bp:
-  pgadmin_data:
+#  psql_volume_bp:
+#  pgadmin_data:
 networks:
   mini_food_story:

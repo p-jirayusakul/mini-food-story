@@ -1,11 +1,11 @@
 package domain
 
 type Table struct {
-	ID          int64  `json:"id,string"`
-	TableNumber int32  `json:"tableNumber"`
-	Status      string `json:"status"`
-	StatusEn    string `json:"statusEN"`
-	Seats       int32  `json:"seats"`
+	ID          int64  `json:"id,string" example:"1923564209627467776"`
+	TableNumber int32  `json:"tableNumber" example:"1"`
+	Status      string `json:"status" example:"สั่งอาหารแล้ว"`
+	StatusEn    string `json:"statusEN" example:"Ordered"`
+	Seats       int32  `json:"seats" example:"5"`
 }
 
 type TableStatus struct {
@@ -25,7 +25,7 @@ type SearchTables struct {
 }
 
 type SearchTablesResult struct {
-	TotalItems int64    `json:"totalItems"`
-	TotalPages int64    `json:"totalPages"`
+	TotalItems int64    `json:"totalItems" example:"10"`
+	TotalPages int64    `json:"totalPages" example:"1"`
 	Data       []*Table `json:"data"`
 }

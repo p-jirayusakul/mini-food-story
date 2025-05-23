@@ -1,0 +1,246 @@
+definitions:
+  food-story_menu-service_internal_domain.Category:
+    properties:
+      id:
+        example: "1921144250070732800"
+        type: string
+      name:
+        example: ขนม
+        type: string
+      nameEN:
+        example: Dessert
+        type: string
+    type: object
+  food-story_menu-service_internal_domain.Product:
+    properties:
+      categoryID:
+        example: "1921143886227443712"
+        type: string
+      categoryName:
+        example: อาหาร
+        type: string
+      categoryNameEN:
+        example: Food
+        type: string
+      description:
+        example: lorem ipsum
+        type: string
+      id:
+        example: "1921144250070732800"
+        type: string
+      imageURL:
+        example: https://example.com/image.jpg
+        type: string
+      isAvailable:
+        example: true
+        type: boolean
+      name:
+        example: ข้าวมันไก่
+        type: string
+      nameEN:
+        example: Chicken rice
+        type: string
+      price:
+        example: 100
+        type: number
+    type: object
+  food-story_menu-service_internal_domain.SearchProductResult:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/food-story_menu-service_internal_domain.Product'
+        type: array
+      totalItems:
+        example: 10
+        type: integer
+      totalPages:
+        example: 1
+        type: integer
+    type: object
+  middleware.ErrorResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: something went wrong
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  middleware.SuccessResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: do something completed
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /:
+    get:
+      consumes:
+      - application/json
+      description: Search menu items with filters
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: pageNumber
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      - description: Filter by category IDs e.g. 333,444,555
+        in: query
+        name: categoryID
+        type: string
+      - description: Order by field (id, tableNumber, seats, status)
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc, desc)
+        in: query
+        name: orderType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/food-story_menu-service_internal_domain.SearchProductResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Search menu items
+      tags:
+      - Menu
+  /{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get menu item details by product ID
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/food-story_menu-service_internal_domain.Product'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get menu item by ID
+      tags:
+      - Menu
+  /category:
+    get:
+      consumes:
+      - application/json
+      description: Get list of all available product categories
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/food-story_menu-service_internal_domain.Category'
+                  type: array
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get list of categories
+      tags:
+      - Category
+swagger: "2.0"
