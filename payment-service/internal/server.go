@@ -15,23 +15,34 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
+	"github.com/gofiber/swagger"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"time"
+	"log"
 )
 
 const EnvFile = ".env"
+const ServiceName = "payment-service"
 
 type FiberServer struct {
-	App *fiber.App
+	App    *fiber.App
+	Config config.Config
 
 	db *pgxpool.Pool
 }
 
+func (s *FiberServer) CloseAllConnection() {
+	if s.db != nil {
+		s.db.Close()
+		log.Println("Database closed")
+	}
+}
+
 func New() *FiberServer {
 	configApp := config.InitConfig(EnvFile)
+	configApp.BaseURL = common.BasePath + "/payments"
 	app := fiber.New(fiber.Config{
-		ServerHeader:             "payment-service",
-		AppName:                  "payment-service",
+		ServerHeader:             ServiceName,
+		AppName:                  ServiceName,
 		ErrorHandler:             middleware.HandleError,
 		EnableSplittingOnParsers: true,
 		JSONEncoder:              json.Marshal,
@@ -39,23 +50,13 @@ func New() *FiberServer {
 	})
 
 	// add rate limit
-	app.Use(limiter.New(limiter.Config{
-		Max:        100,
-		Expiration: 1 * time.Minute,
-		LimitReached: func(_ *fiber.Ctx) error {
-			return fiber.NewError(fiber.StatusTooManyRequests, "Too Many Requests")
-		},
-	}))
+	app.Use(limiter.New(middleware.DefaultLimiter()))
 
 	// add custom CORS
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-		AllowHeaders: "Origin, Content-Type, Accept, Authorization, Connection",
-		AllowMethods: "GET, PUT, POST, PATCH, DELETE, OPTIONS",
-	}))
+	app.Use(cors.New(middleware.DefaultCorsConfig()))
 
 	// add log handler
-	app.Use(middleware.LogHandler())
+	app.Use(middleware.LogHandler(configApp.BaseURL))
 
 	// connect to database
 	configDB := config.InitDBConfig(EnvFile)
@@ -73,7 +74,10 @@ func New() *FiberServer {
 	validator := middleware.NewCustomValidator()
 
 	// init router
-	apiV1 := app.Group(common.BasePath)
+	apiV1 := app.Group(configApp.BaseURL)
+
+	// init swagger endpoint
+	apiV1.Get(common.SwaggerEndpoint+"/*", swagger.HandlerDefault)
 
 	// add healthcheck
 	apiV1.Use(healthcheck.New(healthcheck.Config{
@@ -82,7 +86,7 @@ func New() *FiberServer {
 		},
 		LivenessEndpoint: common.LivenessEndpoint,
 		ReadinessProbe: func(c *fiber.Ctx) bool {
-			return readinessDatabase(c.Context(), dbConn)
+			return readiness(c.Context(), dbConn)
 		},
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
@@ -90,12 +94,13 @@ func New() *FiberServer {
 	registerHandlers(apiV1, store, validator, snowflakeNode, configApp)
 
 	return &FiberServer{
-		App: app,
-		db:  dbConn,
+		App:    app,
+		Config: configApp,
+		db:     dbConn,
 	}
 }
 
-func readinessDatabase(ctx context.Context, dbConn *pgxpool.Pool) bool {
+func readiness(ctx context.Context, dbConn *pgxpool.Pool) bool {
 	return dbConn.Ping(ctx) == nil
 }
 
@@ -103,8 +108,4 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 	paymentRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	paymentCase := usecase.NewUsecase(configApp, *paymentRepo)
 	paymenthd.NewHTTPHandler(router, paymentCase, validator)
-}
-
-func (s *FiberServer) CloseDB() {
-	s.db.Close()
 }
