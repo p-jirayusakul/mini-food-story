@@ -1,0 +1,515 @@
+definitions:
+  food-story_order-service_internal_domain.CurrentOrderItems:
+    properties:
+      createdAt:
+        example: "2025-05-23T11:59:50.010316+07:00"
+        type: string
+      id:
+        example: "1920153361642950656"
+        type: string
+      note:
+        example: lorem ipsum
+        type: string
+      price:
+        example: 60
+        type: number
+      productID:
+        example: "1920153361642950656"
+        type: string
+      productName:
+        example: ข้าวผัด
+        type: string
+      productNameEN:
+        example: Fried rice
+        type: string
+      quantity:
+        example: 1
+        type: integer
+      statusCode:
+        example: PREPARING
+        type: string
+      statusName:
+        example: กำลังเตรียมอาหาร
+        type: string
+      statusNameEN:
+        example: Preparing
+        type: string
+    type: object
+  food-story_order-service_internal_domain.SearchCurrentOrderItemsResult:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/food-story_order-service_internal_domain.CurrentOrderItems'
+        type: array
+      totalItems:
+        example: 10
+        type: integer
+      totalPages:
+        example: 1
+        type: integer
+    type: object
+  food-story_order-service_internal_domain.SearchOrderItemsResult:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/model.OrderItems'
+        type: array
+      totalItems:
+        example: 10
+        type: integer
+      totalPages:
+        example: 1
+        type: integer
+    type: object
+  internal_adapter_http.CurrentOrderResponse:
+    properties:
+      statusCode:
+        example: CONFIRMED
+        type: string
+      statusName:
+        example: ยืนยันออเดอร์
+        type: string
+      statusNameEN:
+        example: Confirmed
+        type: string
+      tableNumber:
+        example: 1
+        type: integer
+    type: object
+  internal_adapter_http.OrderItems:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/internal_adapter_http.OrderItemsData'
+        type: array
+    required:
+    - items
+    type: object
+  internal_adapter_http.OrderItemsData:
+    properties:
+      note:
+        example: lorem ipsum
+        type: string
+      productID:
+        example: "1921828287366041600"
+        type: string
+      quantity:
+        example: 1
+        type: integer
+    required:
+    - productID
+    - quantity
+    type: object
+  middleware.ErrorResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: something went wrong
+        type: string
+      status:
+        example: error
+        type: string
+    type: object
+  middleware.SuccessResponse:
+    properties:
+      data:
+        type: object
+      message:
+        example: do something completed
+        type: string
+      status:
+        example: success
+        type: string
+    type: object
+  model.OrderItems:
+    properties:
+      createdAt:
+        example: "2025-05-23T13:50:36+07:00"
+        type: string
+      id:
+        example: "1920153361642950656"
+        type: string
+      note:
+        example: lorem ipsum
+        type: string
+      orderID:
+        example: "1921828287366041600"
+        type: string
+      orderNumber:
+        example: FS-20250523-0001
+        type: string
+      price:
+        example: 60
+        type: number
+      productID:
+        example: "1921822053405560832"
+        type: string
+      productName:
+        example: ข้าวผัด
+        type: string
+      productNameEN:
+        example: Fried rice
+        type: string
+      quantity:
+        example: 1
+        type: integer
+      statusCode:
+        example: PREPARING
+        type: string
+      statusID:
+        example: "1921868485739155458"
+        type: string
+      statusName:
+        example: กำลังเตรียมอาหาร
+        type: string
+      statusNameEN:
+        example: Preparing
+        type: string
+      tableNumber:
+        example: 1
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /{id}/items/status/incomplete:
+    get:
+      consumes:
+      - application/json
+      description: Search incomplete order items with filters
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      - description: Order ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: pageNumber
+        type: integer
+      - description: Page size
+        in: query
+        name: pageSize
+        type: integer
+      - description: Search by name
+        in: query
+        name: search
+        type: string
+      - collectionFormat: csv
+        description: Filter by status codes
+        in: query
+        items:
+          type: string
+        name: statusCode
+        type: array
+      - description: Order by field
+        in: query
+        name: orderBy
+        type: string
+      - description: Order direction (asc, desc)
+        in: query
+        name: orderType
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/food-story_order-service_internal_domain.SearchOrderItemsResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Search incomplete order items
+      tags:
+      - Order
+  /current:
+    get:
+      consumes:
+      - application/json
+      description: Get current order details for the given session ID
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/internal_adapter_http.CurrentOrderResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get order details by session ID
+      tags:
+      - Order
+    post:
+      consumes:
+      - application/json
+      description: Create a new order with items for current table session
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      - description: Order item details
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/internal_adapter_http.OrderItems'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/middleware.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Create new order
+      tags:
+      - Order
+  /current/items:
+    get:
+      consumes:
+      - application/json
+      description: Get all order items for the current table session with pagination
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      - default: 1
+        description: Page number for pagination
+        in: query
+        name: page_number
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/food-story_order-service_internal_domain.SearchCurrentOrderItemsResult'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get order items for current session
+      tags:
+      - Order
+    post:
+      consumes:
+      - application/json
+      description: Add new items to an existing order for current table session
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      - description: Order items to add
+        in: body
+        name: order
+        required: true
+        schema:
+          $ref: '#/definitions/internal_adapter_http.OrderItems'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/middleware.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Add items to an existing order
+      tags:
+      - Order
+  /current/items/{orderItemsID}:
+    get:
+      consumes:
+      - application/json
+      description: Get specific order item details for current table session
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      - description: Order Item ID
+        in: path
+        name: orderItemsID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - $ref: '#/definitions/middleware.SuccessResponse'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.OrderItems'
+              type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Get order item details by ID
+      tags:
+      - Order
+  /current/items/{orderItemsID}/status/cancel:
+    patch:
+      consumes:
+      - application/json
+      description: Update order item status to cancelled for current table session
+      parameters:
+      - description: Session ID
+        in: header
+        name: X-Session-Id
+        required: true
+        type: string
+      - description: Order Item ID
+        in: path
+        name: orderItemsID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/middleware.SuccessResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/middleware.ErrorResponse'
+      summary: Cancel order item
+      tags:
+      - Order
+swagger: "2.0"

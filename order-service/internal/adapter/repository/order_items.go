@@ -342,6 +342,12 @@ func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []sha
 	for index, item := range orderItems {
 		product, repoErr := i.repository.GetProductByID(ctx, item.ProductID)
 		if repoErr != nil {
+			if errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
+				return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
+					Status: exceptions.ERRNOTFOUND,
+					Errors: exceptions.ErrProductNotFound,
+				}
+			}
 			return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
 				Status: exceptions.ERRREPOSITORY,
 				Errors: fmt.Errorf("failed to get product by id: %w", repoErr),
@@ -351,7 +357,7 @@ func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []sha
 		if product == nil {
 			return []database.CreateOrderItemsParams{}, &exceptions.CustomError{
 				Status: exceptions.ERRNOTFOUND,
-				Errors: errors.New("product not found"),
+				Errors: exceptions.ErrProductNotFound,
 			}
 		}
 
