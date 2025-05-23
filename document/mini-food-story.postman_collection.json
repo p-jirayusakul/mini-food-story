@@ -510,7 +510,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{API_ORDER}}/api/v1/orders/current/items?pageNumber=3",
+							"raw": "{{API_ORDER}}/api/v1/orders/current/items?pageNumber=1",
 							"host": [
 								"{{API_ORDER}}"
 							],
@@ -524,7 +524,7 @@
 							"query": [
 								{
 									"key": "pageNumber",
-									"value": "3"
+									"value": "1"
 								}
 							]
 						}
@@ -572,7 +572,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{API_ORDER}}/api/v1/orders/current/items/1922535048335069184/status/cancelled",
+							"raw": "{{API_ORDER}}/api/v1/orders/current/items/1925810304646647808/status/cancel",
 							"host": [
 								"{{API_ORDER}}"
 							],
@@ -582,9 +582,9 @@
 								"orders",
 								"current",
 								"items",
-								"1922535048335069184",
+								"1925810304646647808",
 								"status",
-								"cancelled"
+								"cancel"
 							]
 						}
 					},
@@ -650,13 +650,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{API_KITCHEN}}/api/v1/orders/search/items?pageNumber&pageSize&search=&statusCode&tableNumber=&orderBy=&orderType=",
+							"raw": "{{API_KITCHEN}}/api/v1/kitchen/orders/search/items?pageNumber&pageSize&search=&statusCode&tableNumber=&orderBy=&orderType=",
 							"host": [
 								"{{API_KITCHEN}}"
 							],
 							"path": [
 								"api",
 								"v1",
+								"kitchen",
 								"orders",
 								"search",
 								"items"
@@ -701,13 +702,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{API_KITCHEN}}/api/v1/orders/1923938802137567232/items",
+							"raw": "{{API_KITCHEN}}/api/v1/kitchen/orders/1923938802137567232/items",
 							"host": [
 								"{{API_KITCHEN}}"
 							],
 							"path": [
 								"api",
 								"v1",
+								"kitchen",
 								"orders",
 								"1923938802137567232",
 								"items"
@@ -722,13 +724,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{API_KITCHEN}}/api/v1/orders/1923266282929524737/items/1923266295143337985",
+							"raw": "{{API_KITCHEN}}/api/v1/kitchen/orders/1923266282929524737/items/1923266295143337985",
 							"host": [
 								"{{API_KITCHEN}}"
 							],
 							"path": [
 								"api",
 								"v1",
+								"kitchen",
 								"orders",
 								"1923266282929524737",
 								"items",
@@ -744,19 +747,20 @@
 						"method": "PATCH",
 						"header": [],
 						"url": {
-							"raw": "{{API_KITCHEN}}/api/v1/orders/1923938802137567232/items/1923938802129178625/status/served",
+							"raw": "{{API_KITCHEN}}/api/v1/kitchen/orders/1923938802137567232/items/1923938802129178625/status/serve",
 							"host": [
 								"{{API_KITCHEN}}"
 							],
 							"path": [
 								"api",
 								"v1",
+								"kitchen",
 								"orders",
 								"1923938802137567232",
 								"items",
 								"1923938802129178625",
 								"status",
-								"served"
+								"serve"
 							]
 						}
 					},
@@ -768,19 +772,20 @@
 						"method": "PATCH",
 						"header": [],
 						"url": {
-							"raw": "{{API_KITCHEN}}/api/v1/orders/1923938802137567232/items/1923938802129178624/status/cancelled",
+							"raw": "{{API_KITCHEN}}/api/v1/kitchen/orders/1923938802137567232/items/1923938802129178624/status/cancel",
 							"host": [
 								"{{API_KITCHEN}}"
 							],
 							"path": [
 								"api",
 								"v1",
+								"kitchen",
 								"orders",
 								"1923938802137567232",
 								"items",
 								"1923938802129178624",
 								"status",
-								"cancelled"
+								"cancel"
 							]
 						}
 					},
