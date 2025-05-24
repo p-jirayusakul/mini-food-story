@@ -16,7 +16,8 @@ x-common-env: &common-env
 
 services:
   dragonfly:
-    image: 'docker.dragonflydb.io/dragonflydb/dragonfly'
+    container_name: redis
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
     ulimits:
       memlock: -1
     ports:
@@ -98,159 +99,186 @@ services:
                kafka-console-producer --bootstrap-server kafka:29092 --topic users < /data/message.json'"
     networks:
       - mini_food_story
-#
-#  psql_bp:
-#    image: postgres:17.5
-#    restart: unless-stopped
-#    environment:
-#      POSTGRES_DB: ${DB_DATABASE}
-#      POSTGRES_USER: ${DB_USERNAME}
-#      POSTGRES_PASSWORD: ${DB_PASSWORD}
-#      TZ: "Asia/Bangkok"
-#    ports:
-#      - "5432:5432"
-#    volumes:
-#      - psql_volume_bp:/var/lib/postgresql/data
-#    healthcheck:
-#      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME}" ]
-#      interval: 10s
-#      timeout: 5s
-#      retries: 3
-#    networks:
-#      - mini_food_story
-#
-#  pgadmin:
-#    image: dpage/pgadmin4
-#    container_name: pgadmin-container
-#    environment:
-#      PGADMIN_DEFAULT_EMAIL: user@domain.com
-#      PGADMIN_DEFAULT_PASSWORD: ${DB_PASSWORD}
-#    ports:
-#      - "5050:80"
-#    networks:
-#      - mini_food_story
-#    depends_on:
-#      psql_bp:
-#        condition: service_healthy
-#    volumes:
-#      - pgadmin_data:/var/lib/pgadmin
-#
-#  migrate:
-#    image: migrate/migrate
-#    container_name: my_migration
-#    volumes:
-#      - ./shared/database/migrations:/migrations
-#    command: [
-#      "-path", "/migrations",
-#      "-database", "postgres://${DB_USERNAME}:${DB_PASSWORD}@psql_bp:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}",
-#      "up"
-#    ]
-#    depends_on:
-#      psql_bp:
-#        condition: service_healthy
-#    networks:
-#      - mini_food_story
-#
-#  table-service:
-#    build:
-#      context: ./
-#      dockerfile: table-service/Dockerfile
-#    restart: unless-stopped
-#    ports:
-#      - "8080:8080"
-#    environment:
-#      <<: *common-env
-#      APP_PORT: 8080
-#    depends_on:
-#      psql_bp:
-#        condition: service_healthy
-#      dragonfly:
-#        condition: service_healthy
-#
-#    networks:
-#      - mini_food_story
-#
-#  menu-service:
-#    build:
-#      context: ./
-#      dockerfile: menu-service/Dockerfile
-#    restart: unless-stopped
-#    ports:
-#      - "8081:8081"
-#    environment:
-#      <<: *common-env
-#      APP_PORT: 8081
-#    depends_on:
-#      psql_bp:
-#        condition: service_healthy
-#      dragonfly:
-#        condition: service_healthy
-#    networks:
-#      - mini_food_story
-#
-#  order-service:
-#    build:
-#      context: ./
-#      dockerfile: order-service/Dockerfile
-#    restart: unless-stopped
-#    ports:
-#      - "8082:8082"
-#    environment:
-#      <<: *common-env
-#      APP_PORT: 8082
-#    depends_on:
-#      psql_bp:
-#        condition: service_healthy
-#      kafka:
-#        condition: service_healthy
-#      dragonfly:
-#        condition: service_healthy
-#    networks:
-#      - mini_food_story
-#
-#  kitchen-service:
-#    build:
-#      context: ./
-#      dockerfile: kitchen-service/Dockerfile
-#    restart: unless-stopped
-#    ports:
-#      - "8083:8083"
-#    environment:
-#      <<: *common-env
-#      APP_PORT: 8083
-#    depends_on:
-#      psql_bp:
-#        condition: service_healthy
-#      kafka:
-#        condition: service_healthy
-#      dragonfly:
-#        condition: service_healthy
-#    networks:
-#      - mini_food_story
-#
-#  payment-service:
-#    build:
-#      context: ./
-#      dockerfile: payment-service/Dockerfile
-#    restart: unless-stopped
-#    ports:
-#      - "8084:8084"
-#    environment:
-#      <<: *common-env
-#      APP_PORT: 8084
-#    depends_on:
-#      psql_bp:
-#        condition: service_healthy
-#      kafka:
-#        condition: service_healthy
-#      dragonfly:
-#        condition: service_healthy
-#    networks:
-#      - mini_food_story
-#
+
+  psql_bp:
+    container_name: database
+    image: postgres:17.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: "Asia/Bangkok"
+    ports:
+      - "5432:5432"
+    volumes:
+      - psql_volume_bp:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mini_food_story
+
+  migrate:
+    image: migrate/migrate:v4.18.3
+    container_name: my_migration
+    volumes:
+      - ./shared/database/migrations:/migrations
+    command: [
+      "-path", "/migrations",
+      "-database", "postgres://postgres:1234@psql_bp:5432/food_story?sslmode=disable&search_path=public",
+      "up"
+    ]
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+
+  traefik:
+    container_name: "api-gateway"
+    image: traefik:v3.4.0
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    restart: unless-stopped
+    networks:
+      - mini_food_story
+
+  whoami:
+    image: "traefik/whoami"
+    container_name: "simple-whoami"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
+      - "traefik.http.routers.whoami.entrypoints=web"
+    networks:
+      - mini_food_story
+
+  table-service:
+    container_name: table-service
+    build:
+      context: ./
+      dockerfile: table-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8080
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.table-service.rule=PathPrefix(`/api/v1/tables`)"
+      - "traefik.http.services.table-service.loadbalancer.server.port=8080"
+
+  menu-service:
+    container_name: menu-service
+    build:
+      context: ./
+      dockerfile: menu-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8081
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.menu-service.rule=PathPrefix(`/api/v1/menu`)"
+      - "traefik.http.services.menu-service.loadbalancer.server.port=8081"
+
+  order-service:
+    container_name: order-service
+    build:
+      context: ./
+      dockerfile: order-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8082
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.order-service.rule=PathPrefix(`/api/v1/orders`)"
+      - "traefik.http.services.order-service.loadbalancer.server.port=8082"
+
+  kitchen-service:
+    container_name: kitchen-service
+    build:
+      context: ./
+      dockerfile: kitchen-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8083
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kitchen-service.rule=PathPrefix(`/api/v1/kitchen`)"
+      - "traefik.http.services.kitchen-service.loadbalancer.server.port=8083"
+
+  payment-service:
+    container_name: payment-service
+    build:
+      context: ./
+      dockerfile: payment-service/Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8084
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payment-service.rule=PathPrefix(`/api/v1/payments`)"
+      - "traefik.http.services.payment-service.loadbalancer.server.port=8084"
+
 volumes:
   dragonflydata:
-#  psql_volume_bp:
-#  pgadmin_data:
+  psql_volume_bp:
+  pgadmin_data:
 networks:
   mini_food_story:
