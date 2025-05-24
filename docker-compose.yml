@@ -6,6 +6,7 @@ x-common-env: &common-env
   DB_PORT: "5432"
   DB_SCHEMA: ${DB_SCHEMA}
   DB_DATABASE: ${DB_DATABASE}
+  DB_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}
   SECRET_KEY: ${SECRET_KEY}
   FRONTEND_URL: ${FRONTEND_URL}
   REDIS_ADDRESS: "dragonfly:6379"
@@ -24,6 +25,27 @@ services:
       - "6379:6379"
     volumes:
       - dragonflydata:/data
+    networks:
+      - mini_food_story
+
+  prometheus:
+    image: prom/prometheus:v3.4.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - mini_food_story
+
+  grafana:
+    image: grafana/grafana:12.0.1
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
     networks:
       - mini_food_story
 
@@ -128,7 +150,7 @@ services:
       - ./shared/database/migrations:/migrations
     command: [
       "-path", "/migrations",
-      "-database", "postgres://postgres:1234@psql_bp:5432/food_story?sslmode=disable&search_path=public",
+      "-database", "${DB_URL}",
       "up"
     ]
     depends_on:
@@ -141,13 +163,20 @@ services:
     container_name: "api-gateway"
     image: traefik:v3.4.0
     command:
+      - "--api.dashboard=true"
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.web.address=:80"
+      - "--entryPoints.metrics.address=:9100"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.entryPoint=metrics"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
     ports:
       - "80:80"
       - "8080:8080"
+      - "9100:9100"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     restart: unless-stopped
@@ -280,5 +309,6 @@ volumes:
   dragonflydata:
   psql_volume_bp:
   pgadmin_data:
+  grafana-data:
 networks:
   mini_food_story:
