@@ -6,7 +6,6 @@ x-common-env: &common-env
   DB_PORT: "5432"
   DB_SCHEMA: ${DB_SCHEMA}
   DB_DATABASE: ${DB_DATABASE}
-  DB_URL: postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}
   SECRET_KEY: ${SECRET_KEY}
   FRONTEND_URL: ${FRONTEND_URL}
   REDIS_ADDRESS: "dragonfly:6379"
@@ -150,7 +149,7 @@ services:
       - ./shared/database/migrations:/migrations
     command: [
       "-path", "/migrations",
-      "-database", "${DB_URL}",
+      "-database", "postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}",
       "up"
     ]
     depends_on:
