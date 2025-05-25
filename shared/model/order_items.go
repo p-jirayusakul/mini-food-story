@@ -47,31 +47,6 @@ type OrderItemsStatus struct {
 	StatusCode string
 }
 
-func TransformOrderItemsResults[T OrderItemsRow](results []T) []*OrderItems {
-	data := make([]*OrderItems, len(results))
-	for index, row := range results {
-		createdAt, _ := utils.PgTimestampToThaiISO8601(row.GetCreatedAt())
-		data[index] = &OrderItems{
-			ID:            row.GetID(),
-			OrderID:       row.GetOrderID(),
-			OrderNumber:   row.GetOrderNumber(),
-			ProductID:     row.GetProductID(),
-			StatusID:      row.GetStatusID(),
-			TableNumber:   row.GetTableNumber(),
-			StatusName:    row.GetStatusName(),
-			StatusNameEN:  row.GetStatusNameEN(),
-			StatusCode:    row.GetStatusCode(),
-			ProductName:   row.GetProductName(),
-			ProductNameEN: row.GetProductNameEN(),
-			Price:         utils.PgNumericToFloat64(row.GetPrice()),
-			Quantity:      row.GetQuantity(),
-			Note:          utils.PgTextToStringPtr(row.GetNote()),
-			CreatedAt:     createdAt,
-		}
-	}
-	return data
-}
-
 func TransformOrderItemsByIDResults[T OrderItemsRow](results T) *OrderItems {
 	createdAt, _ := utils.PgTimestampToThaiISO8601(results.GetCreatedAt())
 	return &OrderItems{
@@ -91,4 +66,16 @@ func TransformOrderItemsByIDResults[T OrderItemsRow](results T) *OrderItems {
 		Note:          utils.PgTextToStringPtr(results.GetNote()),
 		CreatedAt:     createdAt,
 	}
+}
+
+func TransformOrderItemsResults[T OrderItemsRow](results []T) []*OrderItems {
+	if len(results) == 0 {
+		return []*OrderItems{}
+	}
+
+	data := make([]*OrderItems, len(results))
+	for index, row := range results {
+		data[index] = TransformOrderItemsByIDResults(row)
+	}
+	return data
 }
