@@ -50,6 +50,8 @@ sequenceDiagram
 
 ระบบพัฒนาด้วยภาษา Go (Golang) โดยใช้ Redis, PostgreSQL, Kafka และ WebSocket ในการจัดการข้อมูลและส่งต่อ event แบบทันที
 
+เพื่อเพิ่มประสิทธิภาพและความสามารถในการตรวจสอบระบบ **[Prometheus](https://prometheus.io)** และ **[Grafana](https://grafana.com)** ถูกนำมาใช้ร่วมกันกับ **[API Gateway Traefik](https://github.com/traefik/traefik)** ในการตรวจสอบการทำงานของระบบและวิเคราะห์ปัญหาแบบเรียลไทม์:
+
 ---
 
 ## 🧱 องค์ประกอบหลักของระบบ
@@ -74,6 +76,11 @@ sequenceDiagram
 - ครัวสามารถอัปเดตสถานะอาหาร เช่น “เสริฟแล้ว”, “ยกเลิก”
 - ระบบบันทึกการชำระเงิน พร้อมเชื่อมโยงกับออเดอร์
 - ใช้ Clean Architecture เพื่อความง่ายในการดูแลรักษาโค้ด
+- ใช้ **Keycloak** สำหรับ Authentication และ Authorization ที่ปลอดภัย
+- รวม **Prometheus** และ **Grafana** เพื่อ Monitoring และสร้าง Dashboard
+   - ตรวจสอบ Metrics เช่น Request Rate, Latency, และ Error Rate
+- ใช้ **Traefik** เป็น API Gateway สำหรับจัดการ Traffic
+- รองรับการวิเคราะห์การทำงานแบบ Real-time ผ่านการเก็บ Logs และ Metrics
 
 ---
 
@@ -85,11 +92,21 @@ sequenceDiagram
 - Apache Kafka
 - WebSocket (Fiber)
 - Docker Compose
+- Keycloak
+- Grafana Dashboard
+- Prometheus
 
 ---
 
 ## 📝 เอกสารอื่น ๆ
 [Postman Collection](https://raw.githubusercontent.com/p-jirayusakul/mini-food-sotry/refs/heads/main/document/mini-food-story.postman_collection.json)
+
+**swagger url**:
+- **Table Service** – http://localhost/api/v1/tables/swagger/index.html
+- **Menu Service** – http://localhost/api/v1/menu/swagger/index.html
+- **Order Service** – http://localhost/api/v1/orders/swagger/index.html
+- **Kitchen Service** – http://localhost/api/v1/kitchen/swagger/index.htmle
+- **Payment Service** – http://localhost/api/v1/payments/swagger/index.html
 
 --- 
 ## 🏗️ โครงสร้างโปรเจคและสถาปัตยกรรม
