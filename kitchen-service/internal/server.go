@@ -155,7 +155,9 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 
 	kitchenRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	kitchenUseCase := usecase.NewUsecase(configApp, *kitchenRepo)
-	kitchenhd.NewHTTPHandler(router, kitchenUseCase, validator, configApp)
+
+	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
+	kitchenhd.NewHTTPHandler(router, kitchenUseCase, validator, configApp, authInstance)
 
 	websockethub.NewWSHandler(router, configApp, hub)
 }

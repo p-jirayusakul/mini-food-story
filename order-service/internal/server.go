@@ -174,5 +174,7 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 	orderCache := cache.NewRedisTableCache(redisConn)
 	orderRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache, orderQueue)
-	orderhd.NewHTTPHandler(router, orderUseCase, validator, configApp)
+
+	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
+	orderhd.NewHTTPHandler(router, orderUseCase, validator, configApp, authInstance)
 }

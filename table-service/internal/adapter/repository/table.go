@@ -14,7 +14,6 @@ import (
 	"sync"
 )
 
-// TableRow Define an interface that both QuickSearchTablesRow and SearchTablesRow can satisfy
 type TableRow interface {
 	GetID() int64
 	GetTableNumber() int32

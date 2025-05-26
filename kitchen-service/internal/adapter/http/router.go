@@ -12,6 +12,7 @@ type Handler struct {
 	useCase   usecase.Usecase
 	validator *middleware.CustomValidator
 	config    config.Config
+	auth      middleware.AuthInterface
 }
 
 func NewHTTPHandler(
@@ -19,12 +20,14 @@ func NewHTTPHandler(
 	useCase usecase.Usecase,
 	validator *middleware.CustomValidator,
 	config config.Config,
+	auth middleware.AuthInterface,
 ) *Handler {
 	handler := &Handler{
 		router,
 		useCase,
 		validator,
 		config,
+		auth,
 	}
 	handler.setupRoutes()
 	return handler
@@ -32,11 +35,14 @@ func NewHTTPHandler(
 
 func (s *Handler) setupRoutes() {
 	group := s.router.Group("/orders")
-	group.Get("/search/items", s.SearchOrderItems)
-	group.Get("/:id<int>/items", s.GetOrderItems)
-	group.Get("/:id<int>/items/:orderItemsID<int>", s.GetOrderItemsByID)
+	group.Use(s.auth.JWTMiddleware())
 
-	group.Patch("/:id<int>/items/:orderItemsID<int>/status/serve", s.UpdateOrderItemsStatusServe)
-	group.Patch("/:id<int>/items/:orderItemsID<int>/status/cancel", s.UpdateOrderItemsStatusCancel)
+	authGroup := group.Group("", s.auth.RequireRole([]string{"KITCHEN"}))
+	authGroup.Get("/search/items", s.SearchOrderItems)
+	authGroup.Get("/:id<int>/items", s.GetOrderItems)
+	authGroup.Get("/:id<int>/items/:orderItemsID<int>", s.GetOrderItemsByID)
+
+	authGroup.Patch("/:id<int>/items/:orderItemsID<int>/status/serve", s.UpdateOrderItemsStatusServe)
+	authGroup.Patch("/:id<int>/items/:orderItemsID<int>/status/cancel", s.UpdateOrderItemsStatusCancel)
 
 }

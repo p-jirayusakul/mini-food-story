@@ -11,8 +11,8 @@ import (
 	database "food-story/shared/database/sqlc"
 	shareModel "food-story/shared/model"
 	"github.com/jackc/pgx/v5/pgtype"
-	"golang.org/x/sync/errgroup"
 	"strings"
+	"sync"
 )
 
 const FailedToGetOrderItems = "failed to get order items: %w"
@@ -101,34 +101,27 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, pag
 		totalItems   int64
 	)
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		var searchErr *exceptions.CustomError
-		searchResult, searchErr = i.fetchOrderWithItems(ctx, database.GetOrderWithItemsParams{
+	// parallel search
+	wg := sync.WaitGroup{}
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+		searchResult, customError = i.fetchOrderWithItems(ctx, database.GetOrderWithItemsParams{
 			OrderID:    orderID,
 			Pagesize:   pageSize,
 			Pagenumber: pageNumber,
 		})
-		if searchErr != nil {
-			return searchErr.Errors
-		}
-		return nil
-	})
+	}()
+	go func() {
+		defer wg.Done()
+		totalItems, customError = i.fetchTotalOrderWithItems(ctx, orderID)
+	}()
 
-	g.Go(func() error {
-		var totalErr *exceptions.CustomError
-		totalItems, totalErr = i.fetchTotalOrderWithItems(ctx, orderID)
-		if totalErr != nil {
-			return totalErr.Errors
-		}
-		return nil
-	})
+	wg.Wait()
 
-	if err := g.Wait(); err != nil {
-		return domain.SearchCurrentOrderItemsResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+	if customError != nil {
+		return domain.SearchCurrentOrderItemsResult{}, customError
 	}
 
 	return domain.SearchCurrentOrderItemsResult{
@@ -189,30 +182,23 @@ func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int6
 		totalItems   int64
 	)
 
-	g, ctx := errgroup.WithContext(ctx)
-	g.Go(func() error {
-		var searchErr *exceptions.CustomError
-		searchResult, searchErr = i.fetchOrderItemsNotFinal(ctx, searchParams)
-		if searchErr != nil {
-			return searchErr.Errors
-		}
-		return nil
-	})
+	// parallel search
+	wg := sync.WaitGroup{}
+	wg.Add(2)
 
-	g.Go(func() error {
-		var totalErr *exceptions.CustomError
-		totalItems, totalErr = i.fetchTotalItems(ctx, searchParams)
-		if totalErr != nil {
-			return totalErr.Errors
-		}
-		return nil
-	})
+	go func() {
+		defer wg.Done()
+		searchResult, customError = i.fetchOrderItemsNotFinal(ctx, searchParams)
+	}()
+	go func() {
+		defer wg.Done()
+		totalItems, customError = i.fetchTotalItems(ctx, searchParams)
+	}()
 
-	if err := g.Wait(); err != nil {
-		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+	wg.Wait()
+
+	if customError != nil {
+		return domain.SearchOrderItemsResult{}, customError
 	}
 
 	return domain.SearchOrderItemsResult{
