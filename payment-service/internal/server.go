@@ -107,5 +107,7 @@ func readiness(ctx context.Context, dbConn *pgxpool.Pool) bool {
 func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config) {
 	paymentRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	paymentCase := usecase.NewUsecase(configApp, *paymentRepo)
-	paymenthd.NewHTTPHandler(router, paymentCase, validator)
+
+	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
+	paymenthd.NewHTTPHandler(router, paymentCase, validator, authInstance)
 }
