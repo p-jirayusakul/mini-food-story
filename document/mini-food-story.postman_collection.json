@@ -92,11 +92,10 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8080/api/v1/tables/status",
+							"raw": "{{API_TABLE}}/api/v1/tables/status",
 							"host": [
-								"localhost"
+								"{{API_TABLE}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -284,6 +283,46 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "health gateway",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost/api/v1/tables/live",
+							"host": [
+								"localhost"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tables",
+								"live"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "health internal",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{API_TABLE}}/api/v1/tables/live",
+							"host": [
+								"{{API_TABLE}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"tables",
+								"live"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -302,11 +341,10 @@
 							}
 						],
 						"url": {
-							"raw": "localhost:8081/api/v1/menu/category",
+							"raw": "{{API_MENU}}/api/v1/menu/category",
 							"host": [
-								"localhost"
+								"{{API_MENU}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
 								"v1",
@@ -329,11 +367,10 @@
 							}
 						],
 						"url": {
-							"raw": "localhost:8081/api/v1/menu?search=&categoryID=&pageNumber=&pageSize=&orderBy&orderType",
+							"raw": "{{API_MENU}}/api/v1/menu?search=&categoryID=&pageNumber=&pageSize=&orderBy&orderType",
 							"host": [
-								"localhost"
+								"{{API_MENU}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
 								"v1",
@@ -381,11 +418,10 @@
 							}
 						],
 						"url": {
-							"raw": "localhost:8081/api/v1/menu/1921828287366041600",
+							"raw": "{{API_MENU}}/api/v1/menu/1921828287366041600",
 							"host": [
-								"localhost"
+								"{{API_MENU}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
 								"v1",
@@ -543,18 +579,17 @@
 							}
 						],
 						"url": {
-							"raw": "localhost:8082/api/v1/orders/current/items/1922861025929990144",
+							"raw": "{{API_ORDER}}/api/v1/orders/current/items/1926280863717265408",
 							"host": [
-								"localhost"
+								"{{API_ORDER}}"
 							],
-							"port": "8082",
 							"path": [
 								"api",
 								"v1",
 								"orders",
 								"current",
 								"items",
-								"1922861025929990144"
+								"1926280863717265408"
 							]
 						}
 					},
@@ -572,7 +607,7 @@
 							}
 						],
 						"url": {
-							"raw": "{{API_ORDER}}/api/v1/orders/current/items/1925810304646647808/status/cancel",
+							"raw": "{{API_ORDER}}/api/v1/orders/current/items/1926280863717265408/status/cancel",
 							"host": [
 								"{{API_ORDER}}"
 							],
@@ -582,7 +617,7 @@
 								"orders",
 								"current",
 								"items",
-								"1925810304646647808",
+								"1926280863717265408",
 								"status",
 								"cancel"
 							]
@@ -593,10 +628,20 @@
 				{
 					"name": "get order items incomplete",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AUTH_TOKEN_WAITER}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{API_ORDER}}/api/v1/orders/1923938802137567232/items/status/incomplete?pageNumber=&pageSize=&search=&statusCode=&orderBy=&orderType=",
+							"raw": "{{API_ORDER}}/api/v1/orders/1926900970315321344/items/status/incomplete?pageNumber=&pageSize=&search=&statusCode=&orderBy=&orderType=",
 							"host": [
 								"{{API_ORDER}}"
 							],
@@ -604,7 +649,7 @@
 								"api",
 								"v1",
 								"orders",
-								"1923938802137567232",
+								"1926900970315321344",
 								"items",
 								"status",
 								"incomplete"
@@ -647,6 +692,16 @@
 				{
 					"name": "search order items",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AUTH_TOKEN_KITCHEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -699,6 +754,16 @@
 				{
 					"name": "get order items by order id",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AUTH_TOKEN_KITCHEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -721,6 +786,16 @@
 				{
 					"name": "get oder item by id",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AUTH_TOKEN_KITCHEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -744,10 +819,20 @@
 				{
 					"name": "update order items served",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AUTH_TOKEN_KITCHEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "PATCH",
 						"header": [],
 						"url": {
-							"raw": "{{API_KITCHEN}}/api/v1/kitchen/orders/1923938802137567232/items/1923938802129178625/status/serve",
+							"raw": "{{API_KITCHEN}}/api/v1/kitchen/orders/1926280863729848320/items/1926280863713071104/status/serve",
 							"host": [
 								"{{API_KITCHEN}}"
 							],
@@ -756,9 +841,9 @@
 								"v1",
 								"kitchen",
 								"orders",
-								"1923938802137567232",
+								"1926280863729848320",
 								"items",
-								"1923938802129178625",
+								"1926280863713071104",
 								"status",
 								"serve"
 							]
@@ -769,6 +854,16 @@
 				{
 					"name": "update order items cancelled",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AUTH_TOKEN_KITCHEN}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "PATCH",
 						"header": [],
 						"url": {
@@ -823,7 +918,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"orderID\": \"1923938802137567232\",\n    \"methodID\": \"1923732004537372672\",\n    \"note\": null\n}",
+							"raw": "{\n    \"orderID\": \"1926280863729848320\",\n    \"methodID\": \"1923732004537372672\",\n    \"note\": null\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -868,6 +963,333 @@
 								"v1",
 								"payments",
 								"callback"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "keycloak",
+			"item": [
+				{
+					"name": "login waiter01",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"    let token = pm.response.json().access_token;",
+									"    pm.environment.set(\"AUTH_TOKEN_WAITER\", token);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "order-service",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{ORDER_CLIENT_SECRET}}",
+									"type": "text"
+								},
+								{
+									"key": "username",
+									"value": "waiter01",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{AUTH_SERVER}}/realms/foodstory/protocol/openid-connect/token",
+							"host": [
+								"{{AUTH_SERVER}}"
+							],
+							"path": [
+								"realms",
+								"foodstory",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "http://localhost:8180/realms/foodstory/protocol/openid-connect/token",
+							"originalRequest": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/x-www-form-urlencoded"
+									}
+								],
+								"body": {
+									"mode": "urlencoded",
+									"urlencoded": [
+										{
+											"key": "grant_type",
+											"value": "password",
+											"type": "text"
+										},
+										{
+											"key": "client_id",
+											"value": "order-service",
+											"type": "text"
+										},
+										{
+											"key": "client_secret",
+											"value": "{{ORDER_CLIENT_SECRET}}",
+											"type": "text"
+										},
+										{
+											"key": "username",
+											"value": "waiter01",
+											"type": "text"
+										},
+										{
+											"key": "password",
+											"value": "123456",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "http://localhost:8180/realms/foodstory/protocol/openid-connect/token",
+									"protocol": "http",
+									"host": [
+										"localhost"
+									],
+									"port": "8180",
+									"path": [
+										"realms",
+										"foodstory",
+										"protocol",
+										"openid-connect",
+										"token"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Cache-Control",
+									"value": "no-store"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "content-length",
+									"value": "2278"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Referrer-Policy",
+									"value": "no-referrer"
+								},
+								{
+									"key": "Strict-Transport-Security",
+									"value": "max-age=31536000; includeSubDomains"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "SAMEORIGIN"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"access_token\": \"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJQOXZJeGtQdm9xazE4d3JidC1jdVBWVTNvNmV3WnFwVDhPYlhQNm9pSm1zIn0.eyJleHAiOjE3NDgyNDM5MTksImlhdCI6MTc0ODI0MzYxOSwianRpIjoib25ydHJvOjQyZTdmODc4LTdkNzQtNGEyNC04ZWI2LTQ0Njk0MTZjM2MzZSIsImlzcyI6Imh0dHA6Ly9sb2NhbGhvc3Q6ODE4MC9yZWFsbXMvZm9vZHN0b3J5IiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjI4MjM3OWIzLWM0MjQtNGM2Zi05NzlkLTRlMzNjOWJkMTQ1YiIsInR5cCI6IkJlYXJlciIsImF6cCI6Im9yZGVyLXNlcnZpY2UiLCJzaWQiOiIyOTI0OGI0NC1jZGIzLTQ5MzItOTUyYS1iMjNlNDg3MDZjNzgiLCJhY3IiOiIxIiwiYWxsb3dlZC1vcmlnaW5zIjpbImh0dHA6Ly9sb2NhbGhvc3Q6MzAwMSJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1mb29kc3RvcnkiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIiwiV0FJVEVSIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJwcm9maWxlIGVtYWlsIiwiZW1haWxfdmVyaWZpZWQiOmZhbHNlLCJuYW1lIjoiV2FpdGVyIEEiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ3YWl0ZXIwMSIsImdpdmVuX25hbWUiOiJXYWl0ZXIiLCJmYW1pbHlfbmFtZSI6IkEiLCJlbWFpbCI6Imxvb2tfc29nb29kMTQ3QGhvdG1haWwuY29tIn0.UVC5WMIDeaNqs-p9lODxhW-G_XXYjKLzJ6zMFCl1XQd9a0L5hUU2u0NN5jrN466yIJ4Ziy3ujQpXiHigFPHQZ6v1z69KVWU04fILKpiyqoFLX9dTgzgaOkCzBeDqhgIVkws_tSktHqPikwkU2c-XS5xPFuvEpnasFZ-HEpM4INcu-cnGq_OLUV8knF_EeVKK4uJm2v8zMy_vm2iV8kcMS-Qp6hQcdCrbDAubsyZPGg1hMMDf81SLrfKMgISlwq2EWM1k6KiSgiwmKbcOfPcA1A_r6axfTFlOhhRwy-btedY2DPZ73V4UtwP5Le3oCfwBxZjitED8FW8EMl8DuSzuTw\",\n    \"expires_in\": 300,\n    \"refresh_expires_in\": 1800,\n    \"refresh_token\": \"eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJmYjUyOTMxNi02NmIwLTRiYmItYmFjZC0wMjgwZmE1OTEwOWMifQ.eyJleHAiOjE3NDgyNDU0MTksImlhdCI6MTc0ODI0MzYxOSwianRpIjoiODgzNmZkMGQtYTMwOC00NzZjLWIxZjctODkwM2E0NzA3NzlkIiwiaXNzIjoiaHR0cDovL2xvY2FsaG9zdDo4MTgwL3JlYWxtcy9mb29kc3RvcnkiLCJhdWQiOiJodHRwOi8vbG9jYWxob3N0OjgxODAvcmVhbG1zL2Zvb2RzdG9yeSIsInN1YiI6IjI4MjM3OWIzLWM0MjQtNGM2Zi05NzlkLTRlMzNjOWJkMTQ1YiIsInR5cCI6IlJlZnJlc2giLCJhenAiOiJvcmRlci1zZXJ2aWNlIiwic2lkIjoiMjkyNDhiNDQtY2RiMy00OTMyLTk1MmEtYjIzZTQ4NzA2Yzc4Iiwic2NvcGUiOiJzZXJ2aWNlX2FjY291bnQgd2ViLW9yaWdpbnMgcHJvZmlsZSByb2xlcyBiYXNpYyBlbWFpbCBhY3IifQ.dMEAmV84C3EPaNb9nl8o_1G3YuqCs17eJxt7TZbhzFX59EH8uu8XNCYxZJVKrQW2yUsr4bZ9_3Dc5Slos4f4Mw\",\n    \"token_type\": \"Bearer\",\n    \"not-before-policy\": 0,\n    \"session_state\": \"29248b44-cdb3-4932-952a-b23e48706c78\",\n    \"scope\": \"profile email\"\n}"
+						}
+					]
+				},
+				{
+					"name": "login cashier01",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"    let token = pm.response.json().access_token;",
+									"    pm.environment.set(\"AUTH_TOKEN_KITCHEN\", token);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "payment-service",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "yI5Q4NbQcqC8nADPJxJiYqxwCqqQOGJQ",
+									"type": "text"
+								},
+								{
+									"key": "username",
+									"value": "cashier01",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{AUTH_SERVER}}/realms/foodstory/protocol/openid-connect/token",
+							"host": [
+								"{{AUTH_SERVER}}"
+							],
+							"path": [
+								"realms",
+								"foodstory",
+								"protocol",
+								"openid-connect",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login chef01",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"    let token = pm.response.json().access_token;",
+									"    pm.environment.set(\"AUTH_TOKEN_KITCHEN\", token);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "password",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "kitchen-service",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{KITCHEN_CLIENT_SECRET}}",
+									"type": "text"
+								},
+								{
+									"key": "username",
+									"value": "chef01",
+									"type": "text"
+								},
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{AUTH_SERVER}}/realms/foodstory/protocol/openid-connect/token",
+							"host": [
+								"{{AUTH_SERVER}}"
+							],
+							"path": [
+								"realms",
+								"foodstory",
+								"protocol",
+								"openid-connect",
+								"token"
 							]
 						}
 					},

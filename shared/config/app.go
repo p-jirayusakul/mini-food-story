@@ -19,6 +19,7 @@ type Config struct {
 	RedisAddress         string `mapstructure:"REDIS_ADDRESS"`
 	RedisPassword        string `mapstructure:"REDIS_PASSWORD"`
 	KafkaBrokers         string `mapstructure:"KAFKA_BROKERS"`
+	KeyCloakCertURL      string `mapstructure:"KEYCLOAK_CERT_URL"`
 	TimeZone             string `mapstructure:"TZ"`
 	TableSessionDuration time.Duration
 	BaseURL              string
@@ -49,6 +50,7 @@ func InitConfig(envFile string) Config {
 		viper.SetDefault("REDIS_ADDRESS", os.Getenv("REDIS_ADDRESS"))
 		viper.SetDefault("REDIS_PASSWORD", os.Getenv("REDIS_PASSWORD"))
 		viper.SetDefault("KAFKA_BROKERS", os.Getenv("KAFKA_BROKERS"))
+		viper.SetDefault("KEYCLOAK_CERT_URL", os.Getenv("KEYCLOAK_CERT_URL"))
 		viper.SetDefault("TZ", os.Getenv("TZ"))
 	}
 

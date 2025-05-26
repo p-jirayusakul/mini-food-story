@@ -52,14 +52,7 @@ func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []shareMode
 
 func (i *Implement) GetOrderItemsByOrderID(ctx context.Context, orderID int64) (result []*shareModel.OrderItems, customError *exceptions.CustomError) {
 
-	if orderID <= 0 {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: exceptions.ErrOrderRequired,
-		}
-	}
-
-	customError = i.IsOrderExist(ctx, orderID)
+	customError = i.validateAndCheckOrder(ctx, orderID)
 	if customError != nil {
 		return nil, customError
 	}
@@ -86,13 +79,6 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 
 	orderItems, repoErr := i.repository.GetOrderWithItemsGroupID(ctx, orderItemsID)
 	if repoErr != nil {
-		if errors.Is(repoErr, exceptions.ErrRowDatabaseNotFound) {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: exceptions.ErrOrderItemsNotFound,
-			}
-		}
-
 		return nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
 			Errors: fmt.Errorf(FailedToGetOrderItems, repoErr),
@@ -103,15 +89,9 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 }
 
 func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, pageNumber int64) (result domain.SearchCurrentOrderItemsResult, customError *exceptions.CustomError) {
+	pageSize, pageNumber := utils.CalculatePageSizeAndNumber(common.DefaultPageSize, pageNumber)
 
-	if orderID <= 0 {
-		return domain.SearchCurrentOrderItemsResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: exceptions.ErrOrderRequired,
-		}
-	}
-
-	customError = i.IsOrderExist(ctx, orderID)
+	customError = i.validateAndCheckOrder(ctx, orderID)
 	if customError != nil {
 		return domain.SearchCurrentOrderItemsResult{}, customError
 	}
@@ -125,7 +105,6 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, pag
 	wg := sync.WaitGroup{}
 	wg.Add(2)
 
-	pageSize, pageNumber := utils.CalculatePageSizeAndNumber(common.DefaultPageSize, pageNumber)
 	go func() {
 		defer wg.Done()
 		searchResult, customError = i.fetchOrderWithItems(ctx, database.GetOrderWithItemsParams{
@@ -145,28 +124,10 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, pag
 		return domain.SearchCurrentOrderItemsResult{}, customError
 	}
 
-	data := make([]*domain.CurrentOrderItems, len(searchResult))
-	for index, row := range searchResult {
-		createdAt, _ := utils.PgTimestampToThaiISO8601(row.GetCreatedAt())
-		data[index] = &domain.CurrentOrderItems{
-			ID:            row.GetID(),
-			ProductID:     row.GetProductID(),
-			StatusName:    row.GetStatusName(),
-			StatusNameEN:  row.GetStatusNameEN(),
-			StatusCode:    row.GetStatusCode(),
-			ProductName:   row.GetProductName(),
-			ProductNameEN: row.GetProductNameEN(),
-			Price:         utils.PgNumericToFloat64(row.GetPrice()),
-			Quantity:      row.GetQuantity(),
-			Note:          utils.PgTextToStringPtr(row.GetNote()),
-			CreatedAt:     createdAt,
-		}
-	}
-
 	return domain.SearchCurrentOrderItemsResult{
 		TotalItems: totalItems,
 		TotalPages: utils.CalculateTotalPages(totalItems, pageSize),
-		Data:       data,
+		Data:       transformOrderItemsResults(searchResult),
 	}, nil
 }
 
@@ -190,27 +151,7 @@ func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, orderID, order
 		}
 	}
 
-	createdAt, sysErr := utils.PgTimestampToThaiISO8601(orderItem.CreatedAt)
-	if sysErr != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: sysErr,
-		}
-	}
-
-	return &domain.CurrentOrderItems{
-		ID:            orderItem.ID,
-		ProductID:     orderItem.ProductID,
-		StatusName:    orderItem.StatusName,
-		StatusNameEN:  orderItem.StatusNameEN,
-		StatusCode:    orderItem.StatusCode,
-		ProductName:   orderItem.ProductName,
-		ProductNameEN: orderItem.ProductNameEN,
-		Price:         utils.PgNumericToFloat64(orderItem.Price),
-		Quantity:      orderItem.Quantity,
-		Note:          utils.PgTextToStringPtr(orderItem.Note),
-		CreatedAt:     createdAt,
-	}, nil
+	return transformCurrentOrderItemsByIDResults(orderItem), nil
 }
 
 func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
@@ -405,4 +346,54 @@ func validationOrderItems(items []shareModel.OrderItems) *exceptions.CustomError
 		}
 	}
 	return nil
+}
+
+func (i *Implement) validateAndCheckOrder(ctx context.Context, orderID int64) *exceptions.CustomError {
+	if orderID <= 0 {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: exceptions.ErrOrderRequired,
+		}
+	}
+
+	return i.IsOrderExist(ctx, orderID)
+}
+
+type CurrentOrderItemsRow interface {
+	GetID() int64
+	GetProductID() int64
+	GetStatusName() string
+	GetStatusNameEN() string
+	GetStatusCode() string
+	GetProductName() string
+	GetProductNameEN() string
+	GetPrice() pgtype.Numeric
+	GetQuantity() int32
+	GetNote() pgtype.Text
+	GetCreatedAt() pgtype.Timestamptz
+}
+
+func transformCurrentOrderItemsByIDResults[T CurrentOrderItemsRow](results T) *domain.CurrentOrderItems {
+	createdAt, _ := utils.PgTimestampToThaiISO8601(results.GetCreatedAt())
+	return &domain.CurrentOrderItems{
+		ID:            results.GetID(),
+		ProductID:     results.GetProductID(),
+		StatusName:    results.GetStatusName(),
+		StatusNameEN:  results.GetStatusNameEN(),
+		StatusCode:    results.GetStatusCode(),
+		ProductName:   results.GetProductName(),
+		ProductNameEN: results.GetProductNameEN(),
+		Price:         utils.PgNumericToFloat64(results.GetPrice()),
+		Quantity:      results.GetQuantity(),
+		Note:          utils.PgTextToStringPtr(results.GetNote()),
+		CreatedAt:     createdAt,
+	}
+}
+
+func transformOrderItemsResults[T CurrentOrderItemsRow](results []T) []*domain.CurrentOrderItems {
+	data := make([]*domain.CurrentOrderItems, len(results))
+	for index, row := range results {
+		data[index] = transformCurrentOrderItemsByIDResults(row)
+	}
+	return data
 }

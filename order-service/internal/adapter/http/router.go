@@ -14,6 +14,7 @@ type Handler struct {
 	useCase   usecase.Usecase
 	validator *middleware.CustomValidator
 	config    config.Config
+	auth      middleware.AuthInterface
 }
 
 func NewHTTPHandler(
@@ -21,30 +22,31 @@ func NewHTTPHandler(
 	useCase usecase.Usecase,
 	validator *middleware.CustomValidator,
 	config config.Config,
+	auth middleware.AuthInterface,
 ) *Handler {
 	handler := &Handler{
 		router,
 		useCase,
 		validator,
 		config,
+		auth,
 	}
 	handler.setupRoutes()
 	return handler
 }
 
 func (s *Handler) setupRoutes() {
+	secretKey := s.config.SecretKey
 
-	withoutSession := s.router.Group("/")
-	withoutSession.Get("/:id<int>/items/status/incomplete", s.SearchOrderItemsInComplete)
+	// ใช้ middleware header ทีละ endpoint เพราะมีข้อจำกัดเรื่อง router group authentication
+	s.router.Post("/current", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.CreateOrder)
+	s.router.Get("/current", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetOrderByID)
+	s.router.Post("/current/items", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.CreateOrderItems)
+	s.router.Get("/current/items", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetOrderItems)
+	s.router.Get("/current/items/:orderItemsID<int>", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetOrderItemsByID)
+	s.router.Patch("/current/items/:orderItemsID<int>/status/cancel", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.UpdateOrderItemsStatusCancel)
 
-	group := s.router.Group("/", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID)
-	group.Post("/current", s.CreateOrder)
-	group.Get("/current", s.GetOrderByID)
-	group.Post("/current/items", s.CreateOrderItems)
-	group.Get("/current/items", s.GetOrderItems)
-	group.Get("/current/items/:orderItemsID<int>", s.GetOrderItemsByID)
-	group.Patch("/current/items/:orderItemsID<int>/status/cancel", s.UpdateOrderItemsStatusCancel)
-
+	s.router.Get("/:id<int>/items/status/incomplete", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"WAITER", "CASHIER"}), s.SearchOrderItemsInComplete)
 }
 
 func (s *Handler) handleSessionID(c *fiber.Ctx) error {
