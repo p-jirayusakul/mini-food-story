@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"food-story/payment-service/internal/domain"
@@ -9,7 +10,8 @@ import (
 	database "food-story/shared/database/sqlc"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"math/rand"
+	"log/slog"
+	"math/big"
 	"time"
 )
 
@@ -109,8 +111,12 @@ func GenerateRefCode() string {
 	now := time.Now()
 	datePart := now.Format("20060102")
 
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	randomPart := r.Intn(900000) + 100000
+	n, err := rand.Int(rand.Reader, big.NewInt(900000))
+	if err != nil {
+		slog.Error("failed to generate secure random number: ", "err", err)
+		return ""
+	}
+	randomPart := n.Int64() + 100000
 
 	return fmt.Sprintf("PAY-%s-%d", datePart, randomPart)
 }

@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Search tables by filters like number of people, table number, seats, and status",
                 "consumes": [
                     "application/json"
@@ -128,6 +133,11 @@ const docTemplate = `{
                 }
             },
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new table with specified number and seats",
                 "consumes": [
                     "application/json"
@@ -198,6 +208,11 @@ const docTemplate = `{
         },
         "/quick-search": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Quickly search for available tables based on number of people",
                 "consumes": [
                     "application/json"
@@ -290,6 +305,11 @@ const docTemplate = `{
         },
         "/session": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new session for a table with specified number of people",
                 "consumes": [
                     "application/json"
@@ -366,6 +386,11 @@ const docTemplate = `{
         },
         "/session/current": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get details of the current active table session",
                 "consumes": [
                     "application/json"
@@ -434,6 +459,11 @@ const docTemplate = `{
         },
         "/status": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get list of all available table statuses",
                 "consumes": [
                     "application/json"
@@ -496,6 +526,11 @@ const docTemplate = `{
         },
         "/{id}": {
             "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update table number and seats for existing table",
                 "consumes": [
                     "application/json"
@@ -567,6 +602,11 @@ const docTemplate = `{
         },
         "/{id}/status": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update status for existing table",
                 "consumes": [
                     "application/json"
@@ -830,6 +870,13 @@ const docTemplate = `{
                     "example": 1
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

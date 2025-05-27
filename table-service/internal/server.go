@@ -135,5 +135,7 @@ func registerHandlers(router fiber.Router, store database.Store, validator *midd
 	tableCache := cache.NewRedisTableCache(redisConn)
 	tableRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	tableUseCase := usecase.NewUsecase(configApp, *tableRepo, tableCache)
-	tablehd.NewHTTPHandler(router, tableUseCase, validator)
+
+	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
+	tablehd.NewHTTPHandler(router, tableUseCase, validator, authInstance)
 }

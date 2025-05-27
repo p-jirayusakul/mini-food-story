@@ -45,6 +45,9 @@ func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
 	done <- true
 }
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 
 	server := internal.New()

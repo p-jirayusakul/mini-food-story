@@ -208,6 +208,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Search table availability
       tags:
       - Table
@@ -250,6 +252,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Create new table
       tags:
       - Table
@@ -297,6 +301,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Update table details
       tags:
       - Table
@@ -344,6 +350,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Update table status
       tags:
       - Table
@@ -402,6 +410,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Quick search for available tables
       tags:
       - Table
@@ -449,6 +459,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Create new table session
       tags:
       - Table
@@ -491,6 +503,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Get current table session
       tags:
       - Table
@@ -529,7 +543,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Get list of table status
       tags:
       - Table
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

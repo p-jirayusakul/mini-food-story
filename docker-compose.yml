@@ -32,6 +32,23 @@ services:
     networks:
       - mini_food_story
 
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak
+    ports:
+      - "8180:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    command:
+      - start-dev
+      - --import-realm
+    networks:
+      - mini_food_story
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ./import:/opt/keycloak/data/import
+        
   prometheus:
     image: prom/prometheus:v3.4.0
     container_name: prometheus
@@ -163,23 +180,6 @@ services:
     networks:
       - mini_food_story
 
-  keycloak:
-    container_name: keycloak
-    image: quay.io/keycloak/keycloak
-    ports:
-      - "8180:8080"
-    environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-    command:
-      - start-dev
-      - --import-realm
-    networks:
-      - mini_food_story
-    volumes:
-      - keycloak_data:/opt/keycloak/data
-      - ./import:/opt/keycloak/data/import
-
   traefik:
     container_name: "api-gateway"
     image: traefik:v3.4.0
@@ -208,7 +208,10 @@ services:
     container_name: table-service
     build:
       context: ./
-      dockerfile: table-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: table-service
+    image: table-service:latest
     restart: unless-stopped
     environment:
       <<: *common-env
@@ -230,7 +233,10 @@ services:
     container_name: menu-service
     build:
       context: ./
-      dockerfile: menu-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: menu-service
+    image: menu-service:latest
     restart: unless-stopped
     environment:
       <<: *common-env
@@ -251,7 +257,10 @@ services:
     container_name: order-service
     build:
       context: ./
-      dockerfile: order-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: order-service
+    image: order-service:latest
     restart: unless-stopped
     environment:
       <<: *common-env
@@ -274,7 +283,10 @@ services:
     container_name: kitchen-service
     build:
       context: ./
-      dockerfile: kitchen-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: kitchen-service
+    image: kitchen-service:latest
     restart: unless-stopped
     environment:
       <<: *common-env
@@ -297,7 +309,10 @@ services:
     container_name: payment-service
     build:
       context: ./
-      dockerfile: payment-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: payment-service
+    image: payment-service:latest
     restart: unless-stopped
     environment:
       <<: *common-env
