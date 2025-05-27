@@ -208,7 +208,9 @@ services:
     container_name: table-service
     build:
       context: ./
-      dockerfile: table-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: table-service
     restart: unless-stopped
     environment:
       <<: *common-env
@@ -230,7 +232,9 @@ services:
     container_name: menu-service
     build:
       context: ./
-      dockerfile: menu-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: menu-service
     restart: unless-stopped
     environment:
       <<: *common-env
@@ -251,7 +255,9 @@ services:
     container_name: order-service
     build:
       context: ./
-      dockerfile: order-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: order-service
     restart: unless-stopped
     environment:
       <<: *common-env
@@ -274,7 +280,9 @@ services:
     container_name: kitchen-service
     build:
       context: ./
-      dockerfile: kitchen-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: kitchen-service
     restart: unless-stopped
     environment:
       <<: *common-env
@@ -297,7 +305,9 @@ services:
     container_name: payment-service
     build:
       context: ./
-      dockerfile: payment-service/Dockerfile
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: payment-service
     restart: unless-stopped
     environment:
       <<: *common-env
