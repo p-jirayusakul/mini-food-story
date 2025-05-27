@@ -13,6 +13,7 @@ import (
 // @Summary Get list of table status
 // @Description Get list of all available table statuses
 // @Tags Table
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} middleware.SuccessResponse{data=[]domain.Status}
@@ -34,6 +35,7 @@ func (s *Handler) ListTableStatus(c *fiber.Ctx) error {
 // @Summary Create new table
 // @Description Create a new table with specified number and seats
 // @Tags Table
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param table body Table true "Table details"
@@ -70,6 +72,7 @@ func (s *Handler) CreateTable(c *fiber.Ctx) error {
 // @Summary Update table details
 // @Description Update table number and seats for existing table
 // @Tags Table
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path string true "Table ID"
@@ -112,6 +115,7 @@ func (s *Handler) UpdateTable(c *fiber.Ctx) error {
 // @Summary Update table status
 // @Description Update status for existing table
 // @Tags Table
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path string true "Table ID"
@@ -157,6 +161,7 @@ func (s *Handler) UpdateTableStatus(c *fiber.Ctx) error {
 // @Summary Search table availability
 // @Description Search tables by filters like number of people, table number, seats, and status
 // @Tags Table
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param numberOfPeople query int false "Number of people"
@@ -222,6 +227,7 @@ func (s *Handler) SearchTable(c *fiber.Ctx) error {
 // @Summary Quick search for available tables
 // @Description Quickly search for available tables based on number of people
 // @Tags Table
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param numberOfPeople query int true "Number of people required"
@@ -269,6 +275,7 @@ func (s *Handler) QuickSearchTable(c *fiber.Ctx) error {
 // @Summary Create new table session
 // @Description Create a new session for a table with specified number of people
 // @Tags Table
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param table body TableSession true "Table session details"
@@ -311,6 +318,7 @@ func (s *Handler) CreateTableSession(c *fiber.Ctx) error {
 // @Summary Get current table session
 // @Description Get details of the current active table session
 // @Tags Table
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param X-Session-Id header string true "Session ID"

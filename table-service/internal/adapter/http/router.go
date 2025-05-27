@@ -10,24 +10,29 @@ type Handler struct {
 	router    fiber.Router
 	useCase   usecase.UseCase
 	validator *middleware.CustomValidator
+	auth      middleware.AuthInterface
 }
 
 func NewHTTPHandler(
 	router fiber.Router,
 	useCase usecase.UseCase,
 	validator *middleware.CustomValidator,
+	auth middleware.AuthInterface,
 ) *Handler {
 	handler := &Handler{
 		router,
 		useCase,
 		validator,
+		auth,
 	}
 	handler.setupRoutes()
 	return handler
 }
 
 func (s *Handler) setupRoutes() {
+
 	group := s.router.Group("/")
+	group.Use(s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"CASHIER", "WAITER"}))
 
 	group.Get("/status", s.ListTableStatus)
 	group.Post("", s.CreateTable)
