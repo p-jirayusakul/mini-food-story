@@ -32,11 +32,10 @@ FROM alpine:3.20.1 AS prod
 
 ARG SERVICE_NAME
 
-# Install dependencies
-RUN apk add --no-cache tzdata
-
-# Add application user
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Install dependencies and add application user
+RUN apk add --no-cache tzdata && \
+    addgroup -S appgroup && \
+    adduser -S appuser -G appgroup
 WORKDIR /app
 
 # Copy build binary from build stage
