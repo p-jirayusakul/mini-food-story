@@ -16,6 +16,7 @@ const ResGetOrderItemsMsg = "get order items success"
 // @Summary Search order items
 // @Description Search order items with filters
 // @Tags Order
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param pageNumber query int false "Page number" minimum(1)
@@ -68,6 +69,7 @@ func (s *Handler) SearchOrderItems(c *fiber.Ctx) error {
 // @Summary Get order items for specific order
 // @Description Get order items by order ID with pagination
 // @Tags Order
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "Order ID"
@@ -110,6 +112,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 // @Summary Get specific order item
 // @Description Get order item by order ID and order item ID
 // @Tags Order
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "Order ID"
@@ -139,6 +142,7 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 // @Summary Update order item status to serv
 // @Description Update status of specific order item to serv
 // @Tags Order
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "Order ID"
@@ -172,6 +176,7 @@ func (s *Handler) UpdateOrderItemsStatusServe(c *fiber.Ctx) error {
 // @Summary Update order item status to cancel
 // @Description Update status of specific order item to cancel
 // @Tags Order
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param id path int true "Order ID"

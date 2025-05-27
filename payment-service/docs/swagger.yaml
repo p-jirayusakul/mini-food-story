@@ -108,6 +108,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Create payment transaction
       tags:
       - Payment
@@ -184,7 +186,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: List payment methods
       tags:
       - Payment
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

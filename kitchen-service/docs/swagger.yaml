@@ -129,6 +129,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Get order items for specific order
       tags:
       - Order
@@ -180,6 +182,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Get specific order item
       tags:
       - Order
@@ -226,6 +230,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Update order item status to cancel
       tags:
       - Order
@@ -272,6 +278,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Update order item status to serv
       tags:
       - Order
@@ -360,7 +368,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Search order items
       tags:
       - Order
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/": {
             "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Create a new payment transaction for an order",
                 "consumes": [
                     "application/json"
@@ -145,6 +150,11 @@ const docTemplate = `{
         },
         "/methods": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get list of available payment methods",
                 "consumes": [
                     "application/json"
@@ -301,6 +311,13 @@ const docTemplate = `{
                     "example": "success"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

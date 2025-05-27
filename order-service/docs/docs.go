@@ -424,6 +424,11 @@ const docTemplate = `{
         },
         "/{id}/items/status/incomplete": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Search incomplete order items with filters",
                 "consumes": [
                     "application/json"
@@ -436,13 +441,6 @@ const docTemplate = `{
                 ],
                 "summary": "Search incomplete order items",
                 "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Session ID",
-                        "name": "X-Session-Id",
-                        "in": "header",
-                        "required": true
-                    },
                     {
                         "type": "string",
                         "description": "Order ID",
@@ -778,6 +776,13 @@ const docTemplate = `{
                     "example": 1
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

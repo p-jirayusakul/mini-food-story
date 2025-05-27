@@ -179,11 +179,6 @@ paths:
       - application/json
       description: Search incomplete order items with filters
       parameters:
-      - description: Session ID
-        in: header
-        name: X-Session-Id
-        required: true
-        type: string
       - description: Order ID
         in: path
         name: id
@@ -244,6 +239,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/middleware.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Search incomplete order items
       tags:
       - Order
@@ -512,4 +509,9 @@ paths:
       summary: Cancel order item
       tags:
       - Order
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"
