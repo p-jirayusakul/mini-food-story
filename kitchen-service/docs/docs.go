@@ -17,6 +17,11 @@ const docTemplate = `{
     "paths": {
         "/orders/search/items": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Search order items with filters",
                 "consumes": [
                     "application/json"
@@ -148,6 +153,11 @@ const docTemplate = `{
         },
         "/orders/{id}/items": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get order items by order ID with pagination",
                 "consumes": [
                     "application/json"
@@ -223,6 +233,11 @@ const docTemplate = `{
         },
         "/orders/{id}/items/{orderItemsID}": {
             "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Get order item by order ID and order item ID",
                 "consumes": [
                     "application/json"
@@ -304,6 +319,11 @@ const docTemplate = `{
         },
         "/orders/{id}/items/{orderItemsID}/status/cancel": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update status of specific order item to cancel",
                 "consumes": [
                     "application/json"
@@ -373,6 +393,11 @@ const docTemplate = `{
         },
         "/orders/{id}/items/{orderItemsID}/status/serve": {
             "patch": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
                 "description": "Update status of specific order item to serv",
                 "consumes": [
                     "application/json"
@@ -557,6 +582,13 @@ const docTemplate = `{
                     "example": 1
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`

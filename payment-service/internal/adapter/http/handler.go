@@ -12,6 +12,7 @@ import (
 // @Summary Create payment transaction
 // @Description Create a new payment transaction for an order
 // @Tags Payment
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param payment body Payment true "Payment transaction details"
@@ -90,6 +91,7 @@ func (s *Handler) CallbackPaymentTransaction(c *fiber.Ctx) error {
 // @Summary List payment methods
 // @Description Get list of available payment methods
 // @Tags Payment
+// @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Success 200 {object} middleware.SuccessResponse{data=[]domain.PaymentMethod}

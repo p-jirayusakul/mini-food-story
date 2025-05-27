@@ -1,18 +1,22 @@
-x-common-env: &common-env
-  APP_ENV: ${APP_ENV}
+x-db-env: &db-env
   DB_USERNAME: ${DB_USERNAME}
   DB_PASSWORD: ${DB_PASSWORD}
   DB_HOST: "psql_bp"
   DB_PORT: "5432"
   DB_SCHEMA: ${DB_SCHEMA}
   DB_DATABASE: ${DB_DATABASE}
+  TZ: "Asia/Bangkok"
+
+
+x-common-env: &common-env
+  APP_ENV: ${APP_ENV}
   SECRET_KEY: ${SECRET_KEY}
   FRONTEND_URL: ${FRONTEND_URL}
   REDIS_ADDRESS: "dragonfly:6379"
   REDIS_PASSWORD: ${REDIS_PASSWORD}
   KAFKA_BROKERS: "kafka:29092"
-  TZ: "Asia/Bangkok"
   KEYCLOAK_CERT_URL: http://keycloak:8080/realms/foodstory/protocol/openid-connect/certs
+  <<: *db-env
 
 
 services:
@@ -145,14 +149,14 @@ services:
 
   migrate:
     image: migrate/migrate:v4.18.3
-    container_name: my_migration
+    container_name: migrate
+    entrypoint: "" # สำคัญมาก! ล้าง entrypoint เดิมของ image
     volumes:
       - ./shared/database/migrations:/migrations
-    command: [
-      "-path", "/migrations",
-      "-database", "postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}",
-      "up"
-    ]
+    environment:
+      <<: *db-env
+    command: >
+      sh -c "migrate -path /migrations -database 'postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}' up"
     depends_on:
       psql_bp:
         condition: service_healthy
@@ -167,15 +171,14 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-    command: start-dev
-    depends_on:
-      psql_bp:
-        condition: service_healthy
+    command:
+      - start-dev
+      - --import-realm
     networks:
       - mini_food_story
     volumes:
       - keycloak_data:/opt/keycloak/data
-
+      - ./import:/opt/keycloak/data/import
 
   traefik:
     container_name: "api-gateway"
@@ -198,16 +201,6 @@ services:
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
     restart: unless-stopped
-    networks:
-      - mini_food_story
-
-  whoami:
-    image: "traefik/whoami"
-    container_name: "simple-whoami"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.whoami.rule=Host(`whoami.localhost`)"
-      - "traefik.http.routers.whoami.entrypoints=web"
     networks:
       - mini_food_story
 
@@ -326,7 +319,6 @@ services:
 volumes:
   dragonflydata:
   psql_volume_bp:
-  pgadmin_data:
   grafana-data:
   keycloak_data:
 networks:

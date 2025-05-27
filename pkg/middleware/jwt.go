@@ -1,9 +1,12 @@
 package middleware
 
 import (
+	"fmt"
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"io"
+	"net/http"
 	"strings"
 )
 
@@ -19,6 +22,17 @@ type AuthInstance struct {
 }
 
 func NewAuthInstance(keycloakCertURL string) *AuthInstance {
+
+	// validate keycloakCertURL
+	resp, err := http.Get(keycloakCertURL)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		panic(fmt.Sprintf("Failed to GET from keycloakCertURL: %s, error: %v", keycloakCertURL, err))
+	}
+
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
+
 	auth, err := keyfunc.NewDefault([]string{keycloakCertURL})
 	if err != nil {
 		panic(err)

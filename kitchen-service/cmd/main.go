@@ -54,6 +54,9 @@ func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.
 	done <- true
 }
 
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 
 	server := internal.New()

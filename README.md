@@ -99,7 +99,7 @@ sequenceDiagram
 ---
 
 ## 📝 เอกสารอื่น ๆ
-[Postman Collection](https://raw.githubusercontent.com/p-jirayusakul/mini-food-sotry/refs/heads/main/document/mini-food-story.postman_collection.json)
+[Postman Collection](https://raw.githubusercontent.com/p-jirayusakul/mini-food-sotry/refs/heads/main/postman_collection.json)
 
 **swagger url**:
 - **Table Service** – http://localhost/api/v1/tables/swagger/index.html
@@ -146,3 +146,11 @@ sequenceDiagram
    ```bash
    docker compose up
    ```
+
+## 👥 ผู้ใช้งานระบบ Keycloak
+
+| Username  | Password | Role    |
+|-----------|----------|---------|
+| waiter01  | 123456   | waiter  |
+| cashier01 | 123456   | cashier |
+| chef01    | 123456   | Kitchen |

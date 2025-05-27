@@ -894,6 +894,16 @@
 				{
 					"name": "payment methods",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AUTH_TOKEN_CASHIER}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -914,11 +924,21 @@
 				{
 					"name": "create payment transaction",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{AUTH_TOKEN_CASHIER}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"orderID\": \"1926280863729848320\",\n    \"methodID\": \"1923732004537372672\",\n    \"note\": null\n}",
+							"raw": "{\n    \"orderID\": \"1926634878162440192\",\n    \"methodID\": \"1923732004537372672\",\n    \"note\": null\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -971,7 +991,7 @@
 			]
 		},
 		{
-			"name": "keycloak",
+			"name": "authentication",
 			"item": [
 				{
 					"name": "login waiter01",
@@ -1155,7 +1175,7 @@
 									"pm.test(\"Response status code is 200\", function () {",
 									"    pm.expect(pm.response.code).to.equal(200);",
 									"    let token = pm.response.json().access_token;",
-									"    pm.environment.set(\"AUTH_TOKEN_KITCHEN\", token);",
+									"    pm.environment.set(\"AUTH_TOKEN_CASHIER\", token);",
 									"});"
 								],
 								"type": "text/javascript",
@@ -1189,7 +1209,7 @@
 								},
 								{
 									"key": "client_secret",
-									"value": "yI5Q4NbQcqC8nADPJxJiYqxwCqqQOGJQ",
+									"value": "{{PAYMENT_CLIENT_SECRET}}",
 									"type": "text"
 								},
 								{

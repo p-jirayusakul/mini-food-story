@@ -254,9 +254,9 @@ func (s *Handler) UpdateOrderItemsStatusCancel(c *fiber.Ctx) error {
 // @Summary Search incomplete order items
 // @Description Search incomplete order items with filters
 // @Tags Order
+// @Security BearerAuth
 // @Accept json
 // @Produce json
-// @Param X-Session-Id header string true "Session ID"
 // @Param id path string true "Order ID"
 // @Param pageNumber query int false "Page number"
 // @Param pageSize query int false "Page size"
