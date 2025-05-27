@@ -971,7 +971,7 @@
 			]
 		},
 		{
-			"name": "keycloak",
+			"name": "authentication",
 			"item": [
 				{
 					"name": "login waiter01",

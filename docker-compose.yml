@@ -167,7 +167,9 @@ services:
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
-    command: start-dev
+    command:
+      - start-dev
+      - --import-realm
     depends_on:
       psql_bp:
         condition: service_healthy
@@ -175,7 +177,7 @@ services:
       - mini_food_story
     volumes:
       - keycloak_data:/opt/keycloak/data
-
+      - ./import:/opt/keycloak/data/import
 
   traefik:
     container_name: "api-gateway"
