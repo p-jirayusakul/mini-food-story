@@ -73,6 +73,12 @@ services:
       - grafana-data:/var/lib/grafana
     networks:
       - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.phatthakarn.me`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.9.1
