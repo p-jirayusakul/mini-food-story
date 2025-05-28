@@ -48,7 +48,7 @@ services:
       - ./import:/opt/keycloak/data/import
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.keycloak.rule=Host(`auth.phatthakarn.me`)"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.phatthakarn.me`) && PathPrefix(`/realms/foodstory`)"
       - "traefik.http.routers.keycloak.entrypoints=websecure"
       - "traefik.http.routers.keycloak.tls.certresolver=letsencrypt"
       - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
@@ -73,12 +73,6 @@ services:
       - grafana-data:/var/lib/grafana
     networks:
       - mini_food_story
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.phatthakarn.me`)"
-      - "traefik.http.routers.grafana.entrypoints=websecure"
-      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
-      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.9.1
@@ -228,7 +222,6 @@ services:
         condition: service_healthy
       dragonfly:
         condition: service_healthy
-
     networks:
       - mini_food_story
     labels:
