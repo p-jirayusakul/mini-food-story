@@ -102,11 +102,19 @@ sequenceDiagram
 [Postman Collection](https://raw.githubusercontent.com/p-jirayusakul/mini-food-sotry/refs/heads/main/postman_collection.json)
 
 **swagger url**:
-- **Table Service** – http://localhost/api/v1/tables/swagger/index.html
-- **Menu Service** – http://localhost/api/v1/menu/swagger/index.html
-- **Order Service** – http://localhost/api/v1/orders/swagger/index.html
-- **Kitchen Service** – http://localhost/api/v1/kitchen/swagger/index.htmle
-- **Payment Service** – http://localhost/api/v1/payments/swagger/index.html
+- **Table Service** – https://api.phatthakarn.me/api/v1/tables/swagger/index.html
+- **Menu Service** – https://api.phatthakarn.me/api/v1/menu/swagger/index.html
+- **Order Service** – https://api.phatthakarn.me/api/v1/orders/swagger/index.html
+- **Kitchen Service** – https://api.phatthakarn.me/api/v1/kitchen/swagger/index.htmle
+- **Payment Service** – https://api.phatthakarn.me/api/v1/payments/swagger/index.html
+
+**Traefik Dashboard**:
+[https://traefik.phatthakarn.me/dashboard/#/](https://traefik.phatthakarn.me/dashboard/#/)
+
+
+**Grafana Dashboard**:
+[https://grafana.phatthakarn.me](https://grafana.phatthakarn.me)
+
 
 --- 
 ## 🏗️ โครงสร้างโปรเจคและสถาปัตยกรรม
@@ -154,3 +162,14 @@ sequenceDiagram
 | waiter01  | 123456   | waiter  |
 | cashier01 | 123456   | cashier |
 | chef01    | 123456   | Kitchen |
+
+**Curl สำหรับ login**
+   ```bash
+   curl --location 'https://auth.phatthakarn.me/realms/foodstory/protocol/openid-connect/token' \
+   --header 'Content-Type: application/x-www-form-urlencoded' \
+   --data-urlencode 'grant_type=password' \
+   --data-urlencode 'client_id=payment-service' \
+   --data-urlencode 'client_secret=WCh6gtmy4pZdNWsB4LQQ6TJFcdX7MZf8' \
+   --data-urlencode 'username=cashier01' \
+   --data-urlencode 'password=123456'
+   ```
