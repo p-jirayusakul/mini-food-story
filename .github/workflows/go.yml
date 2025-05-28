@@ -101,15 +101,14 @@ jobs:
           ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }} << EOF
             cd mini-food-story
             git pull origin main
+            chmod +x update_env.sh
           
-            cat <<EOT > .env
-              TRAEFIK_BASIC_AUTH=${{ secrets.TRAEFIK_BASIC_AUTH }}
-              KEYCLOAK_CERT_URL=${{ secrets.KEYCLOAK_CERT_URL }}
-              DB_USERNAME=${{ secrets.DB_USERNAME }}
-              DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-              DB_DATABASE=${{ secrets.DB_DATABASE }}
-              SECRET_KEY=${{ secrets.SECRET_KEY }}
-            EOT
+            ./update_env.sh TRAEFIK_BASIC_AUTH ${{ secrets.TRAEFIK_BASIC_AUTH }}
+            ./update_env.sh KEYCLOAK_CERT_URL ${{ secrets.KEYCLOAK_CERT_URL }}
+            ./update_env.sh DB_USERNAME ${{ secrets.DB_USERNAME }}
+            ./update_env.sh DB_PASSWORD ${{ secrets.DB_PASSWORD }} 
+            ./update_env.sh DB_DATABASE ${{ secrets.DB_DATABASE }}
+            ./update_env.sh SECRET_KEY ${{ secrets.SECRET_KEY }}
 
             docker compose -f docker-compose-prod.yml down --remove-orphans
             docker compose -f docker-compose-prod.yml up -d --build
