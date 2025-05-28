@@ -238,7 +238,7 @@ services:
       - "traefik.http.routers.table-service.entrypoints=websecure"
       - "traefik.http.routers.table-service.tls.certresolver=letsencrypt"
       - "traefik.http.services.table-service.loadbalancer.server.port=8080"
-      - "traefik.http.services.table-service.loadbalancer.healthcheck.path=/ready"
+      - "traefik.http.services.table-service.loadbalancer.healthcheck.path=/api/v1/tables/ready"
       - "traefik.http.services.table-service.loadbalancer.healthcheck.interval=10s"
       - "traefik.http.services.table-service.loadbalancer.healthcheck.timeout=2s"
 
@@ -267,7 +267,7 @@ services:
       - "traefik.http.routers.menu-service.entrypoints=websecure"
       - "traefik.http.routers.menu-service.tls.certresolver=letsencrypt"
       - "traefik.http.services.menu-service.loadbalancer.server.port=8081"
-      - "traefik.http.services.menu-service.loadbalancer.healthcheck.path=/ready"
+      - "traefik.http.services.menu-service.loadbalancer.healthcheck.path=/api/v1/menu/ready"
       - "traefik.http.services.menu-service.loadbalancer.healthcheck.interval=10s"
       - "traefik.http.services.menu-service.loadbalancer.healthcheck.timeout=2s"
 
@@ -298,7 +298,7 @@ services:
       - "traefik.http.routers.order-service.entrypoints=websecure"
       - "traefik.http.routers.order-service.tls.certresolver=letsencrypt"
       - "traefik.http.services.order-service.loadbalancer.server.port=8082"
-      - "traefik.http.services.order-service.loadbalancer.healthcheck.path=/ready"
+      - "traefik.http.services.order-service.loadbalancer.healthcheck.path=/api/v1/orders/ready"
       - "traefik.http.services.order-service.loadbalancer.healthcheck.interval=10s"
       - "traefik.http.services.order-service.loadbalancer.healthcheck.timeout=2s"
 
@@ -329,7 +329,7 @@ services:
       - "traefik.http.routers.kitchen-service.entrypoints=websecure"
       - "traefik.http.routers.kitchen-service.tls.certresolver=letsencrypt"
       - "traefik.http.services.kitchen-service.loadbalancer.server.port=8083"
-      - "traefik.http.services.kitchen-service.loadbalancer.healthcheck.path=/ready"
+      - "traefik.http.services.kitchen-service.loadbalancer.healthcheck.path=/api/v1/kitchen/ready"
       - "traefik.http.services.kitchen-service.loadbalancer.healthcheck.interval=10s"
       - "traefik.http.services.kitchen-service.loadbalancer.healthcheck.timeout=2s"
 
@@ -360,7 +360,7 @@ services:
       - "traefik.http.routers.payment-service.entrypoints=websecure"
       - "traefik.http.routers.payment-service.tls.certresolver=letsencrypt"
       - "traefik.http.services.payment-service.loadbalancer.server.port=8084"
-      - "traefik.http.services.payment-service.loadbalancer.healthcheck.path=/ready"
+      - "traefik.http.services.payment-service.loadbalancer.healthcheck.path=/api/v1/payments/ready"
       - "traefik.http.services.payment-service.loadbalancer.healthcheck.interval=10s"
       - "traefik.http.services.payment-service.loadbalancer.healthcheck.timeout=2s"
 
