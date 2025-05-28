@@ -104,7 +104,6 @@ jobs:
             chmod +x update_env.sh
           
             ./update_env.sh TRAEFIK_BASIC_AUTH ${{ secrets.TRAEFIK_BASIC_AUTH }}
-            ./update_env.sh KEYCLOAK_CERT_URL ${{ secrets.KEYCLOAK_CERT_URL }}
             ./update_env.sh DB_USERNAME ${{ secrets.DB_USERNAME }}
             ./update_env.sh DB_PASSWORD ${{ secrets.DB_PASSWORD }} 
             ./update_env.sh DB_DATABASE ${{ secrets.DB_DATABASE }}
