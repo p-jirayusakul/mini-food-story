@@ -98,13 +98,15 @@ jobs:
 
       - name: Deploy to VPS
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }} << EOF
             cd mini-food-story
             git pull origin main
-            export TRAEFIK_BASIC_AUTH=${{ secrets.TRAEFIK_BASIC_AUTH }}
-            export KEYCLOAK_CERT_URL=${{ secrets.KEYCLOAK_CERT_URL }}
-            export DB_USERNAME=${{ secrets.DB_USERNAME }}
-            export DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+            export TRAEFIK_BASIC_AUTH="${{ secrets.TRAEFIK_BASIC_AUTH }}"
+            export KEYCLOAK_CERT_URL="${{ secrets.KEYCLOAK_CERT_URL }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
+
             docker compose -f docker-compose-prod.yml down --remove-orphans
             docker compose -f docker-compose-prod.yml up -d --build
           EOF
