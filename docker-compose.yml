@@ -15,7 +15,7 @@ x-common-env: &common-env
   REDIS_ADDRESS: "dragonfly:6379"
   REDIS_PASSWORD: ${REDIS_PASSWORD}
   KAFKA_BROKERS: "kafka:29092"
-  KEYCLOAK_CERT_URL: ${KEYCLOAK_CERT_URL}
+  KEYCLOAK_CERT_URL: http://keycloak:8080/realms/foodstory/protocol/openid-connect/certs
   <<: *db-env
 
 
