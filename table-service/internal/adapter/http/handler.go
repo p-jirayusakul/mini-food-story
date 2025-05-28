@@ -268,7 +268,7 @@ func (s *Handler) QuickSearchTable(c *fiber.Ctx) error {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
-	return middleware.ResponseOK(c, "search table success", result)
+	return middleware.ResponseOK(c, "search table success test update from github action", result)
 }
 
 // CreateTableSession godoc

@@ -83,28 +83,24 @@ jobs:
         run:
           echo "modules=$(go list -m -json all | jq -s '[.[] | select(.Dir | test("shared|pkg") | not) | .Dir]' -c)" >> $GITHUB_OUTPUT
 
-  build:
+  deploy:
+    name: Deploy to DigitalOcean VPS
     runs-on: ubuntu-latest
     needs: [ golangci-lint, test ]
-    strategy:
-      matrix:
-        modules: ${{ fromJSON(needs.test.outputs.modules) }}
     steps:
-      - name: Checkout Repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Go
-        uses: actions/setup-go@v4
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.0
         with:
-          go-version: ${{ env.GO_VERSION }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      - name: Configure Workspace and Install Dependencies
+      - name: Deploy to VPS
         run: |
-          go work init
-          go work use ${{ env.MODULES }}
-          cd ${{ matrix.modules }} && go mod tidy && go mod download
-
-      - name: Build
-        run: |
-          cd ${{ matrix.modules }}
-          go build -o app cmd/main.go
+          ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_IP }} << 'EOF'
+            cd mini-food-story
+            git pull origin main
+            docker compose -f docker-compose-prod.yml down --remove-orphans
+            docker compose -f docker-compose-prod.yml up -d --build
+          EOF
