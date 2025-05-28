@@ -35,8 +35,6 @@ services:
   keycloak:
     container_name: keycloak
     image: quay.io/keycloak/keycloak
-    ports:
-      - "8180:8080"
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -48,6 +46,12 @@ services:
     volumes:
       - keycloak_data:/opt/keycloak/data
       - ./import:/opt/keycloak/data/import
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.keycloak.rule=Host(`auth.phatthakarn.me`)"
+      - "traefik.http.routers.keycloak.entrypoints=websecure"
+      - "traefik.http.routers.keycloak.tls.certresolver=letsencrypt"
+      - "traefik.http.services.keycloak.loadbalancer.server.port=8080"
 
   prometheus:
     image: prom/prometheus:v3.4.0
@@ -69,22 +73,12 @@ services:
       - grafana-data:/var/lib/grafana
     networks:
       - mini_food_story
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui:v0.7.2
-    ports:
-      - "8090:8080"
-    environment:
-      KAFKA_CLUSTERS_0_NAME: local
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
-      DYNAMIC_CONFIG_ENABLED: 'true'
-    depends_on:
-      - zookeeper
-      - kafka
-      - kafka-init-topics
-    networks:
-      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`grafana.phatthakarn.me`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.routers.grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.9.1
