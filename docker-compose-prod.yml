@@ -1,21 +1,15 @@
 x-db-env: &db-env
-  DB_USERNAME: ${DB_USERNAME}
-  DB_PASSWORD: ${DB_PASSWORD}
+  TZ: "Asia/Bangkok"
   DB_HOST: "psql_bp"
   DB_PORT: "5432"
-  DB_SCHEMA: ${DB_SCHEMA}
-  DB_DATABASE: ${DB_DATABASE}
-  TZ: "Asia/Bangkok"
-
+  DB_SCHEMA: "public"
 
 x-common-env: &common-env
-  APP_ENV: ${APP_ENV}
-  SECRET_KEY: ${SECRET_KEY}
-  FRONTEND_URL: ${FRONTEND_URL}
+  APP_ENV: "prod"
+  FRONTEND_URL: "http://localhost:3000"
   REDIS_ADDRESS: "dragonfly:6379"
-  REDIS_PASSWORD: ${REDIS_PASSWORD}
+  REDIS_PASSWORD: ""
   KAFKA_BROKERS: "kafka:29092"
-  KEYCLOAK_CERT_URL: ${KEYCLOAK_CERT_URL}
   <<: *db-env
 
 
@@ -141,6 +135,8 @@ services:
     container_name: database
     image: postgres:17.5
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USERNAME}
@@ -162,6 +158,8 @@ services:
     image: migrate/migrate:v4.18.3
     container_name: migrate
     entrypoint: "" # สำคัญมาก! ล้าง entrypoint เดิมของ image
+    env_file:
+      - .env
     volumes:
       - ./shared/database/migrations:/migrations
     environment:
@@ -177,6 +175,8 @@ services:
   traefik:
     container_name: "api-gateway"
     image: traefik:v3.4.0
+    env_file:
+      - .env
     command:
       - "--api.dashboard=true"
       - "--api.insecure=false"
@@ -215,6 +215,8 @@ services:
 
   table-service:
     container_name: table-service
+    env_file:
+      - .env
     build:
       context: ./
       dockerfile: Dockerfile
@@ -244,6 +246,8 @@ services:
 
   menu-service:
     container_name: menu-service
+    env_file:
+      - .env
     build:
       context: ./
       dockerfile: Dockerfile
@@ -273,6 +277,8 @@ services:
 
   order-service:
     container_name: order-service
+    env_file:
+      - .env
     build:
       context: ./
       dockerfile: Dockerfile
@@ -304,6 +310,8 @@ services:
 
   kitchen-service:
     container_name: kitchen-service
+    env_file:
+      - .env
     build:
       context: ./
       dockerfile: Dockerfile
@@ -335,6 +343,8 @@ services:
 
   payment-service:
     container_name: payment-service
+    env_file:
+      - .env
     build:
       context: ./
       dockerfile: Dockerfile
