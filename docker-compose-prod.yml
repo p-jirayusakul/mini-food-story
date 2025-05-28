@@ -1,0 +1,363 @@
+x-db-env: &db-env
+  DB_USERNAME: ${DB_USERNAME}
+  DB_PASSWORD: ${DB_PASSWORD}
+  DB_HOST: "psql_bp"
+  DB_PORT: "5432"
+  DB_SCHEMA: ${DB_SCHEMA}
+  DB_DATABASE: ${DB_DATABASE}
+  TZ: "Asia/Bangkok"
+
+
+x-common-env: &common-env
+  APP_ENV: ${APP_ENV}
+  SECRET_KEY: ${SECRET_KEY}
+  FRONTEND_URL: ${FRONTEND_URL}
+  REDIS_ADDRESS: "dragonfly:6379"
+  REDIS_PASSWORD: ${REDIS_PASSWORD}
+  KAFKA_BROKERS: "kafka:29092"
+  KEYCLOAK_CERT_URL: http://keycloak:8080/realms/foodstory/protocol/openid-connect/certs
+  <<: *db-env
+
+
+services:
+  dragonfly:
+    container_name: redis
+    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    ulimits:
+      memlock: -1
+    ports:
+      - "6379:6379"
+    volumes:
+      - dragonflydata:/data
+    networks:
+      - mini_food_story
+
+  keycloak:
+    container_name: keycloak
+    image: quay.io/keycloak/keycloak
+    ports:
+      - "8180:8080"
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+    command:
+      - start-dev
+      - --import-realm
+    networks:
+      - mini_food_story
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ./import:/opt/keycloak/data/import
+
+  prometheus:
+    image: prom/prometheus:v3.4.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - mini_food_story
+
+  grafana:
+    image: grafana/grafana:12.0.1
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - mini_food_story
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    ports:
+      - "8090:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_METRICS_PORT: 9997
+      DYNAMIC_CONFIG_ENABLED: 'true'
+    depends_on:
+      - zookeeper
+      - kafka
+      - kafka-init-topics
+    networks:
+      - mini_food_story
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.9.1
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - mini_food_story
+
+  kafka:
+    image: confluentinc/cp-server:7.9.1
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "9997:9997"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_CONFLUENT_BALANCER_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_JMX_PORT: 9997
+      KAFKA_JMX_HOSTNAME: kafka
+    healthcheck:
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "kafka:29092" ]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    networks:
+      - mini_food_story
+
+  kafka-init-topics:
+    image: confluentinc/cp-kafka:7.9.1
+    volumes:
+      - ./data/message.json:/data/message.json
+    depends_on:
+      - kafka
+    command: "bash -c 'echo Waiting for Kafka to be ready... && \
+               cub kafka-ready -b kafka:29092 1 30 && \
+               kafka-topics --create --topic users --partitions 3 --replication-factor 1 --if-not-exists --bootstrap-server kafka:29092 && \
+               kafka-topics --create --topic messages --partitions 2 --replication-factor 1 --if-not-exists --bootstrap-server kafka:29092 && \
+               kafka-console-producer --bootstrap-server kafka:29092 --topic users < /data/message.json'"
+    networks:
+      - mini_food_story
+
+  psql_bp:
+    container_name: database
+    image: postgres:17.5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: "Asia/Bangkok"
+    ports:
+      - "5432:5432"
+    volumes:
+      - psql_volume_bp:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USERNAME}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - mini_food_story
+
+  migrate:
+    image: migrate/migrate:v4.18.3
+    container_name: migrate
+    entrypoint: "" # สำคัญมาก! ล้าง entrypoint เดิมของ image
+    volumes:
+      - ./shared/database/migrations:/migrations
+    environment:
+      <<: *db-env
+    command: >
+      sh -c "migrate -path /migrations -database 'postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable&search_path=${DB_SCHEMA}' up"
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+
+  traefik:
+    container_name: "api-gateway"
+    image: traefik:v3.4.0
+    command:
+      - "--api.dashboard=true"
+      - "--api.insecure=false"
+      - "--api=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.web.address=:80"
+      - "--entryPoints.websecure.address=:443"
+      - "--entryPoints.metrics.address=:9100"
+      - "--metrics.prometheus=true"
+      - "--metrics.prometheus.entryPoint=metrics"
+      - "--metrics.prometheus.addEntryPointsLabels=true"
+      - "--metrics.prometheus.addServicesLabels=true"
+      - "--certificatesresolvers.letsencrypt.acme.tlschallenge=true"
+      - "--certificatesresolvers.letsencrypt.acme.email=p.jirayusakul@gmail.com"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+      - "9100:9100"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.phatthakarn.me`)"
+      - "traefik.http.routers.traefik.entrypoints=websecure"
+      - "traefik.http.routers.traefik.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.traefik.service=api@internal"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./letsencrypt:/letsencrypt"
+    restart: unless-stopped
+    networks:
+      - mini_food_story
+
+  table-service:
+    container_name: table-service
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: table-service
+    image: table-service:latest
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8080
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.table-service.rule=Host(`api.phatthakarn.me`) && PathPrefix(`/api/v1/tables`)"
+      - "traefik.http.routers.table-service.entrypoints=websecure"
+      - "traefik.http.routers.table-service.tls.certresolver=letsencrypt"
+      - "traefik.http.services.table-service.loadbalancer.server.port=8080"
+
+  menu-service:
+    container_name: menu-service
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: menu-service
+    image: menu-service:latest
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8081
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.menu-service.rule=Host(`api.phatthakarn.me`) && PathPrefix(`/api/v1/menu`)"
+      - "traefik.http.routers.menu-service.entrypoints=websecure"
+      - "traefik.http.routers.menu-service.tls.certresolver=letsencrypt"
+      - "traefik.http.services.menu-service.loadbalancer.server.port=8081"
+
+  order-service:
+    container_name: order-service
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: order-service
+    image: order-service:latest
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8082
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.order-service.rule=Host(`api.phatthakarn.me`) && PathPrefix(`/api/v1/orders`)"
+      - "traefik.http.routers.order-service.entrypoints=websecure"
+      - "traefik.http.routers.order-service.tls.certresolver=letsencrypt"
+      - "traefik.http.services.order-service.loadbalancer.server.port=8082"
+
+  kitchen-service:
+    container_name: kitchen-service
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: kitchen-service
+    image: kitchen-service:latest
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8083
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kitchen-service.rule=Host(`api.phatthakarn.me`) && PathPrefix(`/api/v1/kitchen`)"
+      - "traefik.http.routers.kitchen-service.entrypoints=websecure"
+      - "traefik.http.routers.kitchen-service.tls.certresolver=letsencrypt"
+      - "traefik.http.services.kitchen-service.loadbalancer.server.port=8083"
+
+  payment-service:
+    container_name: payment-service
+    build:
+      context: ./
+      dockerfile: Dockerfile
+      args:
+        SERVICE_NAME: payment-service
+    image: payment-service:latest
+    restart: unless-stopped
+    environment:
+      <<: *common-env
+      APP_PORT: 8084
+    depends_on:
+      psql_bp:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    networks:
+      - mini_food_story
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.payment-service.rule=Host(`api.phatthakarn.me`) && PathPrefix(`/api/v1/payments`)"
+      - "traefik.http.routers.payment-service.entrypoints=websecure"
+      - "traefik.http.routers.payment-service.tls.certresolver=letsencrypt"
+      - "traefik.http.services.payment-service.loadbalancer.server.port=8084"
+
+volumes:
+  dragonflydata:
+  psql_volume_bp:
+  grafana-data:
+  keycloak_data:
+networks:
+  mini_food_story:
