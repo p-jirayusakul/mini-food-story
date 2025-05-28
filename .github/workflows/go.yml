@@ -103,12 +103,6 @@ jobs:
             git pull origin main
             chmod +x update_env.sh
           
-            ./update_env.sh TRAEFIK_BASIC_AUTH ${{ secrets.TRAEFIK_BASIC_AUTH }}
-            ./update_env.sh DB_USERNAME ${{ secrets.DB_USERNAME }}
-            ./update_env.sh DB_PASSWORD ${{ secrets.DB_PASSWORD }} 
-            ./update_env.sh DB_DATABASE ${{ secrets.DB_DATABASE }}
-            ./update_env.sh SECRET_KEY ${{ secrets.SECRET_KEY }}
-
             docker compose -f docker-compose-prod.yml down --remove-orphans
             docker compose -f docker-compose-prod.yml up -d --build
           EOF
