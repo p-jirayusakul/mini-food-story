@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"food-story/shared/kafka"
 	shareModel "food-story/shared/model"
+
 	"github.com/IBM/sarama"
 )
 

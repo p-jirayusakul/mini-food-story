@@ -8,8 +8,9 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
-	"github.com/jackc/pgx/v5/pgtype"
 	"sync"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProduct) (domain.SearchProductResult, *exceptions.CustomError) {

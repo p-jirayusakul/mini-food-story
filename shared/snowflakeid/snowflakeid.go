@@ -2,6 +2,7 @@ package snowflakeid
 
 import (
 	"fmt"
+
 	"github.com/bwmarrin/snowflake"
 )
 

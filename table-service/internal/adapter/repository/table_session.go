@@ -9,10 +9,11 @@ import (
 	database "food-story/shared/database/sqlc"
 	shareModel "food-story/shared/model"
 	"food-story/table-service/internal/domain"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession, sessionID uuid.UUID, expiry time.Time) *exceptions.CustomError {

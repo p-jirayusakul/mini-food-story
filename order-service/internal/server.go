@@ -16,6 +16,10 @@ import (
 	"food-story/shared/kafka"
 	"food-story/shared/redis"
 	"food-story/shared/snowflakeid"
+	"log"
+	"log/slog"
+	"strings"
+
 	"github.com/IBM/sarama"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -23,9 +27,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/swagger"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log"
-	"log/slog"
-	"strings"
 )
 
 const EnvFile = ".env"

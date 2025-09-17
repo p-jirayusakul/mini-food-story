@@ -13,15 +13,16 @@ import (
 	database "food-story/shared/database/sqlc"
 	"food-story/shared/kafka"
 	"food-story/shared/snowflakeid"
+	"log"
+	"log/slog"
+	"strings"
+
 	"github.com/IBM/sarama"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/healthcheck"
 	"github.com/gofiber/swagger"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"log"
-	"log/slog"
-	"strings"
 )
 
 const EnvFile = ".env"

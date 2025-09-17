@@ -10,9 +10,6 @@ import (
 	"fmt"
 	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/shopspring/decimal"
 	"io"
 	"log/slog"
 	"math"
@@ -22,6 +19,10 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 func IndexToFieldName(indexName string, tableName string) string {

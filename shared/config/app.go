@@ -3,9 +3,10 @@ package config
 import (
 	"fmt"
 	"food-story/pkg/utils"
-	"github.com/spf13/viper"
 	"os"
 	"time"
+
+	"github.com/spf13/viper"
 )
 
 type Config struct {

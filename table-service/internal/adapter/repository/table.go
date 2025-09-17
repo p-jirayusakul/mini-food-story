@@ -8,10 +8,11 @@ import (
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	"food-story/table-service/internal/domain"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgtype"
 	"strings"
 	"sync"
+
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type TableRow interface {

@@ -2,6 +2,7 @@ package model
 
 import (
 	"food-story/pkg/utils"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 

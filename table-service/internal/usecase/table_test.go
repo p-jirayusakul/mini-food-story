@@ -10,9 +10,10 @@ import (
 	"food-story/shared/mock/shared"
 	"food-story/table-service/internal/adapter/repository"
 	"food-story/table-service/internal/domain"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"testing"
 )
 
 func TestListTableStatus(t *testing.T) {

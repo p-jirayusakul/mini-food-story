@@ -34,9 +34,9 @@ services:
 
   keycloak:
     container_name: keycloak
-    image: quay.io/keycloak/keycloak
+    image: quay.io/keycloak/keycloak:26.3.4
     ports:
-      - "8180:8080"
+      - "127.0.0.1:8180:8080"
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
@@ -50,7 +50,7 @@ services:
       - ./import:/opt/keycloak/data/import
         
   prometheus:
-    image: prom/prometheus:v3.4.0
+    image: prom/prometheus:v3.5.0
     container_name: prometheus
     ports:
       - "9090:9090"
@@ -62,7 +62,7 @@ services:
       - mini_food_story
 
   grafana:
-    image: grafana/grafana:12.0.1
+    image: grafana/grafana:12.3.0-17782621999
     ports:
       - "3000:3000"
     volumes:
@@ -145,7 +145,7 @@ services:
 
   psql_bp:
     container_name: database
-    image: postgres:17.5
+    image: postgres:17.6
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_DATABASE}
@@ -165,7 +165,7 @@ services:
       - mini_food_story
 
   migrate:
-    image: migrate/migrate:v4.18.3
+    image: migrate/migrate:v4.19.0
     container_name: migrate
     entrypoint: "" # สำคัญมาก! ล้าง entrypoint เดิมของ image
     volumes:
@@ -182,7 +182,7 @@ services:
 
   traefik:
     container_name: "api-gateway"
-    image: traefik:v3.4.0
+    image: traefik:v3.5.2
     command:
       - "--api.dashboard=true"
       - "--api.insecure=true"

@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"database/sql/driver"
-	"github.com/go-playground/validator/v10"
-	"github.com/jackc/pgx/v5/pgtype"
 	"reflect"
 	"regexp"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // Precompiled regular expressions for performance

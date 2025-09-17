@@ -2,6 +2,7 @@ package exceptions
 
 import (
 	"errors"
+
 	"github.com/jackc/pgx/v5"
 )
 

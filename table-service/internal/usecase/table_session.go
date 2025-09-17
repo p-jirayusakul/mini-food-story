@@ -9,9 +9,10 @@ import (
 	shareModel "food-story/shared/model"
 	"food-story/shared/redis"
 	"food-story/table-service/internal/domain"
-	"github.com/google/uuid"
 	"log/slog"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (

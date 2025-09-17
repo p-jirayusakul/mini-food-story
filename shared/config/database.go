@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 	"food-story/pkg/utils"
+	"os"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/spf13/viper"
-	"os"
 )
 
 type DBConfig struct {

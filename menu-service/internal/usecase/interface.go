@@ -7,6 +7,7 @@ import (
 	"food-story/menu-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/shared/config"
+
 	"github.com/google/uuid"
 )
 

@@ -2,12 +2,13 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/MicahParks/keyfunc/v3"
-	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v5"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/MicahParks/keyfunc/v3"
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const PrefixAuth = "Bearer "

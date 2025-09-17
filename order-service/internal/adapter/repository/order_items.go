@@ -10,9 +10,10 @@ import (
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	shareModel "food-story/shared/model"
-	"github.com/jackc/pgx/v5/pgtype"
 	"strings"
 	"sync"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const FailedToGetOrderItems = "failed to get order items: %w"

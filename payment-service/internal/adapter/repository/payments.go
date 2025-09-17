@@ -8,11 +8,12 @@ import (
 	"food-story/payment-service/internal/domain"
 	"food-story/pkg/exceptions"
 	database "food-story/shared/database/sqlc"
-	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"log/slog"
 	"math/big"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const FailToGetTotalAmount = "failed to fetch amount order: %w"

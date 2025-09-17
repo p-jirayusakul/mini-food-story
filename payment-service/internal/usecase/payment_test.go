@@ -9,9 +9,10 @@ import (
 	database "food-story/shared/database/sqlc"
 	mockdb "food-story/shared/mock/database"
 	mockshared "food-story/shared/mock/shared"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"testing"
 )
 
 func TestListPaymentMethods(t *testing.T) {

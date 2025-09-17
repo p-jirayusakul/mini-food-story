@@ -4,8 +4,9 @@ import (
 	"context"
 	"errors"
 	"food-story/kitchen-service/internal/adapter/websocket"
-	"github.com/IBM/sarama"
 	"log"
+
+	"github.com/IBM/sarama"
 )
 
 type Consumer struct {

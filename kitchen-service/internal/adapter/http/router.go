@@ -4,6 +4,7 @@ import (
 	"food-story/kitchen-service/internal/usecase"
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
+
 	"github.com/gofiber/fiber/v2"
 )
 

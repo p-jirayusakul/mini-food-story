@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"food-story/pkg/exceptions"
-	"github.com/redis/go-redis/v9"
 	"log"
 	"log/slog"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 var ctx = context.Background()

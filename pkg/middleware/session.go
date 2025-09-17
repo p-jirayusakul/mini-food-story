@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"food-story/pkg/utils"
+
 	"github.com/gofiber/fiber/v2"
 )
 

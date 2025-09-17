@@ -6,8 +6,9 @@ import (
 	"food-story/pkg/exceptions"
 	shareModel "food-story/shared/model"
 	"food-story/shared/redis"
-	"github.com/google/uuid"
 	"strconv"
+
+	"github.com/google/uuid"
 )
 
 type RedisTableCacheInterface interface {

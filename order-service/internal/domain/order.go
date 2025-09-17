@@ -2,6 +2,7 @@ package domain
 
 import (
 	shareModel "food-story/shared/model"
+
 	"github.com/google/uuid"
 )
 

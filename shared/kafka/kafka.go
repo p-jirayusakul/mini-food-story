@@ -1,8 +1,9 @@
 package kafka
 
 import (
-	"github.com/IBM/sarama"
 	"time"
+
+	"github.com/IBM/sarama"
 )
 
 func InitConsumer(group string, brokers []string) (consumer sarama.ConsumerGroup, client sarama.Client, err error) {

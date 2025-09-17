@@ -3,6 +3,7 @@ package http
 import (
 	"food-story/pkg/middleware"
 	"food-story/table-service/internal/usecase"
+
 	"github.com/gofiber/fiber/v2"
 )
 

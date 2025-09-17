@@ -5,8 +5,9 @@ import (
 	"food-story/pkg/middleware"
 	"food-story/pkg/utils"
 	"food-story/table-service/internal/domain"
-	"github.com/gofiber/fiber/v2"
 	"strconv"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 // ListTableStatus godoc

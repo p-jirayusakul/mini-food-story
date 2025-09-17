@@ -9,9 +9,10 @@ import (
 	"food-story/shared/mock/database"
 	"food-story/shared/mock/shared"
 	shareModel "food-story/shared/model"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
-	"testing"
 )
 
 func TestUpdateOrderItemsStatus(t *testing.T) {
