@@ -20,6 +20,7 @@ type TableRow interface {
 	GetTableNumber() int32
 	GetStatus() string
 	GetStatusEN() string
+	GetStatusCode() string
 	GetSeats() int32
 }
 
@@ -293,6 +294,7 @@ func transformSearchResults[T TableRow](results []T) []*domain.Table {
 			TableNumber: row.GetTableNumber(),
 			Status:      row.GetStatus(),
 			StatusEn:    row.GetStatusEN(),
+			StatusCode:  row.GetStatusCode(),
 			Seats:       row.GetSeats(),
 		}
 	}

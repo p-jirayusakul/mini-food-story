@@ -49,26 +49,26 @@ services:
       - keycloak_data:/opt/keycloak/data
       - ./import:/opt/keycloak/data/import
         
-  prometheus:
-    image: prom/prometheus:v3.5.0
-    container_name: prometheus
-    ports:
-      - "9090:9090"
-    command:
-      - --config.file=/etc/prometheus/prometheus.yml
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
-    networks:
-      - mini_food_story
-
-  grafana:
-    image: grafana/grafana:12.3.0-17782621999
-    ports:
-      - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-    networks:
-      - mini_food_story
+#  prometheus:
+#    image: prom/prometheus:v3.5.0
+#    container_name: prometheus
+#    ports:
+#      - "9090:9090"
+#    command:
+#      - --config.file=/etc/prometheus/prometheus.yml
+#    volumes:
+#      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+#    networks:
+#      - mini_food_story
+#
+#  grafana:
+#    image: grafana/grafana:12.3.0-17782621999
+#    ports:
+#      - "3000:3000"
+#    volumes:
+#      - grafana-data:/var/lib/grafana
+#    networks:
+#      - mini_food_story
 
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
@@ -180,156 +180,156 @@ services:
     networks:
       - mini_food_story
 
-  traefik:
-    container_name: "api-gateway"
-    image: traefik:v3.5.2
-    command:
-      - "--api.dashboard=true"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entryPoints.web.address=:80"
-      - "--entryPoints.metrics.address=:9100"
-      - "--metrics.prometheus=true"
-      - "--metrics.prometheus.entryPoint=metrics"
-      - "--metrics.prometheus.addEntryPointsLabels=true"
-      - "--metrics.prometheus.addServicesLabels=true"
-    ports:
-      - "80:80"
-      - "8080:8080"
-      - "9100:9100"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-    restart: unless-stopped
-    networks:
-      - mini_food_story
-
-  table-service:
-    container_name: table-service
-    build:
-      context: ./
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: table-service
-    image: table-service:latest
-    restart: unless-stopped
-    environment:
-      <<: *common-env
-      APP_PORT: 8080
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-
-    networks:
-      - mini_food_story
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.table-service.rule=PathPrefix(`/api/v1/tables`)"
-      - "traefik.http.services.table-service.loadbalancer.server.port=8080"
-
-  menu-service:
-    container_name: menu-service
-    build:
-      context: ./
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: menu-service
-    image: menu-service:latest
-    restart: unless-stopped
-    environment:
-      <<: *common-env
-      APP_PORT: 8081
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.menu-service.rule=PathPrefix(`/api/v1/menu`)"
-      - "traefik.http.services.menu-service.loadbalancer.server.port=8081"
-
-  order-service:
-    container_name: order-service
-    build:
-      context: ./
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: order-service
-    image: order-service:latest
-    restart: unless-stopped
-    environment:
-      <<: *common-env
-      APP_PORT: 8082
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.order-service.rule=PathPrefix(`/api/v1/orders`)"
-      - "traefik.http.services.order-service.loadbalancer.server.port=8082"
-
-  kitchen-service:
-    container_name: kitchen-service
-    build:
-      context: ./
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: kitchen-service
-    image: kitchen-service:latest
-    restart: unless-stopped
-    environment:
-      <<: *common-env
-      APP_PORT: 8083
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.kitchen-service.rule=PathPrefix(`/api/v1/kitchen`)"
-      - "traefik.http.services.kitchen-service.loadbalancer.server.port=8083"
-
-  payment-service:
-    container_name: payment-service
-    build:
-      context: ./
-      dockerfile: Dockerfile
-      args:
-        SERVICE_NAME: payment-service
-    image: payment-service:latest
-    restart: unless-stopped
-    environment:
-      <<: *common-env
-      APP_PORT: 8084
-    depends_on:
-      psql_bp:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      dragonfly:
-        condition: service_healthy
-    networks:
-      - mini_food_story
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.payment-service.rule=PathPrefix(`/api/v1/payments`)"
-      - "traefik.http.services.payment-service.loadbalancer.server.port=8084"
+#  traefik:
+#    container_name: "api-gateway"
+#    image: traefik:v3.5.2
+#    command:
+#      - "--api.dashboard=true"
+#      - "--api.insecure=true"
+#      - "--providers.docker=true"
+#      - "--providers.docker.exposedbydefault=false"
+#      - "--entryPoints.web.address=:80"
+#      - "--entryPoints.metrics.address=:9100"
+#      - "--metrics.prometheus=true"
+#      - "--metrics.prometheus.entryPoint=metrics"
+#      - "--metrics.prometheus.addEntryPointsLabels=true"
+#      - "--metrics.prometheus.addServicesLabels=true"
+#    ports:
+#      - "80:80"
+#      - "8080:8080"
+#      - "9100:9100"
+#    volumes:
+#      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+#    restart: unless-stopped
+#    networks:
+#      - mini_food_story
+#
+#  table-service:
+#    container_name: table-service
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#      args:
+#        SERVICE_NAME: table-service
+#    image: table-service:latest
+#    restart: unless-stopped
+#    environment:
+#      <<: *common-env
+#      APP_PORT: 8080
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#
+#    networks:
+#      - mini_food_story
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.table-service.rule=PathPrefix(`/api/v1/tables`)"
+#      - "traefik.http.services.table-service.loadbalancer.server.port=8080"
+#
+#  menu-service:
+#    container_name: menu-service
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#      args:
+#        SERVICE_NAME: menu-service
+#    image: menu-service:latest
+#    restart: unless-stopped
+#    environment:
+#      <<: *common-env
+#      APP_PORT: 8081
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.menu-service.rule=PathPrefix(`/api/v1/menu`)"
+#      - "traefik.http.services.menu-service.loadbalancer.server.port=8081"
+#
+#  order-service:
+#    container_name: order-service
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#      args:
+#        SERVICE_NAME: order-service
+#    image: order-service:latest
+#    restart: unless-stopped
+#    environment:
+#      <<: *common-env
+#      APP_PORT: 8082
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.order-service.rule=PathPrefix(`/api/v1/orders`)"
+#      - "traefik.http.services.order-service.loadbalancer.server.port=8082"
+#
+#  kitchen-service:
+#    container_name: kitchen-service
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#      args:
+#        SERVICE_NAME: kitchen-service
+#    image: kitchen-service:latest
+#    restart: unless-stopped
+#    environment:
+#      <<: *common-env
+#      APP_PORT: 8083
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.kitchen-service.rule=PathPrefix(`/api/v1/kitchen`)"
+#      - "traefik.http.services.kitchen-service.loadbalancer.server.port=8083"
+#
+#  payment-service:
+#    container_name: payment-service
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#      args:
+#        SERVICE_NAME: payment-service
+#    image: payment-service:latest
+#    restart: unless-stopped
+#    environment:
+#      <<: *common-env
+#      APP_PORT: 8084
+#    depends_on:
+#      psql_bp:
+#        condition: service_healthy
+#      kafka:
+#        condition: service_healthy
+#      dragonfly:
+#        condition: service_healthy
+#    networks:
+#      - mini_food_story
+#    labels:
+#      - "traefik.enable=true"
+#      - "traefik.http.routers.payment-service.rule=PathPrefix(`/api/v1/payments`)"
+#      - "traefik.http.services.payment-service.loadbalancer.server.port=8084"
 
 volumes:
   dragonflydata:

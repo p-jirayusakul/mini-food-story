@@ -18,6 +18,7 @@ type CurrentOrderItems struct {
 
 type SearchOrderItems struct {
 	Name        string
+	TableNumber int32
 	StatusCode  []string
 	OrderByType string
 	OrderBy     string

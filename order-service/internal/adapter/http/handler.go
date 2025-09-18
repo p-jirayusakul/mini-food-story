@@ -308,6 +308,48 @@ func (s *Handler) SearchOrderItemsInComplete(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get order items success", result)
 }
 
+// GetOrderItemsByTableID godoc
+// @Summary Get order items for current session
+// @Description Get all order items for the current table session with pagination
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param X-Session-Id header string true "Session ID"
+// @Param page_number query int false "Page number for pagination" default(1)
+// @Success 200 {object} middleware.SuccessResponse{data=domain.SearchCurrentOrderItemsResult}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /current/items [get]
+func (s *Handler) GetOrderItemsByTableID(c *fiber.Ctx) error {
+	tableID, err := utils.StrToInt64(c.Params("tableID"))
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	body := new(SearchCurrentOrderItems)
+	if errValidate := c.QueryParser(body); errValidate != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, errValidate.Error())
+	}
+
+	if err = s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	sessionID, customError := s.useCase.GetSessionIDByTableID(c.Context(), tableID)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, body.PageNumber)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get order items success", result)
+}
+
 func getSession(c *fiber.Ctx) (uuid.UUID, error) {
 	sessionIDAny, ok := c.Locals("sessionID").(string)
 	if !ok {

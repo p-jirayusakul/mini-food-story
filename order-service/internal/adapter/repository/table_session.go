@@ -19,3 +19,22 @@ func (i *Implement) UpdateStatusCloseTableSession(ctx context.Context, sessionID
 
 	return nil
 }
+
+func (i *Implement) GetSessionIDByTableID(ctx context.Context, tableID int64) (result uuid.UUID, customError *exceptions.CustomError) {
+	resultDB, err := i.repository.GetSessionIDByTableID(ctx, tableID)
+	if err != nil {
+		return uuid.UUID{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: err,
+		}
+	}
+
+	result, err = uuid.Parse(resultDB.String())
+	if err != nil {
+		return uuid.UUID{}, &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: err,
+		}
+	}
+	return result, nil
+}

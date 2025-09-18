@@ -48,6 +48,7 @@ func (s *Handler) setupRoutes() {
 	s.router.Patch("/current/items/:orderItemsID<int>/status/cancel", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.UpdateOrderItemsStatusCancel)
 
 	s.router.Get("/:id<int>/items/status/incomplete", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"WAITER", "CASHIER"}), s.SearchOrderItemsInComplete)
+	s.router.Get("/tables/:tableID<int>/items", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"WAITER", "CASHIER"}), s.GetOrderItemsByTableID)
 }
 
 func (s *Handler) handleSessionID(c *fiber.Ctx) error {

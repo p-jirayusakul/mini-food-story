@@ -17,6 +17,10 @@ func (q *QuickSearchTablesRow) GetStatusEN() string {
 	return q.StatusEN
 }
 
+func (q *QuickSearchTablesRow) GetStatusCode() string {
+	return q.StatusCode
+}
+
 func (q *QuickSearchTablesRow) GetSeats() int32 {
 	return q.Seats
 }
@@ -36,6 +40,10 @@ func (s *SearchTablesRow) GetStatus() string {
 
 func (s *SearchTablesRow) GetStatusEN() string {
 	return s.StatusEN
+}
+
+func (s *SearchTablesRow) GetStatusCode() string {
+	return s.StatusCode
 }
 
 func (s *SearchTablesRow) GetSeats() int32 {

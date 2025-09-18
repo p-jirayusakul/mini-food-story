@@ -314,27 +314,3 @@ func (s *Handler) CreateTableSession(c *fiber.Ctx) error {
 		URL: result,
 	})
 }
-
-// CurrentSession godoc
-// @Summary Get current table session
-// @Description Get details of the current active table session
-// @Tags Table
-// @Security BearerAuth
-// @Accept json
-// @Produce json
-// @Param X-Session-Id header string true "Session ID"
-// @Success 200 {object} middleware.SuccessResponse{data=model.CurrentTableSession}
-// @Failure 400 {object} middleware.ErrorResponse
-// @Failure 401 {object} middleware.ErrorResponse
-// @Failure 404 {object} middleware.ErrorResponse
-// @Failure 500 {object} middleware.ErrorResponse
-// @Router /session/current [get]
-func (s *Handler) CurrentSession(c *fiber.Ctx) error {
-	sessionIDData := c.Get("X-Session-Id")
-	result, customError := s.useCase.GetCurrentSession(sessionIDData)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
-	}
-
-	return middleware.ResponseOK(c, "get current session success", result)
-}

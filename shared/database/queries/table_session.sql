@@ -30,3 +30,6 @@ WHERE ts.session_id = sqlc.arg(sessionID)::uuid;
 UPDATE public.table_session
 SET ended_at=NOW(), status='closed'
 WHERE session_id=sqlc.arg(sessionID)::uuid;
+
+-- name: GetSessionIDByTableID :one
+select session_id from public.table_session where table_id = sqlc.arg(table_id)::bigint and status = 'active' LIMIT 1;

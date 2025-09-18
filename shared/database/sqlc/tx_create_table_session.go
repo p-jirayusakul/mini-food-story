@@ -12,7 +12,7 @@ func (store *SQLStore) TXCreateTableSession(ctx context.Context, arg CreateTable
 			return err
 		}
 
-		err = q.UpdateTablesStatusOccupied(ctx, arg.TableID)
+		err = q.UpdateTablesStatusWaitToOrder(ctx, arg.TableID)
 		if err != nil {
 			return err
 		}

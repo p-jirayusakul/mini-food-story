@@ -23,9 +23,9 @@ UPDATE public.tables
 SET status_id=$2, updated_at = NOW()
 WHERE id=$1;
 
--- name: UpdateTablesStatusOrdered :exec
+-- name: UpdateTablesStatusWaitingToBeServed :exec
 UPDATE public.tables
-SET status_id=(select id from public.md_table_statuses WHERE code = 'ORDERED'), updated_at = NOW()
+SET status_id=(select id from public.md_table_statuses WHERE code = 'WAIT_SERVE'), updated_at = NOW()
 WHERE id=sqlc.arg(id)::bigint;
 
 -- name: UpdateTablesStatusAvailable :exec
@@ -43,13 +43,13 @@ UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'DISABLED'), updated_at = NOW()
 WHERE id=sqlc.arg(id)::bigint;
 
--- name: UpdateTablesStatusOccupied :exec
+-- name: UpdateTablesStatusWaitToOrder :exec
 UPDATE public.tables
-SET status_id=(select id from public.md_table_statuses WHERE code = 'OCCUPIED'), updated_at = NOW()
+SET status_id=(select id from public.md_table_statuses WHERE code = 'WAIT_ORDER'), updated_at = NOW()
 WHERE id=sqlc.arg(id)::bigint;
 
 -- name: SearchTables :many
-SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", t.seats
+SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", s.code as "statusCode", t.seats
 FROM public.tables t
          INNER JOIN public.md_table_statuses s ON t.status_id = s.id
 WHERE (sqlc.narg(table_number)::int IS NULL OR t.table_number = sqlc.narg(table_number)::int)
@@ -94,7 +94,7 @@ WHERE (sqlc.narg(table_number)::int IS NULL OR t.table_number = sqlc.narg(table_
     );
 
 -- name: QuickSearchTables :many
-SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", t.seats
+SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", s.code as "statusCode", t.seats
 FROM public.tables t
          INNER JOIN public.md_table_statuses s ON t.status_id = s.id
 WHERE t.seats >= sqlc.arg(number_of_people)::integer AND s.code = 'AVAILABLE'

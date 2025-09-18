@@ -23,6 +23,7 @@ type Usecase interface {
 	UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError)
 	SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError)
 	IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError
+	GetSessionIDByTableID(ctx context.Context, tableID int64) (result uuid.UUID, customError *exceptions.CustomError)
 }
 
 type Implement struct {

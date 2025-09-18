@@ -5,6 +5,7 @@ type Table struct {
 	TableNumber int32  `json:"tableNumber" example:"1"`
 	Status      string `json:"status" example:"สั่งอาหารแล้ว"`
 	StatusEn    string `json:"statusEN" example:"Ordered"`
+	StatusCode  string `json:"statusCode" example:"ORDERED"`
 	Seats       int32  `json:"seats" example:"5"`
 }
 

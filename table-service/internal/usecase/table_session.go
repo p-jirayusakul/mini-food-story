@@ -74,39 +74,6 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 	return i.config.FrontendURL + "?s=" + encryptedSessionID, nil
 }
 
-func (i *Implement) GetCurrentSession(sessionIDEncrypt string) (*shareModel.CurrentTableSession, *exceptions.CustomError) {
-	sessionIDDecrypt, err := utils.DecryptSession(sessionIDEncrypt, []byte(i.config.SecretKey))
-	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: fmt.Errorf("failed to get current session: %w", err),
-		}
-	}
-
-	sessionID := sessionIDDecrypt.SessionID
-	expiry := sessionIDDecrypt.Expiry
-	if expiry.Before(time.Now()) {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: fmt.Errorf("session expired"),
-		}
-	}
-
-	cachedTable, customError := i.cache.GetCachedTable(redis.KeyTable + sessionID)
-	if customError != nil {
-		return nil, customError
-	}
-
-	if cachedTable == nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: fmt.Errorf("session not found"),
-		}
-	}
-
-	return cachedTable, nil
-}
-
 func (i *Implement) generateSessionDetails() (uuid.UUID, time.Time) {
 	return uuid.New(), time.Now().Add(i.config.TableSessionDuration)
 }
