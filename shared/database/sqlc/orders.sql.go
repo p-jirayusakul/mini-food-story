@@ -382,6 +382,17 @@ func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []i
 	return items, nil
 }
 
+const getTableIDByOrderID = `-- name: GetTableIDByOrderID :one
+SELECT table_id FROM public.orders WHERE id = $1::bigint
+`
+
+func (q *Queries) GetTableIDByOrderID(ctx context.Context, orderID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, getTableIDByOrderID, orderID)
+	var table_id int64
+	err := row.Scan(&table_id)
+	return table_id, err
+}
+
 const getTableNumberOrderByID = `-- name: GetTableNumberOrderByID :one
 SELECT t.table_number as "tableNumber"
 FROM public.orders o

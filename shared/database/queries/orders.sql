@@ -288,3 +288,6 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
 WHERE o.id = sqlc.arg(order_id)::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED');
+
+-- name: GetTableIDByOrderID :one
+SELECT table_id FROM public.orders WHERE id = sqlc.arg(order_id)::bigint;

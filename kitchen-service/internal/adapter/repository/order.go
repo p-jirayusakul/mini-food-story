@@ -68,3 +68,25 @@ func (i *Implement) IsOrderExist(ctx context.Context, id int64) (customError *ex
 
 	return nil
 }
+
+func (i *Implement) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (bool, *exceptions.CustomError) {
+	isExist, err := i.repository.IsOrderItemsNotFinal(ctx, orderID)
+	if err != nil {
+		return false, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to check order items not final: %w", err),
+		}
+	}
+	return isExist, nil
+}
+
+func (i *Implement) GetTableIDByOrderID(ctx context.Context, orderID int64) (int64, *exceptions.CustomError) {
+	tableID, err := i.repository.GetTableIDByOrderID(ctx, orderID)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get table id by order id: %w", err),
+		}
+	}
+	return tableID, nil
+}

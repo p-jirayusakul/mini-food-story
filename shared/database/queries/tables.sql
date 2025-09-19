@@ -43,6 +43,11 @@ UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'DISABLED'), updated_at = NOW()
 WHERE id=sqlc.arg(id)::bigint;
 
+-- name: UpdateTablesStatusFoodServed :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'FOOD_SERVED'), updated_at = NOW()
+WHERE id=sqlc.arg(id)::bigint;
+
 -- name: UpdateTablesStatusWaitToOrder :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'WAIT_ORDER'), updated_at = NOW()

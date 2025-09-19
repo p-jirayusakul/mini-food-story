@@ -38,6 +38,22 @@ func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []shareMode
 		}
 	}
 
+	tableID, err := i.repository.GetTableIDByOrderID(ctx, orderItemsPayload[0].OrderID)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get table id by order id: %w", err),
+		}
+	}
+
+	err = i.repository.UpdateTablesStatusWaitingToBeServed(ctx, tableID)
+	if err != nil {
+		return nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to update tables status waiting to be served: %w", err),
+		}
+	}
+
 	var orderItemsID []int64
 	for _, item := range orderItemsPayload {
 		orderItemsID = append(orderItemsID, item.ID)
@@ -193,7 +209,7 @@ func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int6
 	}()
 	go func() {
 		defer wg.Done()
-		totalItems, customError = i.fetchTotalItems(ctx, searchParams)
+		totalItems, customError = i.fetchTotalItemsNotFinal(ctx, searchParams)
 	}()
 
 	wg.Wait()
@@ -243,7 +259,7 @@ func (i *Implement) fetchOrderItemsNotFinal(ctx context.Context, params database
 	return result, nil
 }
 
-func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchOrderItemsIsNotFinalParams) (int64, *exceptions.CustomError) {
+func (i *Implement) fetchTotalItemsNotFinal(ctx context.Context, params database.SearchOrderItemsIsNotFinalParams) (int64, *exceptions.CustomError) {
 	totalParams := database.GetTotalSearchOrderItemsIsNotFinalParams{
 		ProductName: params.ProductName,
 		OrderID:     params.OrderID,

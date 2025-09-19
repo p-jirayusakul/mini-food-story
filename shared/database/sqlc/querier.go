@@ -30,6 +30,7 @@ type Querier interface {
 	GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error)
 	GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error)
 	GetSessionIDByTableID(ctx context.Context, tableID int64) (pgtype.UUID, error)
+	GetTableIDByOrderID(ctx context.Context, orderID int64) (int64, error)
 	GetTableNumber(ctx context.Context, id int64) (int32, error)
 	GetTableNumberOrderByID(ctx context.Context, orderID int64) (int32, error)
 	GetTableSession(ctx context.Context, sessionid pgtype.UUID) (*GetTableSessionRow, error)
@@ -77,6 +78,7 @@ type Querier interface {
 	UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error
 	UpdateTablesStatusAvailable(ctx context.Context, id int64) error
 	UpdateTablesStatusDisabled(ctx context.Context, id int64) error
+	UpdateTablesStatusFoodServed(ctx context.Context, id int64) error
 	UpdateTablesStatusReserved(ctx context.Context, id int64) error
 	UpdateTablesStatusWaitToOrder(ctx context.Context, id int64) error
 	UpdateTablesStatusWaitingToBeServed(ctx context.Context, id int64) error

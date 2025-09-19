@@ -75,7 +75,29 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.U
 
 	payload.OrderID = orderID
 
-	return i.repository.UpdateOrderItemsStatus(ctx, payload)
+	customError = i.repository.UpdateOrderItemsStatus(ctx, payload)
+	if customError != nil {
+		return customError
+	}
+
+	isOrderItemsNotFinal, customError := i.repository.IsOrderItemsNotFinal(ctx, payload.OrderID)
+	if customError != nil {
+		return customError
+	}
+
+	if !isOrderItemsNotFinal {
+		tableID, tableIDErr := i.repository.GetTableIDByOrderID(ctx, payload.OrderID)
+		if tableIDErr != nil {
+			return tableIDErr
+		}
+
+		statusFoodServedErr := i.repository.UpdateTablesStatusFoodServed(ctx, tableID)
+		if statusFoodServedErr != nil {
+			return statusFoodServedErr
+		}
+	}
+
+	return
 }
 
 func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {

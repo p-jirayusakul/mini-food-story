@@ -325,6 +325,17 @@ func (q *Queries) UpdateTablesStatusDisabled(ctx context.Context, id int64) erro
 	return err
 }
 
+const updateTablesStatusFoodServed = `-- name: UpdateTablesStatusFoodServed :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'FOOD_SERVED'), updated_at = NOW()
+WHERE id=$1::bigint
+`
+
+func (q *Queries) UpdateTablesStatusFoodServed(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusFoodServed, id)
+	return err
+}
+
 const updateTablesStatusReserved = `-- name: UpdateTablesStatusReserved :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'RESERVED'), updated_at = NOW()
