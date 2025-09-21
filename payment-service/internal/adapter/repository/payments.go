@@ -35,10 +35,15 @@ func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain
 	}
 
 	transactionID = uuid.New().String()
+	pendingStatus, customError := i.GetPaymentStatusPending(ctx)
+	if customError != nil {
+		return "", customError
+	}
 	arg := database.CreatePaymentParams{
 		ID:            i.snowflakeID.Generate(),
 		OrderID:       payload.OrderID,
 		Method:        payload.Method,
+		Status:        pendingStatus,
 		Note:          note,
 		Amount:        amount,
 		TransactionID: transactionID,
@@ -63,8 +68,35 @@ func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain
 	return transactionID, nil
 }
 
+func (i *Implement) GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (statusCode string, customError *exceptions.CustomError) {
+
+	const errNotFound = "payment status not found"
+	result, err := i.repository.GetPaymentLastStatusCodeByTransaction(ctx, transactionID)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return "", &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: fmt.Errorf(errNotFound),
+			}
+		}
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: err,
+		}
+	}
+
+	if result.String == "" {
+		return "", &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf(errNotFound),
+		}
+	}
+
+	return result.String, nil
+}
+
 func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionID string) (customError *exceptions.CustomError) {
-	err := i.repository.UpdateStatusPaymentPaidByTransactionID(ctx, transactionID)
+	err := i.repository.UpdateStatusPaymentSuccessByTransactionID(ctx, transactionID)
 	if err != nil {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,

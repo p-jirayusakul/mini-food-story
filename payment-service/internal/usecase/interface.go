@@ -12,6 +12,7 @@ type PaymentUsecase interface {
 	ListPaymentMethods(ctx context.Context) (result []*domain.PaymentMethod, customError *exceptions.CustomError)
 	CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, customError *exceptions.CustomError)
 	CallbackPaymentTransaction(ctx context.Context, transactionID string) (customError *exceptions.CustomError)
+	GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (result string, customError *exceptions.CustomError)
 }
 
 type PaymentImplement struct {

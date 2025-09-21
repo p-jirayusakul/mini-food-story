@@ -26,7 +26,9 @@ type Querier interface {
 	GetOrderWithItems(ctx context.Context, arg GetOrderWithItemsParams) ([]*GetOrderWithItemsRow, error)
 	GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error)
 	GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []int64) ([]*GetOrderWithItemsGroupIDRow, error)
+	GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (pgtype.Text, error)
 	GetPaymentOrderIDByTransaction(ctx context.Context, transactionID string) (int64, error)
+	GetPaymentStatusPending(ctx context.Context) (int64, error)
 	GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error)
 	GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error)
 	GetSessionIDByTableID(ctx context.Context, tableID int64) (pgtype.UUID, error)
@@ -71,9 +73,11 @@ type Querier interface {
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
 	UpdateProductAvailability(ctx context.Context, arg UpdateProductAvailabilityParams) error
 	UpdateStatusCloseTableSession(ctx context.Context, sessionid pgtype.UUID) error
-	UpdateStatusPaymentFail(ctx context.Context, id int64) error
-	UpdateStatusPaymentPaidByID(ctx context.Context, id int64) error
-	UpdateStatusPaymentPaidByTransactionID(ctx context.Context, transactionID string) error
+	UpdateStatusPaymentCancelledByTransactionID(ctx context.Context, transactionID string) error
+	UpdateStatusPaymentConfirmedByTransactionID(ctx context.Context, transactionID string) error
+	UpdateStatusPaymentFailedByTransactionID(ctx context.Context, transactionID string) error
+	UpdateStatusPaymentPendingByTransactionID(ctx context.Context, transactionID string) error
+	UpdateStatusPaymentSuccessByTransactionID(ctx context.Context, transactionID string) error
 	UpdateTables(ctx context.Context, arg UpdateTablesParams) error
 	UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error
 	UpdateTablesStatusAvailable(ctx context.Context, id int64) error

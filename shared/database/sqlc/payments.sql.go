@@ -12,9 +12,8 @@ import (
 )
 
 const createPayment = `-- name: CreatePayment :one
-INSERT INTO public.payments
-(id, order_id, amount, "method", transaction_id, ref_code, note)
-VALUES($1, $2, $3, $4, $5, $6, $7)
+insert into public.payments (id, order_id, amount, method, status, transaction_id, ref_code, note)
+values ($1::bigint, $2::bigint, $3::numeric, $4::bigint, $5::bigint, $6::text, $7::varchar, $8::text)
 RETURNING id
 `
 
@@ -23,6 +22,7 @@ type CreatePaymentParams struct {
 	OrderID       int64          `json:"order_id"`
 	Amount        pgtype.Numeric `json:"amount"`
 	Method        int64          `json:"method"`
+	Status        int64          `json:"status"`
 	TransactionID string         `json:"transaction_id"`
 	RefCode       string         `json:"ref_code"`
 	Note          pgtype.Text    `json:"note"`
@@ -34,6 +34,7 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (i
 		arg.OrderID,
 		arg.Amount,
 		arg.Method,
+		arg.Status,
 		arg.TransactionID,
 		arg.RefCode,
 		arg.Note,
@@ -41,6 +42,20 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (i
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const getPaymentLastStatusCodeByTransaction = `-- name: GetPaymentLastStatusCodeByTransaction :one
+select mps.code from public.payments as p
+LEFT JOIN public.md_payment_statuses as mps ON mps.id = p.status
+where p.transaction_id=$1
+limit 1
+`
+
+func (q *Queries) GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (pgtype.Text, error) {
+	row := q.db.QueryRow(ctx, getPaymentLastStatusCodeByTransaction, transactionID)
+	var code pgtype.Text
+	err := row.Scan(&code)
+	return code, err
 }
 
 const getPaymentOrderIDByTransaction = `-- name: GetPaymentOrderIDByTransaction :one
@@ -54,35 +69,57 @@ func (q *Queries) GetPaymentOrderIDByTransaction(ctx context.Context, transactio
 	return orderID, err
 }
 
-const updateStatusPaymentFail = `-- name: UpdateStatusPaymentFail :exec
+const updateStatusPaymentCancelledByTransactionID = `-- name: UpdateStatusPaymentCancelledByTransactionID :exec
 UPDATE public.payments
-SET status='failed'::payment_status, paid_at=NULL, updated_at=NOW()
-WHERE id=$1::bigint
-`
-
-func (q *Queries) UpdateStatusPaymentFail(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, updateStatusPaymentFail, id)
-	return err
-}
-
-const updateStatusPaymentPaidByID = `-- name: UpdateStatusPaymentPaidByID :exec
-UPDATE public.payments
-SET status='paid'::payment_status, paid_at=NOW(), updated_at=NOW()
-WHERE id=$1::bigint
-`
-
-func (q *Queries) UpdateStatusPaymentPaidByID(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, updateStatusPaymentPaidByID, id)
-	return err
-}
-
-const updateStatusPaymentPaidByTransactionID = `-- name: UpdateStatusPaymentPaidByTransactionID :exec
-UPDATE public.payments
-SET status='paid'::payment_status, paid_at=NOW(), updated_at=NOW()
+SET status=(select id from public.md_payment_statuses WHERE code = 'CANCELLED'), updated_at=NOW()
 WHERE transaction_id=$1::text
 `
 
-func (q *Queries) UpdateStatusPaymentPaidByTransactionID(ctx context.Context, transactionID string) error {
-	_, err := q.db.Exec(ctx, updateStatusPaymentPaidByTransactionID, transactionID)
+func (q *Queries) UpdateStatusPaymentCancelledByTransactionID(ctx context.Context, transactionID string) error {
+	_, err := q.db.Exec(ctx, updateStatusPaymentCancelledByTransactionID, transactionID)
+	return err
+}
+
+const updateStatusPaymentConfirmedByTransactionID = `-- name: UpdateStatusPaymentConfirmedByTransactionID :exec
+UPDATE public.payments
+SET status=(select id from public.md_payment_statuses WHERE code = 'CONFIRMED'), updated_at=NOW()
+WHERE transaction_id=$1::text
+`
+
+func (q *Queries) UpdateStatusPaymentConfirmedByTransactionID(ctx context.Context, transactionID string) error {
+	_, err := q.db.Exec(ctx, updateStatusPaymentConfirmedByTransactionID, transactionID)
+	return err
+}
+
+const updateStatusPaymentFailedByTransactionID = `-- name: UpdateStatusPaymentFailedByTransactionID :exec
+UPDATE public.payments
+SET status=(select id from public.md_payment_statuses WHERE code = 'FAILED'), updated_at=NOW()
+WHERE transaction_id=$1::text
+`
+
+func (q *Queries) UpdateStatusPaymentFailedByTransactionID(ctx context.Context, transactionID string) error {
+	_, err := q.db.Exec(ctx, updateStatusPaymentFailedByTransactionID, transactionID)
+	return err
+}
+
+const updateStatusPaymentPendingByTransactionID = `-- name: UpdateStatusPaymentPendingByTransactionID :exec
+UPDATE public.payments
+SET status=(select id from public.md_payment_statuses WHERE code = 'PENDING'), updated_at=NOW()
+WHERE transaction_id=$1::text
+`
+
+func (q *Queries) UpdateStatusPaymentPendingByTransactionID(ctx context.Context, transactionID string) error {
+	_, err := q.db.Exec(ctx, updateStatusPaymentPendingByTransactionID, transactionID)
+	return err
+}
+
+const updateStatusPaymentSuccessByTransactionID = `-- name: UpdateStatusPaymentSuccessByTransactionID :exec
+UPDATE public.payments
+SET status=(select id from public.md_payment_statuses WHERE code = 'SUCCESS'), paid_at=NOW(), updated_at=NOW()
+WHERE transaction_id=$1::text
+`
+
+func (q *Queries) UpdateStatusPaymentSuccessByTransactionID(ctx context.Context, transactionID string) error {
+	_, err := q.db.Exec(ctx, updateStatusPaymentSuccessByTransactionID, transactionID)
 	return err
 }

@@ -109,3 +109,31 @@ func (s *Handler) ListPaymentMethods(c *fiber.Ctx) error {
 
 	return middleware.ResponseOK(c, "get list payment methods success", result)
 }
+
+// GetPaymentLastStatusCodeByTransaction godoc
+// @Summary List payment methods
+// @Description Get list of available payment methods
+// @Tags Payment
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} middleware.SuccessResponse{data=[]domain.PaymentMethod}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /methods [get]
+func (s *Handler) GetPaymentLastStatusCodeByTransaction(c *fiber.Ctx) error {
+
+	transactionID := c.Params("transactionID")
+	result, customError := s.useCase.GetPaymentLastStatusCodeByTransaction(c.Context(), transactionID)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	response := LastStatusCodeResponse{
+		Code: result,
+	}
+
+	return middleware.ResponseOK(c, "get payment last status", response)
+}

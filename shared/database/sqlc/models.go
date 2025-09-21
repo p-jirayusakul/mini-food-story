@@ -11,50 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type PaymentStatus string
-
-const (
-	PaymentStatusPending  PaymentStatus = "pending"
-	PaymentStatusPaid     PaymentStatus = "paid"
-	PaymentStatusFailed   PaymentStatus = "failed"
-	PaymentStatusRefunded PaymentStatus = "refunded"
-)
-
-func (e *PaymentStatus) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = PaymentStatus(s)
-	case string:
-		*e = PaymentStatus(s)
-	default:
-		return fmt.Errorf("unsupported scan type for PaymentStatus: %T", src)
-	}
-	return nil
-}
-
-type NullPaymentStatus struct {
-	PaymentStatus PaymentStatus `json:"payment_status"`
-	Valid         bool          `json:"valid"` // Valid is true if PaymentStatus is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullPaymentStatus) Scan(value interface{}) error {
-	if value == nil {
-		ns.PaymentStatus, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.PaymentStatus.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullPaymentStatus) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.PaymentStatus), nil
-}
-
 type TableSessionStatus string
 
 const (
@@ -117,6 +73,26 @@ type MdOrderStatus struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type MdPaymentMethod struct {
+	ID        int64              `json:"id"`
+	Code      string             `json:"code"`
+	Name      string             `json:"name"`
+	NameEn    string             `json:"name_en"`
+	Enable    bool               `json:"enable"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MdPaymentStatus struct {
+	ID        int64              `json:"id"`
+	Code      string             `json:"code"`
+	Name      string             `json:"name"`
+	NameEn    string             `json:"name_en"`
+	IsFinal   bool               `json:"is_final"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
 type MdTableStatus struct {
 	ID        int64              `json:"id"`
 	Code      string             `json:"code"`
@@ -163,23 +139,13 @@ type Payment struct {
 	OrderID       int64              `json:"order_id"`
 	Amount        pgtype.Numeric     `json:"amount"`
 	Method        int64              `json:"method"`
-	Status        NullPaymentStatus  `json:"status"`
+	Status        int64              `json:"status"`
 	PaidAt        pgtype.Timestamptz `json:"paid_at"`
 	TransactionID string             `json:"transaction_id"`
 	RefCode       string             `json:"ref_code"`
+	Note          pgtype.Text        `json:"note"`
 	CreatedAt     pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt     pgtype.Timestamptz `json:"updated_at"`
-	Note          pgtype.Text        `json:"note"`
-}
-
-type PaymentMethod struct {
-	ID        int64              `json:"id"`
-	Code      string             `json:"code"`
-	Name      string             `json:"name"`
-	NameEn    string             `json:"name_en"`
-	Enable    bool               `json:"enable"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Product struct {

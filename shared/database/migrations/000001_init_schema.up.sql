@@ -4,13 +4,6 @@ CREATE TYPE "table_session_status" AS ENUM (
     'expired'
     );
 
-CREATE TYPE "payment_status" AS ENUM (
-    'pending',
-    'paid',
-    'failed',
-    'refunded'
-    );
-
 CREATE TABLE "md_table_statuses" (
                                      "id" bigint UNIQUE PRIMARY KEY NOT NULL,
                                      "code" varchar(15) UNIQUE NOT NULL,
@@ -37,6 +30,26 @@ CREATE TABLE "md_order_statuses" (
                                      "is_final" bool NOT NULL DEFAULT false,
                                      "created_at" timestamptz NOT NULL DEFAULT NOW(),
                                      "updated_at" timestamptz
+);
+
+CREATE TABLE "md_payment_methods" (
+                                      "id" bigint UNIQUE PRIMARY KEY NOT NULL,
+                                      "code" varchar(15) UNIQUE NOT NULL,
+                                      "name" varchar(100) UNIQUE NOT NULL,
+                                      "name_en" varchar(100) UNIQUE NOT NULL,
+                                      "enable" bool NOT NULL DEFAULT false,
+                                      "created_at" timestamptz NOT NULL DEFAULT NOW(),
+                                      "updated_at" timestamptz
+);
+
+CREATE TABLE "md_payment_statuses" (
+                                       "id" bigint UNIQUE PRIMARY KEY NOT NULL,
+                                       "code" varchar(15) UNIQUE NOT NULL,
+                                       "name" varchar(100) UNIQUE NOT NULL,
+                                       "name_en" varchar(100) UNIQUE NOT NULL,
+                                       "is_final" bool NOT NULL DEFAULT false,
+                                       "created_at" timestamptz NOT NULL DEFAULT NOW(),
+                                       "updated_at" timestamptz
 );
 
 CREATE TABLE "tables" (
@@ -108,23 +121,13 @@ CREATE TABLE "payments" (
                             "order_id" bigint NOT NULL,
                             "amount" numeric(10,2) NOT NULL DEFAULT 0,
                             "method" bigint NOT NULL,
-                            "status" payment_status DEFAULT 'pending',
+                            "status" bigint NOT NULL,
                             "paid_at" timestamptz,
                             "transaction_id" text UNIQUE NOT NULL,
                             "ref_code" varchar(150) UNIQUE NOT NULL,
+                            "note" text,
                             "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                            "updated_at" timestamptz,
-                            "note" text
-);
-
-CREATE TABLE "payment_methods" (
-                                   "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                                   "code" varchar(15) UNIQUE NOT NULL,
-                                   "name" varchar(100) UNIQUE NOT NULL,
-                                   "name_en" varchar(100) UNIQUE NOT NULL,
-                                   "enable" bool NOT NULL DEFAULT false,
-                                   "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                                   "updated_at" timestamptz
+                            "updated_at" timestamptz
 );
 
 CREATE INDEX ON "md_table_statuses" ("id");
@@ -136,6 +139,14 @@ CREATE INDEX ON "md_categories" ("id");
 CREATE INDEX ON "md_order_statuses" ("id");
 
 CREATE INDEX ON "md_order_statuses" ("code");
+
+CREATE INDEX ON "md_payment_methods" ("id");
+
+CREATE INDEX ON "md_payment_methods" ("code");
+
+CREATE INDEX ON "md_payment_statuses" ("id");
+
+CREATE INDEX ON "md_payment_statuses" ("code");
 
 CREATE INDEX ON "tables" ("id");
 
@@ -175,11 +186,7 @@ CREATE INDEX ON "payments" ("order_id");
 
 CREATE INDEX ON "payments" ("transaction_id");
 
-CREATE INDEX ON "payments" ("ref_code");
-
-CREATE INDEX ON "payment_methods" ("id");
-
-CREATE INDEX ON "payment_methods" ("code");
+CREATE INDEX "transaction_id_status" ON "payments" ("transaction_id", "status");
 
 COMMENT ON COLUMN "order_items"."prepared_at" IS 'เวลาที่ทำอาหารเสร็จ';
 
@@ -201,7 +208,9 @@ ALTER TABLE "order_items" ADD FOREIGN KEY ("status_id") REFERENCES "md_order_sta
 
 ALTER TABLE "payments" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id");
 
-ALTER TABLE "payments" ADD FOREIGN KEY ("method") REFERENCES "payment_methods" ("id");
+ALTER TABLE "payments" ADD FOREIGN KEY ("method") REFERENCES "md_payment_methods" ("id");
+
+ALTER TABLE "payments" ADD FOREIGN KEY ("status") REFERENCES "md_payment_statuses" ("id");
 
 -- Insert Master Data
 
@@ -210,22 +219,25 @@ INSERT INTO public.md_categories (id,name,name_en,created_at,updated_at) VALUES
                                                                              (1921144050476388352,'เครื่องดื่ม','Drink',NOW(),NULL),
                                                                              (1921144250070732800,'ขนม','Dessert',NOW(),NULL);
 
-INSERT INTO public.md_order_statuses (id,code,name,name_en,sort_order,is_final,created_at,updated_at) VALUES
-                                                                                                          (1921868485739155456,'PENDING','รอยืนยันออเดอร์','Pending',1,false,NOW(),NULL),
-                                                                                                          (1921868485739155457,'CONFIRMED','ยืนยันออเดอร์','Confirmed',2,false,NOW(),NULL),
-                                                                                                          (1921868485739155458,'PREPARING','กำลังเตรียมอาหาร','Preparing',3,false,NOW(),NULL),
-                                                                                                          (1921868485739155459,'SERVED','เสิร์ฟอาหารแล้ว','Served',4,false,NOW(),NULL),
-                                                                                                          (1921868485739155460,'WAITING_PAYMENT','รอชำระเงิน','Waiting for Payment',5,false,NOW(),NULL),
-                                                                                                          (1921868485739155461,'COMPLETED','เสร็จสิ้น','Completed',6,true,NOW(),NULL),
-                                                                                                          (1921868485739155462,'CANCELLED','ยกเลิก','Cancelled',7,true,NOW(),NULL);
-INSERT INTO public.md_table_statuses (id,code,name,name_en,created_at,updated_at) VALUES
-                                                                                      (1919968486671519744,'AVAILABLE','ว่าง','Available',NOW(),NULL),
-                                                                                      (1919968486843486208,'RESERVED','ถูกจองล่วงหน้า','Reserved',NOW(),NULL),
-                                                                                      (1919968486847680512,'OCCUPIED','มีลูกค้า','Occupied',NOW(),NULL),
-                                                                                      (1919968486847680513,'ORDERED','สั่งอาหารแล้ว','Ordered',NOW(),NULL),
-                                                                                      (1919968486847680514,'WAITING_PAYMENT','รอชำระเงิน','Waiting for Payment',NOW(),NULL),
-                                                                                      (1919968486847680515,'CLEANING','รอทำความสะอาด','Cleaning',NOW(),NULL),
-                                                                                      (1919968486847680516,'DISABLED','ปิดการใช้งานชั่วคราว','Disabled',NOW(),NULL);
+insert into public.md_order_statuses (id, code, name, name_en, sort_order, is_final, created_at, updated_at)
+values  (1921868485739155456, 'PENDING', 'รอยืนยันออเดอร์', 'Pending', 1, false, '2025-09-18 11:43:59.552632 +00:00', null),
+        (1921868485739155457, 'CONFIRMED', 'ยืนยันออเดอร์', 'Confirmed', 2, false, '2025-09-18 11:43:59.552632 +00:00', null),
+        (1921868485739155458, 'PREPARING', 'กำลังเตรียมอาหาร', 'Preparing', 3, false, '2025-09-18 11:43:59.552632 +00:00', null),
+        (1921868485739155459, 'SERVED', 'เสิร์ฟอาหารแล้ว', 'Served', 4, false, '2025-09-18 11:43:59.552632 +00:00', null),
+        (1921868485739155460, 'WAITING_PAYMENT', 'รอชำระเงิน', 'Waiting for Payment', 5, false, '2025-09-18 11:43:59.552632 +00:00', null),
+        (1921868485739155461, 'COMPLETED', 'เสร็จสิ้น', 'Completed', 6, true, '2025-09-18 11:43:59.552632 +00:00', null),
+        (1921868485739155462, 'CANCELLED', 'ยกเลิก', 'Cancelled', 7, true, '2025-09-18 11:43:59.552632 +00:00', null);
+
+insert into public.md_table_statuses (id, code, name, name_en, created_at, updated_at)
+values  (1919968486671519744, 'AVAILABLE', 'ว่าง', 'Available', '2025-09-18 11:43:59.552632 +00:00', null),
+        (1919968486843486208, 'RESERVED', 'ถูกจองล่วงหน้า', 'Reserved', '2025-09-18 11:43:59.552632 +00:00', null),
+        (1919968486847680514, 'WAITING_PAYMENT', 'รอชำระเงิน', 'Waiting for Payment', '2025-09-18 11:43:59.552632 +00:00', null),
+        (1919968486847680515, 'CLEANING', 'รอทำความสะอาด', 'Cleaning', '2025-09-18 11:43:59.552632 +00:00', null),
+        (1919968486847680516, 'DISABLED', 'ปิดการใช้งานชั่วคราว', 'Disabled', '2025-09-18 11:43:59.552632 +00:00', null),
+        (1919968486847680512, 'WAIT_ORDER', 'รอสั่ง', 'Waiting to Order', '2025-09-18 11:43:59.552632 +00:00', null),
+        (1919968486847680513, 'WAIT_SERVE', 'รอเสิร์ฟ', 'Waiting to be Served', '2025-09-18 11:43:59.552632 +00:00', null),
+        (1919968486847680517, 'FOOD_SERVED', 'อาหารครบแล้ว', 'Food Served', '2025-09-18 16:10:29.071839 +00:00', null),
+        (1919968486847680518, 'CALL_WAITER', 'เรียกพนักงาน', 'Call Waiter', '2025-09-18 16:10:29.071839 +00:00', null);
 
 
 INSERT INTO public.products (id,name,name_en,categories,description,price,is_available,image_url,created_at,updated_at) VALUES
@@ -243,7 +255,6 @@ INSERT INTO public."tables" (id,table_number,status_id,seats,created_at,updated_
                                                                                         (1919971956241731584,2,1919968486671519744,3,NOW(),NULL);
 
 
-INSERT INTO public.payment_methods (id,code,"name",name_en,"enable",created_at,updated_at) VALUES
+INSERT INTO public.md_payment_methods (id,code,"name",name_en,"enable",created_at,updated_at) VALUES
                                                                                                (1923732004537372672,'CASH','เงินสด','Cash',true,NOW(),NULL),
-                                                                                               (1923732004537372673,'CREDIT_CARD','บัตรเครดิต','Credit Card',true,NOW(),NULL),
                                                                                                (1923732004537372675,'PROMPTPAY','พร้อมเพย์','PromptPay',true,NOW(),NULL);

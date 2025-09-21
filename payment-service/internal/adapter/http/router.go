@@ -37,4 +37,5 @@ func (s *Handler) setupRoutes() {
 
 	group.Post("/", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{role}), s.CreatePaymentTransaction)
 	group.Get("/methods", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{role}), s.ListPaymentMethods)
+	group.Get("/transactions/:transactionID/stream", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{role}), s.GetPaymentLastStatusCodeByTransaction)
 }
