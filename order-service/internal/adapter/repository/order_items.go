@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"food-story/order-service/internal/domain"
-	"food-story/pkg/common"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
@@ -105,8 +104,8 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 	return shareModel.TransformOrderItemsResults(orderItems), nil
 }
 
-func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, pageNumber int64) (result domain.SearchCurrentOrderItemsResult, customError *exceptions.CustomError) {
-	pageSize, pageNumber := utils.CalculatePageSizeAndNumber(common.DefaultPageSize, pageNumber)
+func (i *Implement) GetCurrentOrderItems(ctx context.Context, orderID int64, pageNumberParam, pageSizeParam int64) (result domain.SearchCurrentOrderItemsResult, customError *exceptions.CustomError) {
+	pageSize, pageNumber := utils.CalculatePageSizeAndNumber(pageSizeParam, pageNumberParam)
 
 	customError = i.validateAndCheckOrder(ctx, orderID)
 	if customError != nil {

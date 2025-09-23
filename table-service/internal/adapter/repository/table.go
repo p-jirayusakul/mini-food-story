@@ -22,6 +22,7 @@ type TableRow interface {
 	GetStatusEN() string
 	GetStatusCode() string
 	GetSeats() int32
+	GetOrderID() *int64
 }
 
 func (i *Implement) IsTableAvailableOrReserved(ctx context.Context, tableID int64) *exceptions.CustomError {
@@ -296,6 +297,7 @@ func transformSearchResults[T TableRow](results []T) []*domain.Table {
 			StatusEn:    row.GetStatusEN(),
 			StatusCode:  row.GetStatusCode(),
 			Seats:       row.GetSeats(),
+			OrderID:     row.GetOrderID(),
 		}
 	}
 	return data

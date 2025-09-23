@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"context"
 	"errors"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
@@ -55,10 +54,6 @@ func (i *Implement) GetCurrentTableSession(sessionID uuid.UUID) (result shareMod
 	}
 
 	return *session, nil
-}
-
-func (i *Implement) GetSessionIDByTableID(ctx context.Context, tableID int64) (result uuid.UUID, customError *exceptions.CustomError) {
-	return i.repository.GetSessionIDByTableID(ctx, tableID)
 }
 
 func (i *Implement) IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError {

@@ -462,7 +462,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+WHERE o.id = $1::bigint AND (mos.is_final IS TRUE)
   AND (($2::varchar IS NULL OR oi."product_name" ILIKE '%' || $2::varchar || '%') OR ($2::varchar IS NULL OR oi.product_name_en ILIKE '%' || $2::varchar || '%'))
   AND (
     $3::varchar[] IS NULL
@@ -501,7 +501,7 @@ SELECT COUNT(*) > 0 as "isNotFinal"
 FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
-WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+WHERE o.id = $1::bigint AND (mos.is_final IS TRUE)
 `
 
 func (q *Queries) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (bool, error) {
@@ -679,7 +679,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+WHERE o.id = $1::bigint AND (mos.is_final IS TRUE)
   AND (($2::varchar IS NULL OR oi."product_name" ILIKE '%' || $2::varchar || '%') OR ($2::varchar IS NULL OR oi.product_name_en ILIKE '%' || $2::varchar || '%'))
   AND (
     $3::varchar[] IS NULL

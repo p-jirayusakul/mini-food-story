@@ -41,16 +41,17 @@ func (s *Handler) setupRoutes() {
 
 	// ใช้ middleware header ทีละ endpoint เพราะมีข้อจำกัดเรื่อง router group authentication
 	s.router.Post("/current", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.CreateOrder)
-	s.router.Get("/current", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetOrderByID)
+	s.router.Get("/current", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetCurrentOrderByID)
 	s.router.Post("/current/items", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.CreateOrderItems)
-	s.router.Get("/current/items", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetOrderItems)
-	s.router.Get("/current/items/:orderItemsID<int>", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetOrderItemsByID)
-	s.router.Patch("/current/items/:orderItemsID<int>/status/cancel", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.UpdateOrderItemsStatusCancel)
+	s.router.Get("/current/items", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetCurrentOrderItems)
+	s.router.Get("/current/items/:orderItemsID<int>", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.GetCurrentOrderItemsByID)
+	s.router.Patch("/current/items/:orderItemsID<int>/status/cancel", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.UpdateCurrentOrderItemsStatusCancel)
 
-	s.router.Get("/:id<int>/items/status/incomplete", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"WAITER", "CASHIER"}), s.SearchOrderItemsInComplete)
-	s.router.Get("/tables/:tableID<int>/items", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"WAITER", "CASHIER"}), s.GetOrderItemsByTableID)
-	s.router.Patch("/tables/:tableID<int>/items/:orderItemsID<int>/status/cancel", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"WAITER", "CASHIER"}), s.UpdateOrderItemsStatusCancelByTableID)
-	s.router.Patch("/tables/:tableID<int>/items/:orderItemsID<int>/status/serve", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"WAITER", "CASHIER"}), s.UpdateOrderItemsStatusServedByTableID)
+	var roles = []string{"WAITER", "CASHIER"}
+	s.router.Get("/:id<int>/items/status/incomplete", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.SearchOrderItemsInComplete)
+	s.router.Get("/:id<int>/items", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.GetOrderItems)
+	s.router.Patch("/:id<int>/items/:orderItemsID<int>/status/cancel", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.UpdateOrderItemsStatusCancel)
+	s.router.Patch("/:id<int>/items/:orderItemsID<int>/status/serve", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.UpdateOrderItemsStatusServed)
 }
 
 func (s *Handler) handleSessionID(c *fiber.Ctx) error {

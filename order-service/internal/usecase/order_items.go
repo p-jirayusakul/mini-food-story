@@ -39,7 +39,7 @@ func (i *Implement) CreateOrderItems(ctx context.Context, sessionID uuid.UUID, i
 	return
 }
 
-func (i *Implement) GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUID, pageNumber int64) (result domain.SearchCurrentOrderItemsResult, customError *exceptions.CustomError) {
+func (i *Implement) GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUID, pageNumber, pageSize int64) (result domain.SearchCurrentOrderItemsResult, customError *exceptions.CustomError) {
 	tableSession, customError := i.GetCurrentTableSession(sessionID)
 	if customError != nil {
 		return domain.SearchCurrentOrderItemsResult{}, customError
@@ -50,7 +50,7 @@ func (i *Implement) GetCurrentOrderItems(ctx context.Context, sessionID uuid.UUI
 		return domain.SearchCurrentOrderItemsResult{}, convertErr
 	}
 
-	return i.repository.GetCurrentOrderItems(ctx, orderID, pageNumber)
+	return i.repository.GetCurrentOrderItems(ctx, orderID, pageNumber, pageSize)
 }
 
 func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, sessionID uuid.UUID, orderItemsID int64) (result *domain.CurrentOrderItems, customError *exceptions.CustomError) {
@@ -67,14 +67,11 @@ func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, sessionID uuid
 	return i.repository.GetCurrentOrderItemsByID(ctx, orderID, orderItemsID)
 }
 
-func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
-	orderID, customError := i.GetOrderIDFromSession(sessionID)
-	if customError != nil {
-		return customError
-	}
+func (i *Implement) GetOrderItems(ctx context.Context, orderID, pageNumber, pageSize int64) (result domain.SearchCurrentOrderItemsResult, customError *exceptions.CustomError) {
+	return i.repository.GetCurrentOrderItems(ctx, orderID, pageNumber, pageSize)
+}
 
-	payload.OrderID = orderID
-
+func (i *Implement) UpdateOrderItemsStatusByID(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
 	customError = i.repository.UpdateOrderItemsStatus(ctx, payload)
 	if customError != nil {
 		return customError
@@ -98,6 +95,17 @@ func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.U
 	}
 
 	return
+}
+
+func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, sessionID uuid.UUID, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
+	orderID, customError := i.GetOrderIDFromSession(sessionID)
+	if customError != nil {
+		return customError
+	}
+
+	payload.OrderID = orderID
+
+	return i.UpdateOrderItemsStatusByID(ctx, payload)
 }
 
 func (i *Implement) SearchOrderItemsIncomplete(ctx context.Context, orderID int64, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {

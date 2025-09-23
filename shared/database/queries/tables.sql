@@ -54,9 +54,25 @@ SET status_id=(select id from public.md_table_statuses WHERE code = 'WAIT_ORDER'
 WHERE id=sqlc.arg(id)::bigint;
 
 -- name: SearchTables :many
-SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", s.code as "statusCode", t.seats
+SELECT
+    t.id,
+    t.table_number AS "tableNumber",
+    s.name         AS status,
+    s.name_en      AS "statusEN",
+    s.code         AS "statusCode",
+    t.seats,
+    CASE WHEN o_latest.id IS NOT NULL THEN o_latest.id END AS "orderID"
 FROM public.tables t
-         INNER JOIN public.md_table_statuses s ON t.status_id = s.id
+         JOIN public.md_table_statuses s ON t.status_id = s.id
+         LEFT JOIN LATERAL (
+    SELECT o.id
+    FROM public.table_session ts
+             JOIN public.orders o ON o.session_id = ts.session_id
+    WHERE ts.table_id = t.id
+      AND ts.status = 'active'
+    ORDER BY o.created_at DESC
+    LIMIT 1
+    ) AS o_latest ON TRUE
 WHERE (sqlc.narg(table_number)::int IS NULL OR t.table_number = sqlc.narg(table_number)::int)
   AND (sqlc.narg(seats)::int IS NULL OR t.seats = sqlc.narg(seats)::int)
   AND (
@@ -99,9 +115,25 @@ WHERE (sqlc.narg(table_number)::int IS NULL OR t.table_number = sqlc.narg(table_
     );
 
 -- name: QuickSearchTables :many
-SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", s.code as "statusCode", t.seats
+SELECT
+    t.id,
+    t.table_number AS "tableNumber",
+    s.name         AS status,
+    s.name_en      AS "statusEN",
+    s.code         AS "statusCode",
+    t.seats,
+    CASE WHEN o_latest.id IS NOT NULL THEN o_latest.id END AS "orderID"
 FROM public.tables t
-         INNER JOIN public.md_table_statuses s ON t.status_id = s.id
+         JOIN public.md_table_statuses s ON t.status_id = s.id
+         LEFT JOIN LATERAL (
+    SELECT o.id
+    FROM public.table_session ts
+             JOIN public.orders o ON o.session_id = ts.session_id
+    WHERE ts.table_id = t.id
+      AND ts.status = 'active'
+    ORDER BY o.created_at DESC
+    LIMIT 1
+    ) AS o_latest ON TRUE
 WHERE t.seats >= sqlc.arg(number_of_people)::integer AND s.code = 'AVAILABLE'
 ORDER BY CASE
              WHEN sqlc.arg(order_by_type)::text = 'asc' THEN

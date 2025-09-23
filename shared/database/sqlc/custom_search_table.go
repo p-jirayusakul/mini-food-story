@@ -25,6 +25,13 @@ func (q *QuickSearchTablesRow) GetSeats() int32 {
 	return q.Seats
 }
 
+func (q *QuickSearchTablesRow) GetOrderID() *int64 {
+	if q.OrderID.Valid {
+		return &q.OrderID.Int64
+	}
+	return nil
+}
+
 // GetID Implement TableRow for SearchTablesRow
 func (s *SearchTablesRow) GetID() int64 {
 	return s.ID
@@ -48,4 +55,11 @@ func (s *SearchTablesRow) GetStatusCode() string {
 
 func (s *SearchTablesRow) GetSeats() int32 {
 	return s.Seats
+}
+
+func (q *SearchTablesRow) GetOrderID() *int64 {
+	if q.OrderID.Valid {
+		return &q.OrderID.Int64
+	}
+	return nil
 }

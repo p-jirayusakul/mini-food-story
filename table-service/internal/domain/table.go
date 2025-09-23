@@ -7,6 +7,7 @@ type Table struct {
 	StatusEn    string `json:"statusEN" example:"Ordered"`
 	StatusCode  string `json:"statusCode" example:"ORDERED"`
 	Seats       int32  `json:"seats" example:"5"`
+	OrderID     *int64 `json:"orderID,string" example:"1923564209627467776"`
 }
 
 type TableStatus struct {

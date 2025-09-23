@@ -21,4 +21,5 @@ type SearchOrderItemsIncomplete struct {
 
 type SearchCurrentOrderItems struct {
 	PageNumber int64 `query:"pageNumber" example:"1"`
+	PageSize   int64 `query:"pageSize" example:"10"`
 }

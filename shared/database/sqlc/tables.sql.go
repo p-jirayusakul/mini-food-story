@@ -105,9 +105,25 @@ func (q *Queries) IsTableExists(ctx context.Context, id int64) (bool, error) {
 }
 
 const quickSearchTables = `-- name: QuickSearchTables :many
-SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", s.code as "statusCode", t.seats
+SELECT
+    t.id,
+    t.table_number AS "tableNumber",
+    s.name         AS status,
+    s.name_en      AS "statusEN",
+    s.code         AS "statusCode",
+    t.seats,
+    CASE WHEN o_latest.id IS NOT NULL THEN o_latest.id END AS "orderID"
 FROM public.tables t
-         INNER JOIN public.md_table_statuses s ON t.status_id = s.id
+         JOIN public.md_table_statuses s ON t.status_id = s.id
+         LEFT JOIN LATERAL (
+    SELECT o.id
+    FROM public.table_session ts
+             JOIN public.orders o ON o.session_id = ts.session_id
+    WHERE ts.table_id = t.id
+      AND ts.status = 'active'
+    ORDER BY o.created_at DESC
+    LIMIT 1
+    ) AS o_latest ON TRUE
 WHERE t.seats >= $1::integer AND s.code = 'AVAILABLE'
 ORDER BY CASE
              WHEN $2::text = 'asc' THEN
@@ -141,12 +157,13 @@ type QuickSearchTablesParams struct {
 }
 
 type QuickSearchTablesRow struct {
-	ID          int64  `json:"id"`
-	TableNumber int32  `json:"tableNumber"`
-	Status      string `json:"status"`
-	StatusEN    string `json:"statusEN"`
-	StatusCode  string `json:"statusCode"`
-	Seats       int32  `json:"seats"`
+	ID          int64       `json:"id"`
+	TableNumber int32       `json:"tableNumber"`
+	Status      string      `json:"status"`
+	StatusEN    string      `json:"statusEN"`
+	StatusCode  string      `json:"statusCode"`
+	Seats       int32       `json:"seats"`
+	OrderID     pgtype.Int8 `json:"orderID"`
 }
 
 func (q *Queries) QuickSearchTables(ctx context.Context, arg QuickSearchTablesParams) ([]*QuickSearchTablesRow, error) {
@@ -171,6 +188,7 @@ func (q *Queries) QuickSearchTables(ctx context.Context, arg QuickSearchTablesPa
 			&i.StatusEN,
 			&i.StatusCode,
 			&i.Seats,
+			&i.OrderID,
 		); err != nil {
 			return nil, err
 		}
@@ -183,9 +201,25 @@ func (q *Queries) QuickSearchTables(ctx context.Context, arg QuickSearchTablesPa
 }
 
 const searchTables = `-- name: SearchTables :many
-SELECT t.id, t.table_number as "tableNumber", s.name as status, s.name_en as "statusEN", s.code as "statusCode", t.seats
+SELECT
+    t.id,
+    t.table_number AS "tableNumber",
+    s.name         AS status,
+    s.name_en      AS "statusEN",
+    s.code         AS "statusCode",
+    t.seats,
+    CASE WHEN o_latest.id IS NOT NULL THEN o_latest.id END AS "orderID"
 FROM public.tables t
-         INNER JOIN public.md_table_statuses s ON t.status_id = s.id
+         JOIN public.md_table_statuses s ON t.status_id = s.id
+         LEFT JOIN LATERAL (
+    SELECT o.id
+    FROM public.table_session ts
+             JOIN public.orders o ON o.session_id = ts.session_id
+    WHERE ts.table_id = t.id
+      AND ts.status = 'active'
+    ORDER BY o.created_at DESC
+    LIMIT 1
+    ) AS o_latest ON TRUE
 WHERE ($1::int IS NULL OR t.table_number = $1::int)
   AND ($2::int IS NULL OR t.seats = $2::int)
   AND (
@@ -227,12 +261,13 @@ type SearchTablesParams struct {
 }
 
 type SearchTablesRow struct {
-	ID          int64  `json:"id"`
-	TableNumber int32  `json:"tableNumber"`
-	Status      string `json:"status"`
-	StatusEN    string `json:"statusEN"`
-	StatusCode  string `json:"statusCode"`
-	Seats       int32  `json:"seats"`
+	ID          int64       `json:"id"`
+	TableNumber int32       `json:"tableNumber"`
+	Status      string      `json:"status"`
+	StatusEN    string      `json:"statusEN"`
+	StatusCode  string      `json:"statusCode"`
+	Seats       int32       `json:"seats"`
+	OrderID     pgtype.Int8 `json:"orderID"`
 }
 
 func (q *Queries) SearchTables(ctx context.Context, arg SearchTablesParams) ([]*SearchTablesRow, error) {
@@ -259,6 +294,7 @@ func (q *Queries) SearchTables(ctx context.Context, arg SearchTablesParams) ([]*
 			&i.StatusEN,
 			&i.StatusCode,
 			&i.Seats,
+			&i.OrderID,
 		); err != nil {
 			return nil, err
 		}

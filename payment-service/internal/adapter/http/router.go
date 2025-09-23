@@ -31,11 +31,11 @@ func NewHTTPHandler(
 }
 
 func (s *Handler) setupRoutes() {
-	const role = "CASHIER"
+	role := []string{"CASHIER", "WAITER"}
 	group := s.router.Group("/")
 	group.Post("/callback", s.CallbackPaymentTransaction)
 
-	group.Post("/", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{role}), s.CreatePaymentTransaction)
-	group.Get("/methods", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{role}), s.ListPaymentMethods)
-	group.Get("/transactions/:transactionID/stream", s.auth.JWTMiddleware(), s.auth.RequireRole([]string{role}), s.GetPaymentLastStatusCodeByTransaction)
+	group.Post("/", s.auth.JWTMiddleware(), s.auth.RequireRole(role), s.CreatePaymentTransaction)
+	group.Get("/methods", s.auth.JWTMiddleware(), s.auth.RequireRole(role), s.ListPaymentMethods)
+	group.Get("/transactions/:transactionID/stream", s.StreamPaymentStatusByTransaction)
 }

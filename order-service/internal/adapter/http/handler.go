@@ -62,7 +62,7 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 	return middleware.ResponseCreated(c, "create order success", nil)
 }
 
-// GetOrderByID godoc
+// GetCurrentOrderByID godoc
 // @Summary Get order details by session ID
 // @Description Get current order details for the given session ID
 // @Tags Order
@@ -75,7 +75,7 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 // @Failure 403 {object} middleware.ErrorResponse
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /current [get]
-func (s *Handler) GetOrderByID(c *fiber.Ctx) error {
+func (s *Handler) GetCurrentOrderByID(c *fiber.Ctx) error {
 	sessionID, err := getSession(c)
 	if err != nil {
 		return err
@@ -143,7 +143,7 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 	return middleware.ResponseCreated(c, "create order item success", nil)
 }
 
-// GetOrderItems godoc
+// GetCurrentOrderItems godoc
 // @Summary Get order items for current session
 // @Description Get all order items for the current table session with pagination
 // @Tags Order
@@ -157,7 +157,7 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 // @Failure 403 {object} middleware.ErrorResponse
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /current/items [get]
-func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
+func (s *Handler) GetCurrentOrderItems(c *fiber.Ctx) error {
 	sessionID, err := getSession(c)
 	if err != nil {
 		return err
@@ -172,7 +172,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, body.PageNumber)
+	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, body.PageNumber, body.PageSize)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -180,7 +180,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get order items success", result)
 }
 
-// GetOrderItemsByID godoc
+// GetCurrentOrderItemsByID godoc
 // @Summary Get order item details by ID
 // @Description Get specific order item details for current table session
 // @Tags Order
@@ -195,7 +195,7 @@ func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 // @Failure 404 {object} middleware.ErrorResponse
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /current/items/{orderItemsID} [get]
-func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
+func (s *Handler) GetCurrentOrderItemsByID(c *fiber.Ctx) error {
 	sessionID, err := getSession(c)
 	if err != nil {
 		return err
@@ -214,7 +214,7 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get order item success", result)
 }
 
-// UpdateOrderItemsStatusCancel godoc
+// UpdateCurrentOrderItemsStatusCancel godoc
 // @Summary Cancel order item
 // @Description Update order item status to cancelled for current table session
 // @Tags Order
@@ -229,7 +229,7 @@ func (s *Handler) GetOrderItemsByID(c *fiber.Ctx) error {
 // @Failure 404 {object} middleware.ErrorResponse
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /current/items/{orderItemsID}/status/cancel [patch]
-func (s *Handler) UpdateOrderItemsStatusCancel(c *fiber.Ctx) error {
+func (s *Handler) UpdateCurrentOrderItemsStatusCancel(c *fiber.Ctx) error {
 	sessionID, err := getSession(c)
 	if err != nil {
 		return err
@@ -308,7 +308,7 @@ func (s *Handler) SearchOrderItemsInComplete(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get order items success", result)
 }
 
-// GetOrderItemsByTableID godoc
+// GetOrderItems godoc
 // @Summary Get order items for current session
 // @Description Get all order items for the current table session with pagination
 // @Tags Order
@@ -322,8 +322,8 @@ func (s *Handler) SearchOrderItemsInComplete(c *fiber.Ctx) error {
 // @Failure 403 {object} middleware.ErrorResponse
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /current/items [get]
-func (s *Handler) GetOrderItemsByTableID(c *fiber.Ctx) error {
-	tableID, err := utils.StrToInt64(c.Params("tableID"))
+func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
+	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -337,12 +337,7 @@ func (s *Handler) GetOrderItemsByTableID(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	sessionID, customError := s.useCase.GetSessionIDByTableID(c.Context(), tableID)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
-	}
-
-	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, body.PageNumber)
+	result, customError := s.useCase.GetOrderItems(c.Context(), orderID, body.PageNumber, body.PageSize)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -350,7 +345,7 @@ func (s *Handler) GetOrderItemsByTableID(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get order items success", result)
 }
 
-// UpdateOrderItemsStatusCancelByTableID godoc
+// UpdateOrderItemsStatusCancel godoc
 // @Summary Cancel order item
 // @Description Update order item status to cancelled for current table session
 // @Tags Order
@@ -364,17 +359,12 @@ func (s *Handler) GetOrderItemsByTableID(c *fiber.Ctx) error {
 // @Failure 403 {object} middleware.ErrorResponse
 // @Failure 404 {object} middleware.ErrorResponse
 // @Failure 500 {object} middleware.ErrorResponse
-// @Router /tables/{tableID}/items/{orderItemsID}/status/cancel [patch]
-func (s *Handler) UpdateOrderItemsStatusCancelByTableID(c *fiber.Ctx) error {
+// @Router /{id}/items/{orderItemsID}/status/cancel [patch]
+func (s *Handler) UpdateOrderItemsStatusCancel(c *fiber.Ctx) error {
 
-	tableID, err := utils.StrToInt64(c.Params("tableID"))
+	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	sessionID, customError := s.useCase.GetSessionIDByTableID(c.Context(), tableID)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
 	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))
@@ -382,8 +372,9 @@ func (s *Handler) UpdateOrderItemsStatusCancelByTableID(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	customError = s.useCase.UpdateOrderItemsStatus(c.Context(), sessionID, shareModel.OrderItemsStatus{
+	customError := s.useCase.UpdateOrderItemsStatusByID(c.Context(), shareModel.OrderItemsStatus{
 		ID:         orderItemsID,
+		OrderID:    orderID,
 		StatusCode: "CANCELLED",
 	})
 	if customError != nil {
@@ -393,13 +384,12 @@ func (s *Handler) UpdateOrderItemsStatusCancelByTableID(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "update order item status success", nil)
 }
 
-// UpdateOrderItemsStatusServedByTableID godoc
+// UpdateOrderItemsStatusServed godoc
 // @Summary Cancel order item
 // @Description Update order item status to cancelled for current table session
 // @Tags Order
 // @Accept json
 // @Produce json
-// @Param X-Session-Id header string true "Session ID"
 // @Param orderItemsID path string true "Order Item ID"
 // @Success 200 {object} middleware.SuccessResponse
 // @Failure 400 {object} middleware.ErrorResponse
@@ -407,17 +397,12 @@ func (s *Handler) UpdateOrderItemsStatusCancelByTableID(c *fiber.Ctx) error {
 // @Failure 403 {object} middleware.ErrorResponse
 // @Failure 404 {object} middleware.ErrorResponse
 // @Failure 500 {object} middleware.ErrorResponse
-// @Router /tables/{tableID}/items/{orderItemsID}/status/cancel [patch]
-func (s *Handler) UpdateOrderItemsStatusServedByTableID(c *fiber.Ctx) error {
+// @Router /{id}/items/{orderItemsID}/status/serve [patch]
+func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
 
-	tableID, err := utils.StrToInt64(c.Params("tableID"))
+	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	sessionID, customError := s.useCase.GetSessionIDByTableID(c.Context(), tableID)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
 	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))
@@ -425,8 +410,9 @@ func (s *Handler) UpdateOrderItemsStatusServedByTableID(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	customError = s.useCase.UpdateOrderItemsStatus(c.Context(), sessionID, shareModel.OrderItemsStatus{
+	customError := s.useCase.UpdateOrderItemsStatusByID(c.Context(), shareModel.OrderItemsStatus{
 		ID:         orderItemsID,
+		OrderID:    orderID,
 		StatusCode: "SERVED",
 	})
 	if customError != nil {
