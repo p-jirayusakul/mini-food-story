@@ -34,6 +34,10 @@ func (i *Implement) UpdateTableStatus(ctx context.Context, tableStatus domain.Ta
 	return i.repository.UpdateTablesStatus(ctx, tableStatus)
 }
 
+func (i *Implement) UpdateTableStatusAvailable(ctx context.Context, tableID int64) (customError *exceptions.CustomError) {
+	return i.repository.UpdateTablesStatusAvailable(ctx, tableID)
+}
+
 func (i *Implement) SearchTableByFilters(ctx context.Context, search domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError) {
 	return i.repository.SearchTables(ctx, search)
 }

@@ -53,6 +53,16 @@ UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'WAIT_ORDER'), updated_at = NOW()
 WHERE id=sqlc.arg(id)::bigint;
 
+-- name: UpdateTablesStatusWaitingForPayment :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'WAITING_PAYMENT'), updated_at = NOW()
+WHERE id=sqlc.arg(id)::bigint;
+
+-- name: UpdateTablesStatusCleaning :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'CLEANING'), updated_at = NOW()
+WHERE id=sqlc.arg(id)::bigint;
+
 -- name: SearchTables :many
 SELECT
     t.id,

@@ -314,3 +314,33 @@ func (s *Handler) CreateTableSession(c *fiber.Ctx) error {
 		URL: result,
 	})
 }
+
+// UpdateTableStatusAvailable godoc
+// @Summary Update table status
+// @Description Update status for existing table
+// @Tags Table
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Table ID"
+// @Param status body updateTableStatus true "Table status details"
+// @Success 200 {object} middleware.SuccessResponse
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 404 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /{id}/status/available [patch]
+func (s *Handler) UpdateTableStatusAvailable(c *fiber.Ctx) error {
+	id, err := utils.StrToInt64(c.Params("id"))
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	customError := s.useCase.UpdateTableStatusAvailable(c.Context(), id)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "update table status success", nil)
+}

@@ -44,6 +44,17 @@ func (q *Queries) CreatePayment(ctx context.Context, arg CreatePaymentParams) (i
 	return id, err
 }
 
+const getPaymentAmountByTransaction = `-- name: GetPaymentAmountByTransaction :one
+SELECT amount::numeric FROM public.payments WHERE transaction_id =$1::text LIMIT 1
+`
+
+func (q *Queries) GetPaymentAmountByTransaction(ctx context.Context, transactionID string) (pgtype.Numeric, error) {
+	row := q.db.QueryRow(ctx, getPaymentAmountByTransaction, transactionID)
+	var amount pgtype.Numeric
+	err := row.Scan(&amount)
+	return amount, err
+}
+
 const getPaymentLastStatusCodeByTransaction = `-- name: GetPaymentLastStatusCodeByTransaction :one
 select mps.code from public.payments as p
 LEFT JOIN public.md_payment_statuses as mps ON mps.id = p.status

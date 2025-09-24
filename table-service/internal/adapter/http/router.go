@@ -41,6 +41,7 @@ func (s *Handler) setupRoutes() {
 
 	group.Put("/:id<int>", s.UpdateTable)
 	group.Patch("/:id<int>/status", s.UpdateTableStatus)
+	group.Patch("/:id<int>/status/available", s.UpdateTableStatusAvailable)
 	group.Get("", s.SearchTable)
 	group.Get("/quick-search", s.QuickSearchTable)
 

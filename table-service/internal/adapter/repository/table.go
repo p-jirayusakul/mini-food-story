@@ -236,6 +236,17 @@ func (i *Implement) QuickSearchAvailableTable(ctx context.Context, search domain
 	}, nil
 }
 
+func (i *Implement) UpdateTablesStatusAvailable(ctx context.Context, tableID int64) (customError *exceptions.CustomError) {
+	err := i.repository.UpdateTablesStatusAvailable(ctx, tableID)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to update table status: %w", err),
+		}
+	}
+	return nil
+}
+
 func (i *Implement) fetchTables(ctx context.Context, params database.SearchTablesParams) ([]*database.SearchTablesRow, *exceptions.CustomError) {
 	result, err := i.repository.SearchTables(ctx, params)
 	if err != nil {

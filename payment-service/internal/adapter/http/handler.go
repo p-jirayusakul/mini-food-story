@@ -137,40 +137,44 @@ func (s *Handler) StreamPaymentStatusByTransaction(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).SendString("handler/useCase is nil")
 	}
 
+	// SSE headers
 	c.Set("Content-Type", "text/event-stream")
 	c.Set("Cache-Control", "no-cache, no-transform")
 	c.Set("Connection", "keep-alive")
+	// (ถ้ามี Nginx) ปิดการ buffer:
+	c.Set("X-Accel-Buffering", "no")
 
-	// 🟢 จับ fasthttp.RequestCtx ไว้ก่อน ห้ามเรียก c.Context() ภายใน writer อีก
-	rc := c.Context()
+	// 🟢 copy ค่าจาก c ออกมาก่อนเข้า writer
+	rc := c.Context()          // fasthttp.RequestCtx (เพื่อเอา Done())
+	notify := rc.Done()        // <-chan struct{}, ห้ามเรียก c.Context() ใน writer อีก
+	baseCtx := c.UserContext() // stdlib context อาจเป็น nil
+	if baseCtx == nil {
+		baseCtx = context.Background()
+	}
+	txIDCopy := txID // ป้องกัน capture ตัวแปร outer
+
 	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
+		// กัน panic ทั้งหมดใน stream แล้ว log stack
 		defer func() {
 			if r := recover(); r != nil {
-				// log ฝั่ง server ให้เห็นจุดพังจริง
-				fmt.Printf("[SSE panic] tx=%s err=%v\n%s\n", txID, r, debug.Stack())
-				// ส่งข้อความเบา ๆ ไปให้ client
+				fmt.Printf("[SSE panic] tx=%s err=%v\n%s\n", txIDCopy, r, debug.Stack())
 				_ = writeSSE(w, "error", "", `{"message":"internal panic"}`)
 			}
 		}()
 
-		// base context (อาจเป็น nil)
-		base := c.UserContext()
-		if base == nil {
-			base = context.Background()
-		}
-		ctx, cancel := context.WithCancel(base)
+		// context สำหรับ DB + lifecycle ของ SSE (อ้างจาก baseCtx ที่ copy ไว้แล้ว)
+		ctx, cancel := context.WithCancel(baseCtx)
 		defer cancel()
 
-		// 🔔 channel จาก fasthttp ที่จะแจ้งเมื่อ client ปิดการเชื่อมต่อ
-		notify := rc.Done()
-
-		// init status
-		last, err := s.useCase.GetPaymentLastStatusCodeByTransaction(ctx, txID)
+		// --- init event ครั้งแรก ---
+		last, err := s.useCase.GetPaymentLastStatusCodeByTransaction(ctx, txIDCopy)
 		if err != nil {
 			_ = writeSSE(w, "error", "0", `{"message":"get current status failed"}`)
 			return
 		}
-		_ = writeSSE(w, "init", "0", fmt.Sprintf(`{"id":"%s","status":"%s"}`, txID, last))
+		if err := writeSSE(w, "init", "0", fmt.Sprintf(`{"id":"%s","status":"%s"}`, txIDCopy, last)); err != nil {
+			return
+		}
 		if finalStatus[last] {
 			return
 		}
@@ -187,7 +191,7 @@ func (s *Handler) StreamPaymentStatusByTransaction(c *fiber.Ctx) error {
 			case <-ctx.Done():
 				return
 			case <-notify:
-				// client ปิด → ยกเลิก context DB แล้วจบ
+				// client ปิด → cancel แล้วจบ
 				cancel()
 				return
 			case <-heartbeat.C:
@@ -196,7 +200,7 @@ func (s *Handler) StreamPaymentStatusByTransaction(c *fiber.Ctx) error {
 					return
 				}
 			case <-tick.C:
-				cur, err := s.useCase.GetPaymentLastStatusCodeByTransaction(ctx, txID)
+				cur, err := s.useCase.GetPaymentLastStatusCodeByTransaction(ctx, txIDCopy)
 				if err != nil {
 					_ = writeSSE(w, "error", fmt.Sprint(evID), `{"message":"poll failed"}`)
 					cancel()
@@ -206,7 +210,7 @@ func (s *Handler) StreamPaymentStatusByTransaction(c *fiber.Ctx) error {
 					last = cur
 					evID++
 					if err := writeSSE(w, "update", fmt.Sprint(evID),
-						fmt.Sprintf(`{"id":"%s","status":"%s"}`, txID, cur)); err != nil {
+						fmt.Sprintf(`{"id":"%s","status":"%s"}`, txIDCopy, cur)); err != nil {
 						cancel()
 						return
 					}
@@ -219,6 +223,33 @@ func (s *Handler) StreamPaymentStatusByTransaction(c *fiber.Ctx) error {
 	})
 
 	return nil
+}
+
+// PaymentTransactionQR godoc
+// @Summary List payment methods
+// @Description Get list of available payment methods
+// @Tags Payment
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} middleware.SuccessResponse{data=[]domain.PaymentMethod}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /methods [get]
+func (s *Handler) PaymentTransactionQR(c *fiber.Ctx) error {
+	txID := c.Params("transactionID")
+	if txID == "" {
+		return c.Status(fiber.StatusBadRequest).SendString("missing transactionID")
+	}
+
+	result, customError := s.useCase.PaymentTransactionQR(c.Context(), txID)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get payment transaction QR success", result)
 }
 
 // ชุดสถานะที่ถือว่า final (ปรับตาม md_payment_statuses ของคุณ)

@@ -31,6 +31,9 @@ WHERE transaction_id=sqlc.arg(transaction_id)::text;
 -- name: GetPaymentOrderIDByTransaction :one
 SELECT order_id as "orderID" FROM public.payments WHERE transaction_id =sqlc.arg(transaction_id)::text LIMIT 1;
 
+-- name: GetPaymentAmountByTransaction :one
+SELECT amount::numeric FROM public.payments WHERE transaction_id =sqlc.arg(transaction_id)::text LIMIT 1;
+
 -- name: GetPaymentLastStatusCodeByTransaction :one
 select mps.code from public.payments as p
 LEFT JOIN public.md_payment_statuses as mps ON mps.id = p.status

@@ -17,6 +17,7 @@ type UseCase interface {
 	SearchTableByFilters(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
 	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError)
 	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError)
+	UpdateTableStatusAvailable(ctx context.Context, tableID int64) (customError *exceptions.CustomError)
 }
 
 type Implement struct {

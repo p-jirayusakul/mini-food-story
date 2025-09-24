@@ -44,3 +44,15 @@ func (i *Implement) IsOrderExist(ctx context.Context, orderID int64) (customErro
 
 	return nil
 }
+
+func (i *Implement) GetTableIDByOrderID(ctx context.Context, orderID int64) (result int64, customError *exceptions.CustomError) {
+	tableID, err := i.repository.GetTableIDByOrderID(ctx, orderID)
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get table by order id: %w", err),
+		}
+	}
+
+	return tableID, nil
+}

@@ -137,7 +137,42 @@ func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionI
 		}
 	}
 
+	tableID, customError := i.GetTableIDByOrderID(ctx, orderID)
+	if customError != nil {
+		return customError
+	}
+
+	customError = i.UpdateTablesStatusCleaning(ctx, tableID)
+	if customError != nil {
+		return customError
+	}
+
 	return nil
+}
+
+func (i *Implement) GetPaymentAmountByTransaction(ctx context.Context, transactionID string) (result float64, customError *exceptions.CustomError) {
+	amount, err := i.repository.GetPaymentAmountByTransaction(ctx, transactionID)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return 0, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: fmt.Errorf(FailToGetTotalAmount, err),
+			}
+		}
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: err,
+		}
+	}
+	amountFloat, err := amount.Float64Value()
+	if err != nil {
+		return 0, &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: err,
+		}
+	}
+
+	return amountFloat.Float64, nil
 }
 
 func GenerateRefCode() string {

@@ -350,6 +350,17 @@ func (q *Queries) UpdateTablesStatusAvailable(ctx context.Context, id int64) err
 	return err
 }
 
+const updateTablesStatusCleaning = `-- name: UpdateTablesStatusCleaning :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'CLEANING'), updated_at = NOW()
+WHERE id=$1::bigint
+`
+
+func (q *Queries) UpdateTablesStatusCleaning(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusCleaning, id)
+	return err
+}
+
 const updateTablesStatusDisabled = `-- name: UpdateTablesStatusDisabled :exec
 UPDATE public.tables
 SET status_id=(select id from public.md_table_statuses WHERE code = 'DISABLED'), updated_at = NOW()
@@ -391,6 +402,17 @@ WHERE id=$1::bigint
 
 func (q *Queries) UpdateTablesStatusWaitToOrder(ctx context.Context, id int64) error {
 	_, err := q.db.Exec(ctx, updateTablesStatusWaitToOrder, id)
+	return err
+}
+
+const updateTablesStatusWaitingForPayment = `-- name: UpdateTablesStatusWaitingForPayment :exec
+UPDATE public.tables
+SET status_id=(select id from public.md_table_statuses WHERE code = 'WAITING_PAYMENT'), updated_at = NOW()
+WHERE id=$1::bigint
+`
+
+func (q *Queries) UpdateTablesStatusWaitingForPayment(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, updateTablesStatusWaitingForPayment, id)
 	return err
 }
 

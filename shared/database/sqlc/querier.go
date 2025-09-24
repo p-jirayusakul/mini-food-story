@@ -26,6 +26,7 @@ type Querier interface {
 	GetOrderWithItems(ctx context.Context, arg GetOrderWithItemsParams) ([]*GetOrderWithItemsRow, error)
 	GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error)
 	GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []int64) ([]*GetOrderWithItemsGroupIDRow, error)
+	GetPaymentAmountByTransaction(ctx context.Context, transactionID string) (pgtype.Numeric, error)
 	GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (pgtype.Text, error)
 	GetPaymentOrderIDByTransaction(ctx context.Context, transactionID string) (int64, error)
 	GetPaymentStatusPending(ctx context.Context) (int64, error)
@@ -81,10 +82,12 @@ type Querier interface {
 	UpdateTables(ctx context.Context, arg UpdateTablesParams) error
 	UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error
 	UpdateTablesStatusAvailable(ctx context.Context, id int64) error
+	UpdateTablesStatusCleaning(ctx context.Context, id int64) error
 	UpdateTablesStatusDisabled(ctx context.Context, id int64) error
 	UpdateTablesStatusFoodServed(ctx context.Context, id int64) error
 	UpdateTablesStatusReserved(ctx context.Context, id int64) error
 	UpdateTablesStatusWaitToOrder(ctx context.Context, id int64) error
+	UpdateTablesStatusWaitingForPayment(ctx context.Context, id int64) error
 	UpdateTablesStatusWaitingToBeServed(ctx context.Context, id int64) error
 }
 
