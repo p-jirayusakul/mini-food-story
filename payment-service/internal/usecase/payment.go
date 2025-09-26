@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/howeyc/crc16"
 )
 
@@ -24,16 +25,6 @@ func (i *PaymentImplement) CreatePaymentTransaction(ctx context.Context, payload
 	}
 
 	transactionID, customError = i.repository.CreatePaymentTransaction(ctx, payload)
-	if customError != nil {
-		return "", customError
-	}
-
-	tableID, customError := i.repository.GetTableIDByOrderID(ctx, payload.OrderID)
-	if customError != nil {
-		return "", customError
-	}
-
-	customError = i.repository.UpdateTablesStatusWaitingForPayment(ctx, tableID)
 	if customError != nil {
 		return "", customError
 	}
@@ -85,11 +76,18 @@ func (i *PaymentImplement) PaymentTransactionQR(ctx context.Context, transaction
 	}, nil
 }
 
-func (i *PaymentImplement) CallbackPaymentTransaction(ctx context.Context, transactionID string) (customError *exceptions.CustomError) {
+func (i *PaymentImplement) CallbackPaymentTransaction(ctx context.Context, transactionID string, statusCode string) (customError *exceptions.CustomError) {
 
-	customError = i.repository.CallbackPaymentTransaction(ctx, transactionID)
+	sessionID, customError := i.repository.CallbackPaymentTransaction(ctx, transactionID, statusCode)
 	if customError != nil {
 		return customError
+	}
+
+	if sessionID != uuid.Nil {
+		customError = i.cache.DeleteCachedTable(sessionID)
+		if customError != nil {
+			return customError
+		}
 	}
 
 	return nil

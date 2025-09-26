@@ -10,6 +10,7 @@ import (
 	database "food-story/shared/database/sqlc"
 	"log/slog"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -65,6 +66,16 @@ func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain
 		}
 	}
 
+	tableID, customError := i.GetTableIDByOrderID(ctx, payload.OrderID)
+	if customError != nil {
+		return "", customError
+	}
+
+	customError = i.UpdateTablesStatusWaitingForPayment(ctx, tableID)
+	if customError != nil {
+		return "", customError
+	}
+
 	return transactionID, nil
 }
 
@@ -95,43 +106,94 @@ func (i *Implement) GetPaymentLastStatusCodeByTransaction(ctx context.Context, t
 	return result.String, nil
 }
 
-func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionID string) (customError *exceptions.CustomError) {
-	err := i.repository.UpdateStatusPaymentSuccessByTransactionID(ctx, transactionID)
-	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
+func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionID, statusCode string) (sessionID uuid.UUID, customError *exceptions.CustomError) {
+
+	if statusCode == "" || statusCode == "PENDING" {
+		return uuid.Nil, nil
+	}
+
+	if strings.ToUpper(statusCode) != "SUCCESS" {
+		switch statusCode {
+		case "CANCELLED":
+			err := i.repository.UpdateStatusPaymentCancelledByTransactionID(ctx, transactionID)
+			if err != nil {
+				return uuid.Nil, &exceptions.CustomError{
+					Status: exceptions.ERRREPOSITORY,
+					Errors: err,
+				}
+			}
+		case "FAILED":
+			err := i.repository.UpdateStatusPaymentFailedByTransactionID(ctx, transactionID)
+			if err != nil {
+				return uuid.Nil, &exceptions.CustomError{
+					Status: exceptions.ERRREPOSITORY,
+					Errors: err,
+				}
+			}
+		case "TIMEOUT":
+			err := i.repository.UpdateStatusPaymentTimeOutByTransactionID(ctx, transactionID)
+			if err != nil {
+				return uuid.Nil, &exceptions.CustomError{
+					Status: exceptions.ERRREPOSITORY,
+					Errors: err,
+				}
+			}
+		default:
+			return uuid.Nil, &exceptions.CustomError{
+				Status: exceptions.ERRREPOSITORY,
+				Errors: errors.New("status code not supported"),
+			}
+		}
+	} else {
+		err := i.repository.UpdateStatusPaymentSuccessByTransactionID(ctx, transactionID)
+		if err != nil {
+			return uuid.Nil, &exceptions.CustomError{
+				Status: exceptions.ERRREPOSITORY,
+				Errors: err,
+			}
 		}
 	}
 
 	orderID, err := i.repository.GetPaymentOrderIDByTransaction(ctx, transactionID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return &exceptions.CustomError{
+			return uuid.Nil, &exceptions.CustomError{
 				Status: exceptions.ERRNOTFOUND,
 				Errors: exceptions.ErrOrderNotFound,
 			}
 		}
 
-		return &exceptions.CustomError{
+		return uuid.Nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
 			Errors: err,
 		}
 	}
 
+	if strings.ToUpper(statusCode) != "SUCCESS" {
+		err = i.repository.UpdateOrderStatusWaitForPayment(ctx, orderID)
+		if err != nil {
+			return uuid.Nil, &exceptions.CustomError{
+				Status: exceptions.ERRREPOSITORY,
+				Errors: err,
+			}
+		}
+		return uuid.Nil, nil
+	}
+
 	amount, err := i.repository.GetTotalAmountToPayForServedItems(ctx, orderID)
 	if err != nil {
-		return &exceptions.CustomError{
+		return uuid.Nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
 			Errors: fmt.Errorf(FailToGetTotalAmount, err),
 		}
 	}
+
 	err = i.repository.UpdateOrderStatusCompletedAndAmount(ctx, database.UpdateOrderStatusCompletedAndAmountParams{
 		ID:     orderID,
 		Amount: amount,
 	})
 	if err != nil {
-		return &exceptions.CustomError{
+		return uuid.Nil, &exceptions.CustomError{
 			Status: exceptions.ERRREPOSITORY,
 			Errors: err,
 		}
@@ -139,15 +201,25 @@ func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionI
 
 	tableID, customError := i.GetTableIDByOrderID(ctx, orderID)
 	if customError != nil {
-		return customError
+		return uuid.Nil, customError
 	}
 
 	customError = i.UpdateTablesStatusCleaning(ctx, tableID)
 	if customError != nil {
-		return customError
+		return uuid.Nil, customError
 	}
 
-	return nil
+	sessionID, customError = i.GetSessionIDByOrderID(ctx, orderID)
+	if customError != nil {
+		return uuid.Nil, customError
+	}
+
+	customError = i.UpdateStatusCloseTableSession(ctx, sessionID)
+	if customError != nil {
+		return uuid.Nil, customError
+	}
+
+	return sessionID, nil
 }
 
 func (i *Implement) GetPaymentAmountByTransaction(ctx context.Context, transactionID string) (result float64, customError *exceptions.CustomError) {

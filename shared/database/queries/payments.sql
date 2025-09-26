@@ -28,6 +28,11 @@ UPDATE public.payments
 SET status=(select id from public.md_payment_statuses WHERE code = 'FAILED'), updated_at=NOW()
 WHERE transaction_id=sqlc.arg(transaction_id)::text;
 
+-- name: UpdateStatusPaymentTimeOutByTransactionID :exec
+UPDATE public.payments
+SET status=(select id from public.md_payment_statuses WHERE code = 'TIMEOUT'), updated_at=NOW()
+WHERE transaction_id=sqlc.arg(transaction_id)::text;
+
 -- name: GetPaymentOrderIDByTransaction :one
 SELECT order_id as "orderID" FROM public.payments WHERE transaction_id =sqlc.arg(transaction_id)::text LIMIT 1;
 

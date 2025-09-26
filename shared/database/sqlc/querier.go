@@ -32,6 +32,7 @@ type Querier interface {
 	GetPaymentStatusPending(ctx context.Context) (int64, error)
 	GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error)
 	GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error)
+	GetSessionIDByOrderID(ctx context.Context, id int64) (pgtype.UUID, error)
 	GetSessionIDByTableID(ctx context.Context, tableID int64) (pgtype.UUID, error)
 	GetTableIDByOrderID(ctx context.Context, orderID int64) (int64, error)
 	GetTableNumber(ctx context.Context, id int64) (int32, error)
@@ -79,6 +80,7 @@ type Querier interface {
 	UpdateStatusPaymentFailedByTransactionID(ctx context.Context, transactionID string) error
 	UpdateStatusPaymentPendingByTransactionID(ctx context.Context, transactionID string) error
 	UpdateStatusPaymentSuccessByTransactionID(ctx context.Context, transactionID string) error
+	UpdateStatusPaymentTimeOutByTransactionID(ctx context.Context, transactionID string) error
 	UpdateTables(ctx context.Context, arg UpdateTablesParams) error
 	UpdateTablesStatus(ctx context.Context, arg UpdateTablesStatusParams) error
 	UpdateTablesStatusAvailable(ctx context.Context, id int64) error

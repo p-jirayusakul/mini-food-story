@@ -8,4 +8,5 @@ type Payment struct {
 
 type CallbackPayment struct {
 	TransactionID string `json:"transactionID" validate:"required" example:"e88ac32b-c940-4102-a51f-c7a2e7ed6622"`
+	Status        string `json:"status" validate:"required" example:"SUCCESS"`
 }

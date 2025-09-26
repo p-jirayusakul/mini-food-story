@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"food-story/pkg/exceptions"
+
+	"github.com/google/uuid"
 )
 
 func (i *Implement) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (customError *exceptions.CustomError) {
@@ -55,4 +57,25 @@ func (i *Implement) GetTableIDByOrderID(ctx context.Context, orderID int64) (res
 	}
 
 	return tableID, nil
+}
+
+func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, customError *exceptions.CustomError) {
+	sessionIDData, err := i.repository.GetSessionIDByOrderID(ctx, orderID)
+	if err != nil {
+		return uuid.Nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get table by order id: %w", err),
+		}
+	}
+
+	sessionIDString := sessionIDData.String()
+	sessionID, err := uuid.Parse(sessionIDString)
+	if err != nil {
+		return uuid.Nil, &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: fmt.Errorf("failed to get session by order id: %w", err),
+		}
+	}
+
+	return sessionID, nil
 }

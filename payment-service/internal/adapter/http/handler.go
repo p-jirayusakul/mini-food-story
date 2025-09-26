@@ -85,7 +85,7 @@ func (s *Handler) CallbackPaymentTransaction(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	customError := s.useCase.CallbackPaymentTransaction(c.Context(), body.TransactionID)
+	customError := s.useCase.CallbackPaymentTransaction(c.Context(), body.TransactionID, body.Status)
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
@@ -258,6 +258,7 @@ var finalStatus = map[string]bool{
 	"FAILED":    true,
 	"CANCELLED": true,
 	"REFUNDED":  true,
+	"TIMEOUT":   true,
 }
 
 // ส่ง event ในรูปแบบ SSE มาตรฐาน

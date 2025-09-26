@@ -134,3 +134,14 @@ func (q *Queries) UpdateStatusPaymentSuccessByTransactionID(ctx context.Context,
 	_, err := q.db.Exec(ctx, updateStatusPaymentSuccessByTransactionID, transactionID)
 	return err
 }
+
+const updateStatusPaymentTimeOutByTransactionID = `-- name: UpdateStatusPaymentTimeOutByTransactionID :exec
+UPDATE public.payments
+SET status=(select id from public.md_payment_statuses WHERE code = 'TIMEOUT'), updated_at=NOW()
+WHERE transaction_id=$1::text
+`
+
+func (q *Queries) UpdateStatusPaymentTimeOutByTransactionID(ctx context.Context, transactionID string) error {
+	_, err := q.db.Exec(ctx, updateStatusPaymentTimeOutByTransactionID, transactionID)
+	return err
+}

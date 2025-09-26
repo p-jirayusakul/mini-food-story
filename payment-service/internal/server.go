@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"encoding/json"
+	"food-story/payment-service/internal/adapter/cache"
 	paymenthd "food-story/payment-service/internal/adapter/http"
 	"food-story/payment-service/internal/adapter/repository"
 	"food-story/payment-service/internal/usecase"
@@ -10,8 +11,10 @@ import (
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
 	database "food-story/shared/database/sqlc"
+	"food-story/shared/redis"
 	"food-story/shared/snowflakeid"
 	"log"
+	"log/slog"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -67,6 +70,9 @@ func New() *FiberServer {
 	}
 	store := database.NewStore(dbConn)
 
+	// connect to redis
+	redisConn := redis.NewRedisClient(configApp.RedisAddress, configApp.RedisPassword, 0)
+
 	// Create a new Node with a Node number of 1
 	node := snowflakeid.CreateSnowflakeNode(1)
 	snowflakeNode := snowflakeid.NewSnowflake(node)
@@ -87,12 +93,12 @@ func New() *FiberServer {
 		},
 		LivenessEndpoint: common.LivenessEndpoint,
 		ReadinessProbe: func(c *fiber.Ctx) bool {
-			return readiness(c.Context(), dbConn)
+			return readiness(c.Context(), dbConn, redisConn)
 		},
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
 
 	return &FiberServer{
 		App:    app,
@@ -101,13 +107,26 @@ func New() *FiberServer {
 	}
 }
 
-func readiness(ctx context.Context, dbConn *pgxpool.Pool) bool {
-	return dbConn.Ping(ctx) == nil
+func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.RedisClient) bool {
+	dbErr := dbConn.Ping(ctx)
+	if dbErr != nil {
+		slog.Error("ping database", "error: ", dbErr)
+		return false
+	}
+
+	redisErr := redisConn.Client.Ping(ctx).Err()
+	if redisErr != nil {
+		slog.Error("ping redis", "error: ", redisErr)
+		return false
+	}
+
+	return true
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
+	paymentCache := cache.NewRedisTableCache(redisConn)
 	paymentRepo := repository.NewRepository(configApp, store, snowflakeNode)
-	paymentCase := usecase.NewUsecase(configApp, *paymentRepo)
+	paymentCase := usecase.NewUsecase(configApp, *paymentRepo, paymentCache)
 
 	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
 	paymenthd.NewHTTPHandler(router, paymentCase, validator, authInstance)

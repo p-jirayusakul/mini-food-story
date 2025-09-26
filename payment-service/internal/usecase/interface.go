@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"food-story/payment-service/internal/adapter/cache"
 	"food-story/payment-service/internal/adapter/repository"
 	"food-story/payment-service/internal/domain"
 	"food-story/pkg/exceptions"
@@ -11,7 +12,7 @@ import (
 type PaymentUsecase interface {
 	ListPaymentMethods(ctx context.Context) (result []*domain.PaymentMethod, customError *exceptions.CustomError)
 	CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, customError *exceptions.CustomError)
-	CallbackPaymentTransaction(ctx context.Context, transactionID string) (customError *exceptions.CustomError)
+	CallbackPaymentTransaction(ctx context.Context, transactionID string, statusCode string) (customError *exceptions.CustomError)
 	GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (result string, customError *exceptions.CustomError)
 	PaymentTransactionQR(ctx context.Context, transactionID string) (result domain.TransactionQR, customError *exceptions.CustomError)
 }
@@ -19,12 +20,14 @@ type PaymentUsecase interface {
 type PaymentImplement struct {
 	config     config.Config
 	repository repository.Implement
+	cache      cache.RedisTableCacheInterface
 }
 
-func NewUsecase(config config.Config, repository repository.Implement) *PaymentImplement {
+func NewUsecase(config config.Config, repository repository.Implement, cache cache.RedisTableCacheInterface) *PaymentImplement {
 	return &PaymentImplement{
 		config,
 		repository,
+		cache,
 	}
 }
 

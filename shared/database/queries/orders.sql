@@ -291,3 +291,6 @@ WHERE o.id = sqlc.arg(order_id)::bigint AND (mos.code != 'SERVED' AND mos.code !
 
 -- name: GetTableIDByOrderID :one
 SELECT table_id FROM public.orders WHERE id = sqlc.arg(order_id)::bigint;
+
+-- name: GetSessionIDByOrderID :one
+select session_id as "sessionID" from public.orders where id = sqlc.arg(id)::bigint LIMIT 1;
