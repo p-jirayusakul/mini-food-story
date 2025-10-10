@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
@@ -174,6 +175,9 @@ func (s *Handler) GetCurrentOrderItems(c *fiber.Ctx) error {
 
 	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, body.PageNumber, body.PageSize)
 	if customError != nil {
+		if errors.Is(customError.Errors, exceptions.ErrOrderNotFound) {
+			return middleware.ResponseOK(c, "get order items success", []domain.SearchCurrentOrderItemsResult{})
+		}
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
 	}
 
