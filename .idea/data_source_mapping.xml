@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/shared/database/migrations/000001_init_schema.up.sql" value="bda72426-7c46-46de-a6b5-b3ab42fd6325" />
+    <file url="file://$PROJECT_DIR$/shared/database/queries/order_items.sql" value="bda72426-7c46-46de-a6b5-b3ab42fd6325" />
+    <file url="file://$PROJECT_DIR$/shared/database/queries/orders.sql" value="bda72426-7c46-46de-a6b5-b3ab42fd6325" />
+  </component>
+</project>

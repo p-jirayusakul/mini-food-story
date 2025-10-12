@@ -319,16 +319,17 @@ func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []sha
 		}
 
 		result[index] = database.CreateOrderItemsParams{
-			ID:            i.snowflakeID.Generate(),
-			OrderID:       item.OrderID,
-			ProductID:     product.ID,
-			StatusID:      statusPreparingID,
-			ProductName:   product.Name,
-			ProductNameEn: product.NameEn,
-			Price:         product.Price,
-			Quantity:      item.Quantity,
-			Note:          utils.StringPtrToPgText(item.Note),
-			CreatedAt:     currentTime,
+			ID:              i.snowflakeID.Generate(),
+			OrderID:         item.OrderID,
+			ProductID:       product.ID,
+			StatusID:        statusPreparingID,
+			ProductName:     product.Name,
+			ProductNameEn:   product.NameEn,
+			Price:           product.Price,
+			Quantity:        item.Quantity,
+			Note:            utils.StringPtrToPgText(item.Note),
+			CreatedAt:       currentTime,
+			ProductImageUrl: product.ImageUrl,
 		}
 	}
 
@@ -383,6 +384,7 @@ type CurrentOrderItemsRow interface {
 	GetStatusCode() string
 	GetProductName() string
 	GetProductNameEN() string
+	GetImageURL() pgtype.Text
 	GetPrice() pgtype.Numeric
 	GetQuantity() int32
 	GetNote() pgtype.Text
@@ -399,6 +401,7 @@ func transformCurrentOrderItemsByIDResults[T CurrentOrderItemsRow](results T) *d
 		StatusCode:    results.GetStatusCode(),
 		ProductName:   results.GetProductName(),
 		ProductNameEN: results.GetProductNameEN(),
+		ImageURL:      utils.PgTextToStringPtr(results.GetImageURL()),
 		Price:         utils.PgNumericToFloat64(results.GetPrice()),
 		Quantity:      results.GetQuantity(),
 		Note:          utils.PgTextToStringPtr(results.GetNote()),

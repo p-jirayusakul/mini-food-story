@@ -79,6 +79,7 @@ SELECT o.id  AS "orderID",
        oi.product_id as "productID",
        oi.product_name as "productName",
        oi.product_name_en as "productNameEN",
+       oi.product_image_url as "imageURL",
        oi.quantity,
        (oi.price * oi.quantity) as "price",
        oi.status_id as "statusID",
@@ -103,6 +104,7 @@ type GetOrderItemsByOrderIDRow struct {
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
 	ProductNameEN string             `json:"productNameEN"`
+	ImageURL      pgtype.Text        `json:"imageURL"`
 	Quantity      int32              `json:"quantity"`
 	Price         pgtype.Numeric     `json:"price"`
 	StatusID      int64              `json:"statusID"`
@@ -130,6 +132,7 @@ func (q *Queries) GetOrderItemsByOrderID(ctx context.Context, orderID int64) ([]
 			&i.ProductID,
 			&i.ProductName,
 			&i.ProductNameEN,
+			&i.ImageURL,
 			&i.Quantity,
 			&i.Price,
 			&i.StatusID,
@@ -157,6 +160,7 @@ SELECT o.id  AS "orderID",
        oi.product_id as "productID",
        oi.product_name as "productName",
        oi.product_name_en as "productNameEN",
+       oi.product_image_url as "imageURL",
        oi.quantity,
        (oi.price * oi.quantity) as "price",
        oi.status_id as "statusID",
@@ -188,6 +192,7 @@ type GetOrderWithItemsRow struct {
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
 	ProductNameEN string             `json:"productNameEN"`
+	ImageURL      pgtype.Text        `json:"imageURL"`
 	Quantity      int32              `json:"quantity"`
 	Price         pgtype.Numeric     `json:"price"`
 	StatusID      int64              `json:"statusID"`
@@ -215,6 +220,7 @@ func (q *Queries) GetOrderWithItems(ctx context.Context, arg GetOrderWithItemsPa
 			&i.ProductID,
 			&i.ProductName,
 			&i.ProductNameEN,
+			&i.ImageURL,
 			&i.Quantity,
 			&i.Price,
 			&i.StatusID,
@@ -242,6 +248,7 @@ SELECT o.id  AS "orderID",
        oi.product_id as "productID",
        oi.product_name as "productName",
        oi.product_name_en as "productNameEN",
+       oi.product_image_url as "imageURL",
        oi.quantity,
        (oi.price * oi.quantity) as "price",
        oi.status_id as "statusID",
@@ -270,6 +277,7 @@ type GetOrderWithItemsByIDRow struct {
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
 	ProductNameEN string             `json:"productNameEN"`
+	ImageURL      pgtype.Text        `json:"imageURL"`
 	Quantity      int32              `json:"quantity"`
 	Price         pgtype.Numeric     `json:"price"`
 	StatusID      int64              `json:"statusID"`
@@ -291,6 +299,7 @@ func (q *Queries) GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithIte
 		&i.ProductID,
 		&i.ProductName,
 		&i.ProductNameEN,
+		&i.ImageURL,
 		&i.Quantity,
 		&i.Price,
 		&i.StatusID,
@@ -311,6 +320,7 @@ SELECT o.id  AS "orderID",
        oi.product_id as "productID",
        oi.product_name as "productName",
        oi.product_name_en as "productNameEN",
+       oi.product_image_url as "imageURL",
        oi.quantity,
        (oi.price * oi.quantity) as "price",
        oi.status_id as "statusID",
@@ -335,6 +345,7 @@ type GetOrderWithItemsGroupIDRow struct {
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
 	ProductNameEN string             `json:"productNameEN"`
+	ImageURL      pgtype.Text        `json:"imageURL"`
 	Quantity      int32              `json:"quantity"`
 	Price         pgtype.Numeric     `json:"price"`
 	StatusID      int64              `json:"statusID"`
@@ -362,6 +373,7 @@ func (q *Queries) GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []i
 			&i.ProductID,
 			&i.ProductName,
 			&i.ProductNameEN,
+			&i.ImageURL,
 			&i.Quantity,
 			&i.Price,
 			&i.StatusID,
@@ -548,6 +560,7 @@ SELECT o.id  AS "orderID",
        oi.product_id as "productID",
        oi.product_name as "productName",
        oi.product_name_en as "productNameEN",
+       oi.product_image_url as "imageURL",
        t.table_number as "tableNumber",
        oi.quantity,
        (oi.price * oi.quantity) as "price",
@@ -615,6 +628,7 @@ type SearchOrderItemsRow struct {
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
 	ProductNameEN string             `json:"productNameEN"`
+	ImageURL      pgtype.Text        `json:"imageURL"`
 	TableNumber   int32              `json:"tableNumber"`
 	Quantity      int32              `json:"quantity"`
 	Price         pgtype.Numeric     `json:"price"`
@@ -650,6 +664,7 @@ func (q *Queries) SearchOrderItems(ctx context.Context, arg SearchOrderItemsPara
 			&i.ProductID,
 			&i.ProductName,
 			&i.ProductNameEN,
+			&i.ImageURL,
 			&i.TableNumber,
 			&i.Quantity,
 			&i.Price,
@@ -677,6 +692,7 @@ SELECT o.id  AS "orderID",
        oi.product_id as "productID",
        oi.product_name as "productName",
        oi.product_name_en as "productNameEN",
+       oi.product_image_url as "imageURL",
        t.table_number as "tableNumber",
        oi.quantity,
        (oi.price * oi.quantity) as "price",
@@ -737,6 +753,7 @@ type SearchOrderItemsIsNotFinalRow struct {
 	ProductID     int64              `json:"productID"`
 	ProductName   string             `json:"productName"`
 	ProductNameEN string             `json:"productNameEN"`
+	ImageURL      pgtype.Text        `json:"imageURL"`
 	TableNumber   int32              `json:"tableNumber"`
 	Quantity      int32              `json:"quantity"`
 	Price         pgtype.Numeric     `json:"price"`
@@ -772,6 +789,7 @@ func (q *Queries) SearchOrderItemsIsNotFinal(ctx context.Context, arg SearchOrde
 			&i.ProductID,
 			&i.ProductName,
 			&i.ProductNameEN,
+			&i.ImageURL,
 			&i.TableNumber,
 			&i.Quantity,
 			&i.Price,

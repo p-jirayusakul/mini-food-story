@@ -12,16 +12,17 @@ import (
 )
 
 type CreateOrderItemsParams struct {
-	ID            int64              `json:"id"`
-	OrderID       int64              `json:"order_id"`
-	ProductID     int64              `json:"product_id"`
-	StatusID      int64              `json:"status_id"`
-	ProductName   string             `json:"product_name"`
-	ProductNameEn string             `json:"product_name_en"`
-	Price         pgtype.Numeric     `json:"price"`
-	Quantity      int32              `json:"quantity"`
-	Note          pgtype.Text        `json:"note"`
-	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+	ID              int64              `json:"id"`
+	OrderID         int64              `json:"order_id"`
+	ProductID       int64              `json:"product_id"`
+	StatusID        int64              `json:"status_id"`
+	ProductName     string             `json:"product_name"`
+	ProductNameEn   string             `json:"product_name_en"`
+	Price           pgtype.Numeric     `json:"price"`
+	Quantity        int32              `json:"quantity"`
+	Note            pgtype.Text        `json:"note"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	ProductImageUrl pgtype.Text        `json:"product_image_url"`
 }
 
 const getOrderItemsByID = `-- name: GetOrderItemsByID :one

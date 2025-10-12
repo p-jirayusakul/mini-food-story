@@ -10,6 +10,7 @@ type CurrentOrderItems struct {
 	StatusCode    string  `json:"statusCode" example:"PREPARING"`
 	ProductName   string  `json:"productName" example:"ข้าวผัด"`
 	ProductNameEN string  `json:"productNameEN" example:"Fried rice"`
+	ImageURL      *string `json:"imageURL" example:"https://example.com/image.jpg"`
 	Price         float64 `json:"price" example:"60"`
 	Quantity      int32   `json:"quantity" example:"1"`
 	Note          *string `json:"note" example:"lorem ipsum"`

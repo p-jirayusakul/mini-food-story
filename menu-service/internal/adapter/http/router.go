@@ -39,6 +39,7 @@ func (s *Handler) setupRoutes() {
 	group.Get("", s.SearchMenu)
 	group.Get("/:id<int>", s.GetProductByID)
 	group.Get("/category", s.CategoryList)
+	group.Get("/session/current", s.SessionCurrent)
 }
 
 func (s *Handler) handleSessionID(c *fiber.Ctx) error {

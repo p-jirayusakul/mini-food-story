@@ -17,6 +17,7 @@ type OrderItemsRow interface {
 	GetStatusCode() string
 	GetProductName() string
 	GetProductNameEN() string
+	GetImageURL() pgtype.Text
 	GetTableNumber() int32
 	GetPrice() pgtype.Numeric
 	GetQuantity() int32
@@ -30,6 +31,7 @@ type OrderItems struct {
 	OrderNumber   string  `json:"orderNumber" example:"FS-20250523-0001"`
 	ProductID     int64   `json:"productID,string" example:"1921822053405560832"`
 	StatusID      int64   `json:"statusID,string" example:"1921868485739155458"`
+	ImageURL      *string `json:"imageURL" example:"https://example.com/image.jpg"`
 	TableNumber   int32   `json:"tableNumber" example:"1"`
 	StatusName    string  `json:"statusName" example:"กำลังเตรียมอาหาร"`
 	StatusNameEN  string  `json:"statusNameEN" example:"Preparing"`
@@ -56,6 +58,7 @@ func TransformOrderItemsByIDResults[T OrderItemsRow](results T) *OrderItems {
 		OrderNumber:   results.GetOrderNumber(),
 		ProductID:     results.GetProductID(),
 		StatusID:      results.GetStatusID(),
+		ImageURL:      utils.PgTextToStringPtr(results.GetImageURL()),
 		TableNumber:   results.GetTableNumber(),
 		StatusName:    results.GetStatusName(),
 		StatusNameEN:  results.GetStatusNameEN(),

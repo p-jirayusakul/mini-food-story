@@ -1,7 +1,7 @@
 -- name: CreateOrderItems :copyfrom
 INSERT INTO public.order_items
-(id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note, created_at)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+(id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note, created_at, product_image_url)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 
 -- name: GetOrderItemsByID :one
 SELECT id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note

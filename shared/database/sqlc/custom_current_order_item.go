@@ -44,6 +44,10 @@ func (q *GetOrderWithItemsRow) GetProductNameEN() string {
 	return q.ProductNameEN
 }
 
+func (q *GetOrderWithItemsRow) GetImageURL() pgtype.Text {
+	return q.ImageURL
+}
+
 func (q *GetOrderWithItemsRow) GetTableNumber() int32 {
 	return q.TableNumber
 }

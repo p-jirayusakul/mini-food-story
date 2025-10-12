@@ -114,15 +114,16 @@ type Order struct {
 }
 
 type OrderItem struct {
-	ID            int64          `json:"id"`
-	OrderID       int64          `json:"order_id"`
-	ProductID     int64          `json:"product_id"`
-	StatusID      int64          `json:"status_id"`
-	ProductName   string         `json:"product_name"`
-	ProductNameEn string         `json:"product_name_en"`
-	Price         pgtype.Numeric `json:"price"`
-	Quantity      int32          `json:"quantity"`
-	Note          pgtype.Text    `json:"note"`
+	ID              int64          `json:"id"`
+	OrderID         int64          `json:"order_id"`
+	ProductID       int64          `json:"product_id"`
+	StatusID        int64          `json:"status_id"`
+	ProductName     string         `json:"product_name"`
+	ProductNameEn   string         `json:"product_name_en"`
+	ProductImageUrl pgtype.Text    `json:"product_image_url"`
+	Price           pgtype.Numeric `json:"price"`
+	Quantity        int32          `json:"quantity"`
+	Note            pgtype.Text    `json:"note"`
 	// เวลาที่ทำอาหารเสร็จ
 	PreparedAt pgtype.Timestamptz `json:"prepared_at"`
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`

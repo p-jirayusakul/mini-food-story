@@ -103,6 +103,7 @@ CREATE TABLE "order_items" (
                                "status_id" bigint NOT NULL,
                                "product_name" varchar(255) NOT NULL,
                                "product_name_en" varchar(255) NOT NULL,
+                               "product_image_url" text,
                                "price" numeric(10,2) NOT NULL DEFAULT 0,
                                "quantity" int NOT NULL DEFAULT 1,
                                "note" text,
@@ -240,12 +241,12 @@ values  (1919968486671519744, 'AVAILABLE', 'ว่าง', 'Available', '2025-09
         (1919968486847680518, 'CALL_WAITER', 'เรียกพนักงาน', 'Call Waiter', '2025-09-18 16:10:29.071839 +00:00', null);
 
 
-INSERT INTO public.products (id,name,name_en,categories,description,price,is_available,image_url,created_at,updated_at) VALUES
-                                                                                                                            (1921822053405560832,'ข้าวผัด','Fried rice',1921143886227443712,'lorem ipso',60.00,true,NULL,NOW(),NULL),
-                                                                                                                            (1921822481287483392,'เค้กแครอท','Carrot cake',1921144250070732800,'lorem ipso',120.00,true,NULL,NOW(),NULL),
-                                                                                                                            (1921822608437809152,'แป๊ปซี่','Pepsi',1921144050476388352,'lorem ipso',30.00,true,NULL,NOW(),NULL),
-                                                                                                                            (1921828287366041600,'ข้าวผัดกระเพรา','Phat kaphrao',1921143886227443712,'lorem ipso',70.50,true,NULL,NOW(),NULL),
-                                                                                                                            (1921821817723424768,'ข้าวมันไก่','Chicken rice',1921143886227443712,'lorem ipso',80.00,true,NULL,NOW(),NULL);
+insert into public.products (id, name, name_en, categories, description, price, is_available, image_url, created_at, updated_at)
+values  (1921822053405560832, 'ข้าวผัด', 'Fried rice', 1921143886227443712, 'lorem ipso', 60.00, true, 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null),
+        (1921828287366041600, 'ข้าวผัดกระเพรา', 'Phat kaphrao', 1921143886227443712, 'lorem ipso', 70.50, true, 'https://images.unsplash.com/photo-1694499792070-48e64a00cf0a?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null),
+        (1921821817723424768, 'ข้าวมันไก่', 'Chicken rice', 1921143886227443712, 'lorem ipso', 80.00, true, 'https://images.unsplash.com/photo-1749640566096-5d8098d452b4?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null),
+        (1921822608437809152, 'แป๊ปซี่', 'Pepsi', 1921144050476388352, 'lorem ipso', 30.00, true, 'https://images.unsplash.com/photo-1651000877733-fe2c0a70b3cd?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null),
+        (1921822481287483392, 'เค้กแครอท', 'Carrot cake', 1921144250070732800, 'lorem ipso', 120.00, true, 'https://images.unsplash.com/photo-1622926421334-6829deee4b4b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null);
 
 INSERT INTO public."tables" (id,table_number,status_id,seats,created_at,updated_at) VALUES
                                                                                         (1920153361642950656,5,1919968486671519744,4,NOW(),NULL),

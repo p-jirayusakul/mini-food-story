@@ -107,3 +107,20 @@ func (s *Handler) GetProductByID(c *fiber.Ctx) error {
 
 	return middleware.ResponseOK(c, "get menu success", result)
 }
+
+// SessionCurrent godoc
+// @Summary Get list of categories
+// @Description Get list of all available product categories
+// @Tags Category
+// @Accept json
+// @Produce json
+// @Param X-Session-Id header string true "Session ID"
+// @Success 200 {object} middleware.SuccessResponse{data=[]domain.Category}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /session/current [get]
+func (s *Handler) SessionCurrent(c *fiber.Ctx) error {
+	return middleware.ResponseOK(c, "get session success", nil)
+}

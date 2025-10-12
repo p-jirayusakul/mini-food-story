@@ -106,6 +106,10 @@ func (q *GetOrderWithItemsGroupIDRow) GetProductNameEN() string {
 	return q.ProductNameEN
 }
 
+func (q *GetOrderWithItemsGroupIDRow) GetImageURL() pgtype.Text {
+	return q.ImageURL
+}
+
 func (q *GetOrderWithItemsGroupIDRow) GetPrice() pgtype.Numeric {
 	return q.Price
 }
@@ -166,6 +170,10 @@ func (q *SearchOrderItemsRow) GetProductName() string {
 
 func (q *SearchOrderItemsRow) GetProductNameEN() string {
 	return q.ProductNameEN
+}
+
+func (q *SearchOrderItemsRow) GetImageURL() pgtype.Text {
+	return q.ImageURL
 }
 
 func (q *SearchOrderItemsRow) GetPrice() pgtype.Numeric {
@@ -230,6 +238,10 @@ func (q *SearchOrderItemsIsNotFinalRow) GetProductNameEN() string {
 	return q.ProductNameEN
 }
 
+func (q *SearchOrderItemsIsNotFinalRow) GetImageURL() pgtype.Text {
+	return q.ImageURL
+}
+
 func (q *SearchOrderItemsIsNotFinalRow) GetPrice() pgtype.Numeric {
 	return q.Price
 }
@@ -292,6 +304,10 @@ func (q *GetOrderWithItemsByIDRow) GetProductNameEN() string {
 	return q.ProductNameEN
 }
 
+func (q *GetOrderWithItemsByIDRow) GetImageURL() pgtype.Text {
+	return q.ImageURL
+}
+
 func (q *GetOrderWithItemsByIDRow) GetPrice() pgtype.Numeric {
 	return q.Price
 }
@@ -352,6 +368,10 @@ func (q *GetOrderItemsByOrderIDRow) GetProductName() string {
 
 func (q *GetOrderItemsByOrderIDRow) GetProductNameEN() string {
 	return q.ProductNameEN
+}
+
+func (q *GetOrderItemsByOrderIDRow) GetImageURL() pgtype.Text {
+	return q.ImageURL
 }
 
 func (q *GetOrderItemsByOrderIDRow) GetPrice() pgtype.Numeric {
