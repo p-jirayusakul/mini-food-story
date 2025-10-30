@@ -7,16 +7,19 @@ package database
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const listCategory = `-- name: ListCategory :many
-SELECT id, "name", name_en as "nameEN" FROM public.md_categories ORDER BY id DESC
+SELECT id, "name", name_en as "nameEN", icon_name as "icon" FROM public.md_categories ORDER BY sort_order
 `
 
 type ListCategoryRow struct {
-	ID     int64  `json:"id"`
-	Name   string `json:"name"`
-	NameEN string `json:"nameEN"`
+	ID     int64       `json:"id"`
+	Name   string      `json:"name"`
+	NameEN string      `json:"nameEN"`
+	Icon   pgtype.Text `json:"icon"`
 }
 
 func (q *Queries) ListCategory(ctx context.Context) ([]*ListCategoryRow, error) {
@@ -28,7 +31,12 @@ func (q *Queries) ListCategory(ctx context.Context) ([]*ListCategoryRow, error) 
 	items := []*ListCategoryRow{}
 	for rows.Next() {
 		var i ListCategoryRow
-		if err := rows.Scan(&i.ID, &i.Name, &i.NameEN); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.NameEN,
+			&i.Icon,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, &i)

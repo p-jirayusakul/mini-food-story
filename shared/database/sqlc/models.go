@@ -58,6 +58,8 @@ type MdCategory struct {
 	ID        int64              `json:"id"`
 	Name      string             `json:"name"`
 	NameEn    string             `json:"name_en"`
+	IconName  pgtype.Text        `json:"icon_name"`
+	SortOrder int32              `json:"sort_order"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }

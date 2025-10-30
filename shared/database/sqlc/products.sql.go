@@ -202,7 +202,7 @@ ORDER BY CASE
                      WHEN $5::text = 'id' THEN p.id::text
                      WHEN $5::text = 'name' THEN p."name"
                      WHEN $5::text = 'price' THEN p.price::text
-                     ELSE p.id::text
+                     ELSE c.sort_order::text
                      END
              END,
          CASE
@@ -211,7 +211,7 @@ ORDER BY CASE
                      WHEN $5::text = 'id' THEN p.id::text
                      WHEN $5::text = 'name' THEN p."name"
                      WHEN $5::text = 'price' THEN p.price::text
-                     ELSE p.id::text
+                     ELSE c.sort_order::text
                      END
              END DESC
 OFFSET $6 LIMIT $7

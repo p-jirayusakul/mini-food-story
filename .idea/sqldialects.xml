@@ -2,11 +2,13 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/shared/database/migrations/000001_init_schema.up.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/shared/database/queries/md_categories.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/md_table_statuses.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/order_items.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/order_sequences.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/orders.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/payments.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/shared/database/queries/products.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/table_session.sql" dialect="PostgreSQL" />
   </component>
 </project>

@@ -17,6 +17,8 @@ CREATE TABLE "md_categories" (
                                  "id" bigint UNIQUE PRIMARY KEY NOT NULL,
                                  "name" varchar(100) UNIQUE NOT NULL,
                                  "name_en" varchar(100) UNIQUE NOT NULL,
+                                 icon_name  varchar(50),
+                                 "sort_order" int UNIQUE NOT NULL,
                                  "created_at" timestamptz NOT NULL DEFAULT NOW(),
                                  "updated_at" timestamptz
 );
@@ -215,10 +217,10 @@ ALTER TABLE "payments" ADD FOREIGN KEY ("status") REFERENCES "md_payment_statuse
 
 -- Insert Master Data
 
-INSERT INTO public.md_categories (id,name,name_en,created_at,updated_at) VALUES
-                                                                             (1921143886227443712,'อาหาร','Food',NOW(),NULL),
-                                                                             (1921144050476388352,'เครื่องดื่ม','Drink',NOW(),NULL),
-                                                                             (1921144250070732800,'ขนม','Dessert',NOW(),NULL);
+insert into public.md_categories (id, name, name_en, icon_name, sort_order, created_at, updated_at)
+values  (1921143886227443712, 'อาหาร', 'Food', 'soup', 1, '2025-10-10 05:34:36.643495 +00:00', null),
+        (1921144050476388352, 'เครื่องดื่ม', 'Drink', 'glass-water', 2, '2025-10-10 05:34:36.643495 +00:00', null),
+        (1921144250070732800, 'ขนม', 'Dessert', 'cake-slice', 3, '2025-10-10 05:34:36.643495 +00:00', null);
 
 insert into public.md_order_statuses (id, code, name, name_en, sort_order, is_final, created_at, updated_at)
 values  (1921868485739155456, 'PENDING', 'รอยืนยันออเดอร์', 'Pending', 1, false, '2025-09-18 11:43:59.552632 +00:00', null),

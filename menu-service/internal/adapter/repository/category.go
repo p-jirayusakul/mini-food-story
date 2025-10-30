@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"food-story/menu-service/internal/domain"
 	"food-story/pkg/exceptions"
+	"food-story/pkg/utils"
 )
 
 func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category, customError *exceptions.CustomError) {
@@ -30,6 +31,7 @@ func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category
 			ID:     v.ID,
 			Name:   v.Name,
 			NameEn: v.NameEN,
+			Icon:   utils.PgTextToStringPtr(v.Icon),
 		}
 	}
 	return result, nil

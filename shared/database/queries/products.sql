@@ -48,7 +48,7 @@ ORDER BY CASE
                      WHEN sqlc.arg(order_by)::text = 'id' THEN p.id::text
                      WHEN sqlc.arg(order_by)::text = 'name' THEN p."name"
                      WHEN sqlc.arg(order_by)::text = 'price' THEN p.price::text
-                     ELSE p.id::text
+                     ELSE c.sort_order::text
                      END
              END,
          CASE
@@ -57,7 +57,7 @@ ORDER BY CASE
                      WHEN sqlc.arg(order_by)::text = 'id' THEN p.id::text
                      WHEN sqlc.arg(order_by)::text = 'name' THEN p."name"
                      WHEN sqlc.arg(order_by)::text = 'price' THEN p.price::text
-                     ELSE p.id::text
+                     ELSE c.sort_order::text
                      END
              END DESC
 OFFSET sqlc.arg(page_number) LIMIT sqlc.arg(page_size);

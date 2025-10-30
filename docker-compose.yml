@@ -62,7 +62,7 @@ services:
 #      - mini_food_story
 #
 #  grafana:
-#    image: grafana/grafana:12.3.0-17782621999
+#    image: grafana/grafana:12.3.0-18765596677
 #    ports:
 #      - "3000:3000"
 #    volumes:
@@ -87,7 +87,7 @@ services:
       - mini_food_story
 
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.9.1
+    image: confluentinc/cp-zookeeper:7.9.4
     hostname: zookeeper
     container_name: zookeeper
     ports:
@@ -99,7 +99,7 @@ services:
       - mini_food_story
 
   kafka:
-    image: confluentinc/cp-server:7.9.1
+    image: confluentinc/cp-server:7.9.4
     hostname: kafka
     container_name: kafka
     depends_on:
@@ -130,7 +130,7 @@ services:
       - mini_food_story
 
   kafka-init-topics:
-    image: confluentinc/cp-kafka:7.9.1
+    image: confluentinc/cp-kafka:7.9.4
     volumes:
       - ./data/message.json:/data/message.json
     depends_on:
@@ -182,7 +182,7 @@ services:
 
 #  traefik:
 #    container_name: "api-gateway"
-#    image: traefik:v3.5.2
+#    image: traefik:v3.5.3
 #    command:
 #      - "--api.dashboard=true"
 #      - "--api.insecure=true"
