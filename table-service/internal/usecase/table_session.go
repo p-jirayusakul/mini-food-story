@@ -122,3 +122,33 @@ func (i *Implement) getTableNumberFromCache(ctx context.Context, tableID int64) 
 
 	return tableNumber, nil
 }
+
+func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension) *exceptions.CustomError {
+
+	sessionID, customErr := i.repository.GetSessionIDByTableID(ctx, payload.TableID)
+	if customErr != nil {
+		return customErr
+	}
+
+	oldTTL, customErr := i.cache.GetTTL(sessionID)
+	if customErr != nil {
+		return customErr
+	}
+
+	newTTLMinutes := oldTTL + time.Duration(payload.RequestedMinutes)*time.Minute
+	customErr = i.cache.ExtensionTTL(sessionID, newTTLMinutes)
+	if customErr != nil {
+		return customErr
+	}
+
+	customErr = i.repository.SessionExtension(ctx, payload)
+	if customErr != nil {
+		extensionTTLErr := i.cache.ExtensionTTL(sessionID, oldTTL)
+		if extensionTTLErr != nil {
+			return extensionTTLErr
+		}
+		return customErr
+	}
+
+	return nil
+}

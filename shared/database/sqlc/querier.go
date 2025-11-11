@@ -15,9 +15,11 @@ type Querier interface {
 	CreateOrderItems(ctx context.Context, arg []CreateOrderItemsParams) (int64, error)
 	CreatePayment(ctx context.Context, arg CreatePaymentParams) (int64, error)
 	CreateProduct(ctx context.Context, arg CreateProductParams) (int64, error)
+	CreateSessionExtension(ctx context.Context, arg CreateSessionExtensionParams) (int64, error)
 	CreateTable(ctx context.Context, arg CreateTableParams) (int64, error)
 	CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
 	CreateTableStatus(ctx context.Context, arg CreateTableStatusParams) (int64, error)
+	GetExpiresAtByTableID(ctx context.Context, tableID int64) (*GetExpiresAtByTableIDRow, error)
 	GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow, error)
 	GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderItemsByIDRow, error)
 	GetOrderItemsByOrderID(ctx context.Context, orderID int64) ([]*GetOrderItemsByOrderIDRow, error)
@@ -32,6 +34,7 @@ type Querier interface {
 	GetPaymentStatusPending(ctx context.Context) (int64, error)
 	GetProductAvailableByID(ctx context.Context, id int64) (*GetProductAvailableByIDRow, error)
 	GetProductByID(ctx context.Context, id int64) (*GetProductByIDRow, error)
+	GetSessionExtensionModeByReasonCode(ctx context.Context, code string) (*GetSessionExtensionModeByReasonCodeRow, error)
 	GetSessionIDByOrderID(ctx context.Context, id int64) (pgtype.UUID, error)
 	GetSessionIDByTableID(ctx context.Context, tableID int64) (pgtype.UUID, error)
 	GetTableIDByOrderID(ctx context.Context, orderID int64) (int64, error)
@@ -54,6 +57,7 @@ type Querier interface {
 	IsOrderStatusFinal(ctx context.Context, code string) (bool, error)
 	IsOrderWithItemsExists(ctx context.Context, arg IsOrderWithItemsExistsParams) (bool, error)
 	IsProductExists(ctx context.Context, id int64) (bool, error)
+	IsSessionExtensionReasonExist(ctx context.Context, id int64) (int64, error)
 	IsTableAvailableOrReserved(ctx context.Context, id int64) (bool, error)
 	IsTableExists(ctx context.Context, id int64) (bool, error)
 	IsTableSessionActive(ctx context.Context, sessionid pgtype.UUID) (bool, error)
@@ -61,6 +65,7 @@ type Querier interface {
 	ListCategory(ctx context.Context) ([]*ListCategoryRow, error)
 	ListOrderStatus(ctx context.Context) ([]*ListOrderStatusRow, error)
 	ListPaymentMethods(ctx context.Context) ([]*ListPaymentMethodsRow, error)
+	ListSessionExtensionReason(ctx context.Context) ([]*ListSessionExtensionReasonRow, error)
 	ListTableStatus(ctx context.Context) ([]*ListTableStatusRow, error)
 	QuickSearchTables(ctx context.Context, arg QuickSearchTablesParams) ([]*QuickSearchTablesRow, error)
 	SearchOrderItems(ctx context.Context, arg SearchOrderItemsParams) ([]*SearchOrderItemsRow, error)
@@ -74,6 +79,7 @@ type Querier interface {
 	UpdateOrderStatusWaitForPayment(ctx context.Context, id int64) error
 	UpdateProduct(ctx context.Context, arg UpdateProductParams) error
 	UpdateProductAvailability(ctx context.Context, arg UpdateProductAvailabilityParams) error
+	UpdateSessionExpireBySessionID(ctx context.Context, arg UpdateSessionExpireBySessionIDParams) error
 	UpdateStatusCloseTableSession(ctx context.Context, sessionid pgtype.UUID) error
 	UpdateStatusPaymentCancelledByTransactionID(ctx context.Context, transactionID string) error
 	UpdateStatusPaymentConfirmedByTransactionID(ctx context.Context, transactionID string) error

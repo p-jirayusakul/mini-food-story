@@ -32,6 +32,28 @@ func (s *Handler) ListTableStatus(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get list task status success", result)
 }
 
+// ListSessionExtensionReason godoc
+// @Summary Get list of table status
+// @Description Get list of all available table statuses
+// @Tags Table
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} middleware.SuccessResponse{data=[]domain.ListSessionExtensionReason}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /status [get]
+func (s *Handler) ListSessionExtensionReason(c *fiber.Ctx) error {
+	result, customError := s.useCase.ListSessionExtensionReason(c.Context())
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get list session extension reason success", result)
+}
+
 // CreateTable godoc
 // @Summary Create new table
 // @Description Create a new table with specified number and seats
@@ -343,4 +365,47 @@ func (s *Handler) UpdateTableStatusAvailable(c *fiber.Ctx) error {
 	}
 
 	return middleware.ResponseOK(c, "update table status success", nil)
+}
+
+// SessionExtension godoc
+// @Summary Update table status
+// @Description Update status for existing table
+// @Tags Table
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Param id path string true "Table ID"
+// @Param status body updateTableStatus true "Table status details"
+// @Success 200 {object} middleware.SuccessResponse
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 404 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /{id}/status/available [patch]
+func (s *Handler) SessionExtension(c *fiber.Ctx) error {
+
+	body := new(SessionExtensionRequest)
+	if err := c.BodyParser(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	tableID, err := utils.StrToInt64(body.TableID)
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	customError := s.useCase.SessionExtension(c.Context(), domain.SessionExtension{
+		TableID:          tableID,
+		RequestedMinutes: body.RequestedMinutes,
+		ReasonCode:       body.ReasonCode,
+	})
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+	return middleware.ResponseOK(c, "update session extension success", nil)
 }

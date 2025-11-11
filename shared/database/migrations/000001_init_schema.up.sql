@@ -1,219 +1,302 @@
-CREATE TYPE "table_session_status" AS ENUM (
-    'active',
-    'closed',
-    'expired'
+CREATE TABLE md_table_statuses (
+                                   id BIGINT NOT NULL PRIMARY KEY
+    ,code VARCHAR(15) NOT NULL UNIQUE
+    ,NAME VARCHAR(100) NOT NULL UNIQUE
+    ,name_en VARCHAR(100) NOT NULL UNIQUE
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+CREATE TABLE md_session_extension_mode (
+                                           id BIGINT NOT NULL PRIMARY KEY
+    ,code VARCHAR(50) NOT NULL UNIQUE
+    ,NAME VARCHAR(100) NOT NULL UNIQUE
+    ,name_en VARCHAR(100) NOT NULL UNIQUE
+    ,sort_order INT DEFAULT 1 NOT NULL UNIQUE
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+CREATE TABLE md_session_extension_reason (
+                                             id BIGINT NOT NULL PRIMARY KEY
+    ,code VARCHAR(50) NOT NULL UNIQUE
+    ,NAME VARCHAR(100) NOT NULL UNIQUE
+    ,name_en VARCHAR(100) NOT NULL UNIQUE
+    ,category VARCHAR(50)
+    ,mode_code VARCHAR(50)
+    ,is_active boolean DEFAULT true NOT NULL
+    ,sort_order INT DEFAULT 1 NOT NULL
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+ALTER TABLE md_session_extension_reason OWNER TO postgres;
+
+CREATE TABLE md_categories (
+                               id BIGINT NOT NULL PRIMARY KEY
+    ,NAME VARCHAR(100) NOT NULL UNIQUE
+    ,name_en VARCHAR(100) NOT NULL UNIQUE
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+    ,icon_name VARCHAR(50)
+    ,sort_order INT DEFAULT 1 NOT NULL UNIQUE
+);
+
+CREATE TABLE md_order_statuses (
+                                   id BIGINT NOT NULL PRIMARY KEY
+    ,code VARCHAR(15) NOT NULL UNIQUE
+    ,NAME VARCHAR(100) NOT NULL UNIQUE
+    ,name_en VARCHAR(100) NOT NULL UNIQUE
+    ,sort_order INT NOT NULL UNIQUE
+    ,is_final boolean DEFAULT false NOT NULL
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+CREATE TABLE md_payment_methods (
+                                    id BIGINT NOT NULL PRIMARY KEY
+    ,code VARCHAR(15) NOT NULL UNIQUE
+    ,NAME VARCHAR(100) NOT NULL UNIQUE
+    ,name_en VARCHAR(100) NOT NULL UNIQUE
+    ,enable boolean DEFAULT false NOT NULL
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+CREATE TABLE md_payment_statuses (
+                                     id BIGINT NOT NULL PRIMARY KEY
+    ,code VARCHAR(15) NOT NULL UNIQUE
+    ,NAME VARCHAR(100) NOT NULL UNIQUE
+    ,name_en VARCHAR(100) NOT NULL UNIQUE
+    ,is_final boolean DEFAULT false NOT NULL
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+CREATE TABLE session_extension
+(
+    id                BIGINT NOT NULL PRIMARY KEY,
+    session_id        UUID NOT NULL REFERENCES table_session (session_id),
+    requested_minutes INTEGER NOT NULL,
+    created_at        TIMESTAMP WITH time zone DEFAULT Now() NOT NULL,
+    mode_id           BIGINT CONSTRAINT
+        session_extension_md_session_extension_mode_id_fk
+        REFERENCES
+            md_session_extension_mode,
+    reason_id         BIGINT CONSTRAINT
+        session_extension_md_session_extension_reason_id_fk
+        REFERENCES
+            md_session_extension_reason
+);
+
+CREATE TABLE tables (
+                        id BIGINT NOT NULL PRIMARY KEY
+    ,table_number INT NOT NULL UNIQUE
+    ,status_id BIGINT NOT NULL REFERENCES md_table_statuses
+    ,seats INT DEFAULT 0 NOT NULL
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+
+CREATE TABLE table_session (
+                               id BIGINT NOT NULL PRIMARY KEY
+    ,table_id BIGINT NOT NULL REFERENCES tables
+    ,session_id uuid DEFAULT gen_random_uuid() NOT NULL UNIQUE
+    ,number_of_people INT DEFAULT 1 NOT NULL
+    ,STATUS table_session_status
+    ,started_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,expires_at TIMESTAMP WITH TIME zone NOT NULL
+    ,ended_at TIMESTAMP WITH TIME zone
+    ,hard_expires_at TIMESTAMP WITH TIME zone
+    ,max_extend_minutes INT DEFAULT 120 NOT NULL
+    ,extend_count INT DEFAULT 0 NOT NULL
+    ,extend_total_minutes INT DEFAULT 0 NOT NULL
+    ,last_reason_code TEXT
+    ,last_action_by TEXT
+    ,lock_version INT DEFAULT 1 NOT NULL
+    ,CONSTRAINT chk_time_order CHECK (
+        (started_at <= expires_at)
+            AND (
+            (hard_expires_at IS NULL)
+                OR (expires_at <= hard_expires_at)
+            )
+        )
+);
+
+CREATE TABLE products (
+                          id BIGINT NOT NULL PRIMARY KEY
+    ,NAME VARCHAR(255) NOT NULL UNIQUE
+    ,name_en VARCHAR(255) NOT NULL UNIQUE
+    ,categories BIGINT NOT NULL REFERENCES md_categories
+    ,description TEXT
+    ,price NUMERIC(10, 2) DEFAULT 0 NOT NULL
+    ,is_available boolean DEFAULT false NOT NULL
+    ,image_url TEXT
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+CREATE TABLE orders (
+                        id BIGINT NOT NULL PRIMARY KEY
+    ,order_number VARCHAR(50) NOT NULL UNIQUE
+    ,session_id uuid
+    ,table_id BIGINT NOT NULL REFERENCES tables
+    ,status_id BIGINT NOT NULL REFERENCES md_order_statuses
+    ,total_amount NUMERIC(10, 2) DEFAULT 0 NOT NULL
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+CREATE TABLE order_items (
+                             id BIGINT NOT NULL PRIMARY KEY
+    ,order_id BIGINT NOT NULL REFERENCES orders
+    ,product_id BIGINT NOT NULL REFERENCES products
+    ,status_id BIGINT NOT NULL REFERENCES md_order_statuses
+    ,product_name VARCHAR(255) NOT NULL
+    ,product_name_en VARCHAR(255) NOT NULL
+    ,price NUMERIC(10, 2) DEFAULT 0 NOT NULL
+    ,quantity INT DEFAULT 1 NOT NULL
+    ,note TEXT
+    ,prepared_at TIMESTAMP WITH TIME zone
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+    ,product_image_url TEXT
+);
+
+comment ON COLUMN order_items.prepared_at IS 'เวลาที่ทำอาหารเสร็จ';
+
+CREATE TABLE payments (
+                          id BIGINT NOT NULL PRIMARY KEY
+    ,order_id BIGINT NOT NULL REFERENCES orders
+    ,amount NUMERIC(10, 2) DEFAULT 0 NOT NULL
+    ,method BIGINT NOT NULL REFERENCES md_payment_methods
+    ,STATUS BIGINT NOT NULL REFERENCES md_payment_statuses
+    ,paid_at TIMESTAMP WITH TIME zone
+    ,transaction_id TEXT NOT NULL UNIQUE
+    ,ref_code VARCHAR(150) NOT NULL UNIQUE
+    ,note TEXT
+    ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
+    ,updated_at TIMESTAMP WITH TIME zone
+);
+
+ALTER TABLE md_table_statuses OWNER TO postgres;
+
+CREATE INDEX md_table_statuses_id_idx ON md_table_statuses (id);
+
+CREATE INDEX md_table_statuses_code_idx ON md_table_statuses (code);
+
+ALTER TABLE md_session_extension_mode OWNER TO postgres;
+
+CREATE INDEX md_session_extension_mode_id_idx ON md_session_extension_mode (id);
+
+ALTER TABLE session_extension OWNER TO postgres;
+
+CREATE INDEX session_extension_session_id_idx ON session_extension (session_id);
+
+CREATE INDEX session_extension_created_at_idx ON session_extension (created_at);
+
+CREATE INDEX md_session_extension_reason_id_idx ON md_session_extension_reason (id);
+
+CREATE INDEX md_session_extension_reason_code_idx ON md_session_extension_reason (code);
+
+ALTER TABLE md_categories OWNER TO postgres;
+
+CREATE INDEX md_categories_id_idx ON md_categories (id);
+
+ALTER TABLE md_order_statuses OWNER TO postgres;
+
+CREATE INDEX md_order_statuses_id_idx ON md_order_statuses (id);
+
+CREATE INDEX md_order_statuses_code_idx ON md_order_statuses (code);
+
+ALTER TABLE md_payment_methods OWNER TO postgres;
+
+CREATE INDEX md_payment_methods_id_idx ON md_payment_methods (id);
+
+CREATE INDEX md_payment_methods_code_idx ON md_payment_methods (code);
+
+ALTER TABLE md_payment_statuses OWNER TO postgres;
+
+CREATE INDEX md_payment_statuses_id_idx ON md_payment_statuses (id);
+
+CREATE INDEX md_payment_statuses_code_idx ON md_payment_statuses (code);
+
+ALTER TABLE tables OWNER TO postgres;
+
+CREATE INDEX tables_id_idx ON tables (id);
+
+CREATE INDEX tables_table_number_idx ON tables (table_number);
+
+CREATE INDEX tables_status_id_idx ON tables (status_id);
+
+ALTER TABLE table_session OWNER TO postgres;
+
+CREATE INDEX table_session_id_idx ON table_session (id);
+
+CREATE INDEX table_session_table_id_idx ON table_session (table_id);
+
+CREATE INDEX table_session_session_id_idx ON table_session (session_id);
+
+CREATE INDEX idx_session_status_expires_at ON table_session (
+                                                             STATUS
+    ,expires_at
     );
 
-CREATE TABLE "md_table_statuses" (
-                                     "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                                     "code" varchar(15) UNIQUE NOT NULL,
-                                     "name" varchar(100) UNIQUE NOT NULL,
-                                     "name_en" varchar(100) UNIQUE NOT NULL,
-                                     "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                                     "updated_at" timestamptz
+ALTER TABLE products OWNER TO postgres;
+
+CREATE INDEX products_id_idx ON products (id);
+
+CREATE INDEX products_name_idx ON products (NAME);
+
+CREATE INDEX products_name_en_idx ON products (name_en);
+
+ALTER TABLE orders OWNER TO postgres;
+
+CREATE INDEX orders_id_idx ON orders (id);
+
+CREATE INDEX orders_order_number_idx ON orders (order_number);
+
+CREATE INDEX orders_status_id_idx ON orders (status_id);
+
+CREATE INDEX orders_created_at_idx ON orders (created_at);
+
+ALTER TABLE order_items OWNER TO postgres;
+
+CREATE INDEX order_items_id_idx ON order_items (id);
+
+CREATE INDEX order_items_order_id ON order_items (
+                                                  order_id
+    ,id
+    );
+
+CREATE INDEX order_items_order_id_idx ON order_items (order_id);
+
+CREATE TABLE order_sequences (
+                                 order_date DATE NOT NULL PRIMARY KEY
+    ,current_number INT NOT NULL
 );
 
-CREATE TABLE "md_categories" (
-                                 "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                                 "name" varchar(100) UNIQUE NOT NULL,
-                                 "name_en" varchar(100) UNIQUE NOT NULL,
-                                 icon_name  varchar(50),
-                                 "sort_order" int UNIQUE NOT NULL,
-                                 "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                                 "updated_at" timestamptz
-);
+ALTER TABLE order_sequences OWNER TO postgres;
 
-CREATE TABLE "md_order_statuses" (
-                                     "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                                     "code" varchar(15) UNIQUE NOT NULL,
-                                     "name" varchar(100) UNIQUE NOT NULL,
-                                     "name_en" varchar(100) UNIQUE NOT NULL,
-                                     "sort_order" int UNIQUE NOT NULL,
-                                     "is_final" bool NOT NULL DEFAULT false,
-                                     "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                                     "updated_at" timestamptz
-);
+ALTER TABLE payments OWNER TO postgres;
 
-CREATE TABLE "md_payment_methods" (
-                                      "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                                      "code" varchar(15) UNIQUE NOT NULL,
-                                      "name" varchar(100) UNIQUE NOT NULL,
-                                      "name_en" varchar(100) UNIQUE NOT NULL,
-                                      "enable" bool NOT NULL DEFAULT false,
-                                      "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                                      "updated_at" timestamptz
-);
+CREATE INDEX payments_id_idx ON payments (id);
 
-CREATE TABLE "md_payment_statuses" (
-                                       "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                                       "code" varchar(15) UNIQUE NOT NULL,
-                                       "name" varchar(100) UNIQUE NOT NULL,
-                                       "name_en" varchar(100) UNIQUE NOT NULL,
-                                       "is_final" bool NOT NULL DEFAULT false,
-                                       "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                                       "updated_at" timestamptz
-);
+CREATE INDEX payments_order_id_idx ON payments (order_id);
 
-CREATE TABLE "tables" (
-                          "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                          "table_number" int UNIQUE NOT NULL,
-                          "status_id" bigint NOT NULL,
-                          "seats" int NOT NULL DEFAULT 0,
-                          "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                          "updated_at" timestamptz
-);
+CREATE INDEX payments_transaction_id_idx ON payments (transaction_id);
 
-CREATE TABLE "table_session" (
-                                 "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                                 "table_id" bigint NOT NULL,
-                                 "session_id" uuid UNIQUE NOT NULL DEFAULT gen_random_uuid(),
-                                 "number_of_people" int NOT NULL DEFAULT 1,
-                                 "status" table_session_status,
-                                 "started_at" timestamptz NOT NULL DEFAULT NOW(),
-                                 "expire_at" timestamptz NOT NULL,
-                                 "ended_at" timestamptz
-);
+CREATE INDEX transaction_id_status ON payments (
+                                                transaction_id
+    ,STATUS
+    );
 
-CREATE TABLE "products" (
-                            "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                            "name" varchar(255) UNIQUE NOT NULL,
-                            "name_en" varchar(255) UNIQUE NOT NULL,
-                            "categories" bigint NOT NULL,
-                            "description" text,
-                            "price" numeric(10,2) NOT NULL DEFAULT 0,
-                            "is_available" bool NOT NULL DEFAULT false,
-                            "image_url" text,
-                            "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                            "updated_at" timestamptz
-);
+create type public.table_session_status as enum ('active', 'closed', 'expired');
 
-CREATE TABLE "orders" (
-                          "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                          "order_number" varchar(50) UNIQUE NOT NULL,
-                          "session_id" uuid,
-                          "table_id" bigint NOT NULL,
-                          "status_id" bigint NOT NULL,
-                          "total_amount" numeric(10,2) NOT NULL DEFAULT 0,
-                          "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                          "updated_at" timestamptz
-);
+alter type public.table_session_status owner to postgres;
 
-CREATE TABLE "order_items" (
-                               "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                               "order_id" bigint NOT NULL,
-                               "product_id" bigint NOT NULL,
-                               "status_id" bigint NOT NULL,
-                               "product_name" varchar(255) NOT NULL,
-                               "product_name_en" varchar(255) NOT NULL,
-                               "product_image_url" text,
-                               "price" numeric(10,2) NOT NULL DEFAULT 0,
-                               "quantity" int NOT NULL DEFAULT 1,
-                               "note" text,
-                               "prepared_at" timestamptz,
-                               "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                               "updated_at" timestamptz
-);
 
-CREATE TABLE "order_sequences" (
-                                   "order_date" date PRIMARY KEY NOT NULL,
-                                   "current_number" int NOT NULL
-);
-
-CREATE TABLE "payments" (
-                            "id" bigint UNIQUE PRIMARY KEY NOT NULL,
-                            "order_id" bigint NOT NULL,
-                            "amount" numeric(10,2) NOT NULL DEFAULT 0,
-                            "method" bigint NOT NULL,
-                            "status" bigint NOT NULL,
-                            "paid_at" timestamptz,
-                            "transaction_id" text UNIQUE NOT NULL,
-                            "ref_code" varchar(150) UNIQUE NOT NULL,
-                            "note" text,
-                            "created_at" timestamptz NOT NULL DEFAULT NOW(),
-                            "updated_at" timestamptz
-);
-
-CREATE INDEX ON "md_table_statuses" ("id");
-
-CREATE INDEX ON "md_table_statuses" ("code");
-
-CREATE INDEX ON "md_categories" ("id");
-
-CREATE INDEX ON "md_order_statuses" ("id");
-
-CREATE INDEX ON "md_order_statuses" ("code");
-
-CREATE INDEX ON "md_payment_methods" ("id");
-
-CREATE INDEX ON "md_payment_methods" ("code");
-
-CREATE INDEX ON "md_payment_statuses" ("id");
-
-CREATE INDEX ON "md_payment_statuses" ("code");
-
-CREATE INDEX ON "tables" ("id");
-
-CREATE INDEX ON "tables" ("table_number");
-
-CREATE INDEX ON "tables" ("status_id");
-
-CREATE INDEX ON "table_session" ("id");
-
-CREATE INDEX ON "table_session" ("table_id");
-
-CREATE INDEX ON "table_session" ("session_id");
-
-CREATE INDEX ON "products" ("id");
-
-CREATE INDEX ON "products" ("name");
-
-CREATE INDEX ON "products" ("name_en");
-
-CREATE INDEX ON "orders" ("id");
-
-CREATE INDEX ON "orders" ("order_number");
-
-CREATE INDEX ON "orders" ("status_id");
-
-CREATE INDEX ON "orders" ("created_at");
-
-CREATE INDEX ON "order_items" ("id");
-
-CREATE INDEX "order_items_order_id" ON "order_items" ("order_id", "id");
-
-CREATE INDEX ON "order_items" ("order_id");
-
-CREATE INDEX ON "payments" ("id");
-
-CREATE INDEX ON "payments" ("order_id");
-
-CREATE INDEX ON "payments" ("transaction_id");
-
-CREATE INDEX "transaction_id_status" ON "payments" ("transaction_id", "status");
-
-COMMENT ON COLUMN "order_items"."prepared_at" IS 'เวลาที่ทำอาหารเสร็จ';
-
-ALTER TABLE "tables" ADD FOREIGN KEY ("status_id") REFERENCES "md_table_statuses" ("id");
-
-ALTER TABLE "table_session" ADD FOREIGN KEY ("table_id") REFERENCES "tables" ("id");
-
-ALTER TABLE "products" ADD FOREIGN KEY ("categories") REFERENCES "md_categories" ("id");
-
-ALTER TABLE "orders" ADD FOREIGN KEY ("status_id") REFERENCES "md_order_statuses" ("id");
-
-ALTER TABLE "orders" ADD FOREIGN KEY ("table_id") REFERENCES "tables" ("id");
-
-ALTER TABLE "order_items" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id");
-
-ALTER TABLE "order_items" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id");
-
-ALTER TABLE "order_items" ADD FOREIGN KEY ("status_id") REFERENCES "md_order_statuses" ("id");
-
-ALTER TABLE "payments" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id");
-
-ALTER TABLE "payments" ADD FOREIGN KEY ("method") REFERENCES "md_payment_methods" ("id");
-
-ALTER TABLE "payments" ADD FOREIGN KEY ("status") REFERENCES "md_payment_statuses" ("id");
 
 -- Insert Master Data
 

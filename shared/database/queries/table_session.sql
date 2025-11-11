@@ -1,6 +1,6 @@
 -- name: CreateTableSession :exec
 INSERT INTO public.table_session
-(id, table_id, number_of_people, session_id, status, started_at, expire_at, ended_at)
+(id, table_id, number_of_people, session_id, status, started_at, expires_at, ended_at)
 VALUES($1, $2, $3, $4, 'active', NOW(), $5, NULL);
 
 -- name: IsTableSessionExists :one
@@ -33,3 +33,15 @@ WHERE session_id=sqlc.arg(sessionID)::uuid;
 
 -- name: GetSessionIDByTableID :one
 select session_id from public.table_session where table_id = sqlc.arg(table_id)::bigint and status = 'active' LIMIT 1;
+
+-- name: UpdateSessionExpireBySessionID :exec
+UPDATE public.table_session
+SET extend_count =  extend_count + 1,
+    extend_total_minutes = extend_total_minutes + sqlc.arg(requested_minutes)::integer,
+    last_reason_code = sqlc.arg(last_reason_code)::text,
+    lock_version = lock_version + 1,
+    expires_at = sqlc.arg(expires_at)::timestamp with time zone
+where session_id=sqlc.arg(sessionID)::uuid;
+
+-- name: GetExpiresAtByTableID :one
+select expires_at, max_extend_minutes, extend_total_minutes from public.table_session where table_id = sqlc.arg(table_id)::bigint LIMIT 1;

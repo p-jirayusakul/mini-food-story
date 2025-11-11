@@ -58,10 +58,10 @@ type MdCategory struct {
 	ID        int64              `json:"id"`
 	Name      string             `json:"name"`
 	NameEn    string             `json:"name_en"`
-	IconName  pgtype.Text        `json:"icon_name"`
-	SortOrder int32              `json:"sort_order"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+	IconName  pgtype.Text        `json:"icon_name"`
+	SortOrder int32              `json:"sort_order"`
 }
 
 type MdOrderStatus struct {
@@ -95,6 +95,29 @@ type MdPaymentStatus struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 }
 
+type MdSessionExtensionMode struct {
+	ID        int64              `json:"id"`
+	Code      string             `json:"code"`
+	Name      string             `json:"name"`
+	NameEn    string             `json:"name_en"`
+	SortOrder int32              `json:"sort_order"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
+type MdSessionExtensionReason struct {
+	ID        int64              `json:"id"`
+	Code      string             `json:"code"`
+	Name      string             `json:"name"`
+	NameEn    string             `json:"name_en"`
+	Category  pgtype.Text        `json:"category"`
+	ModeCode  pgtype.Text        `json:"mode_code"`
+	IsActive  bool               `json:"is_active"`
+	SortOrder int32              `json:"sort_order"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
+}
+
 type MdTableStatus struct {
 	ID        int64              `json:"id"`
 	Code      string             `json:"code"`
@@ -116,20 +139,20 @@ type Order struct {
 }
 
 type OrderItem struct {
-	ID              int64          `json:"id"`
-	OrderID         int64          `json:"order_id"`
-	ProductID       int64          `json:"product_id"`
-	StatusID        int64          `json:"status_id"`
-	ProductName     string         `json:"product_name"`
-	ProductNameEn   string         `json:"product_name_en"`
-	ProductImageUrl pgtype.Text    `json:"product_image_url"`
-	Price           pgtype.Numeric `json:"price"`
-	Quantity        int32          `json:"quantity"`
-	Note            pgtype.Text    `json:"note"`
+	ID            int64          `json:"id"`
+	OrderID       int64          `json:"order_id"`
+	ProductID     int64          `json:"product_id"`
+	StatusID      int64          `json:"status_id"`
+	ProductName   string         `json:"product_name"`
+	ProductNameEn string         `json:"product_name_en"`
+	Price         pgtype.Numeric `json:"price"`
+	Quantity      int32          `json:"quantity"`
+	Note          pgtype.Text    `json:"note"`
 	// เวลาที่ทำอาหารเสร็จ
-	PreparedAt pgtype.Timestamptz `json:"prepared_at"`
-	CreatedAt  pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt  pgtype.Timestamptz `json:"updated_at"`
+	PreparedAt      pgtype.Timestamptz `json:"prepared_at"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
+	ProductImageUrl pgtype.Text        `json:"product_image_url"`
 }
 
 type OrderSequence struct {
@@ -164,6 +187,15 @@ type Product struct {
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
+type SessionExtension struct {
+	ID               int64              `json:"id"`
+	SessionID        pgtype.UUID        `json:"session_id"`
+	RequestedMinutes int32              `json:"requested_minutes"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	ModeID           pgtype.Int8        `json:"mode_id"`
+	ReasonID         pgtype.Int8        `json:"reason_id"`
+}
+
 type Table struct {
 	ID          int64              `json:"id"`
 	TableNumber int32              `json:"table_number"`
@@ -174,12 +206,19 @@ type Table struct {
 }
 
 type TableSession struct {
-	ID             int64                  `json:"id"`
-	TableID        int64                  `json:"table_id"`
-	SessionID      pgtype.UUID            `json:"session_id"`
-	NumberOfPeople int32                  `json:"number_of_people"`
-	Status         NullTableSessionStatus `json:"status"`
-	StartedAt      pgtype.Timestamptz     `json:"started_at"`
-	ExpireAt       pgtype.Timestamptz     `json:"expire_at"`
-	EndedAt        pgtype.Timestamptz     `json:"ended_at"`
+	ID                 int64                  `json:"id"`
+	TableID            int64                  `json:"table_id"`
+	SessionID          pgtype.UUID            `json:"session_id"`
+	NumberOfPeople     int32                  `json:"number_of_people"`
+	Status             NullTableSessionStatus `json:"status"`
+	StartedAt          pgtype.Timestamptz     `json:"started_at"`
+	ExpiresAt          pgtype.Timestamptz     `json:"expires_at"`
+	EndedAt            pgtype.Timestamptz     `json:"ended_at"`
+	HardExpiresAt      pgtype.Timestamptz     `json:"hard_expires_at"`
+	MaxExtendMinutes   int32                  `json:"max_extend_minutes"`
+	ExtendCount        int32                  `json:"extend_count"`
+	ExtendTotalMinutes int32                  `json:"extend_total_minutes"`
+	LastReasonCode     pgtype.Text            `json:"last_reason_code"`
+	LastActionBy       pgtype.Text            `json:"last_action_by"`
+	LockVersion        int32                  `json:"lock_version"`
 }

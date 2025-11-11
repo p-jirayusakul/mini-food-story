@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -10,6 +11,7 @@ type Store interface {
 	Querier
 	TXCreateTableSession(ctx context.Context, arg CreateTableSessionParams) error
 	TXCreateOrder(ctx context.Context, arg TXCreateOrderParams) (int64, error)
+	TXSessionsExtension(ctx context.Context, arg TXSessionsExtensionParams) error
 }
 
 // SQLStore provides all functions to execute SQL queries and transactions

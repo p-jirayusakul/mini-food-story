@@ -13,7 +13,7 @@ import (
 
 const createTableSession = `-- name: CreateTableSession :exec
 INSERT INTO public.table_session
-(id, table_id, number_of_people, session_id, status, started_at, expire_at, ended_at)
+(id, table_id, number_of_people, session_id, status, started_at, expires_at, ended_at)
 VALUES($1, $2, $3, $4, 'active', NOW(), $5, NULL)
 `
 
@@ -22,7 +22,7 @@ type CreateTableSessionParams struct {
 	TableID        int64              `json:"table_id"`
 	NumberOfPeople int32              `json:"number_of_people"`
 	SessionID      pgtype.UUID        `json:"session_id"`
-	ExpireAt       pgtype.Timestamptz `json:"expire_at"`
+	ExpiresAt      pgtype.Timestamptz `json:"expires_at"`
 }
 
 func (q *Queries) CreateTableSession(ctx context.Context, arg CreateTableSessionParams) error {
@@ -31,9 +31,26 @@ func (q *Queries) CreateTableSession(ctx context.Context, arg CreateTableSession
 		arg.TableID,
 		arg.NumberOfPeople,
 		arg.SessionID,
-		arg.ExpireAt,
+		arg.ExpiresAt,
 	)
 	return err
+}
+
+const getExpiresAtByTableID = `-- name: GetExpiresAtByTableID :one
+select expires_at, max_extend_minutes, extend_total_minutes from public.table_session where table_id = $1::bigint LIMIT 1
+`
+
+type GetExpiresAtByTableIDRow struct {
+	ExpiresAt          pgtype.Timestamptz `json:"expires_at"`
+	MaxExtendMinutes   int32              `json:"max_extend_minutes"`
+	ExtendTotalMinutes int32              `json:"extend_total_minutes"`
+}
+
+func (q *Queries) GetExpiresAtByTableID(ctx context.Context, tableID int64) (*GetExpiresAtByTableIDRow, error) {
+	row := q.db.QueryRow(ctx, getExpiresAtByTableID, tableID)
+	var i GetExpiresAtByTableIDRow
+	err := row.Scan(&i.ExpiresAt, &i.MaxExtendMinutes, &i.ExtendTotalMinutes)
+	return &i, err
 }
 
 const getSessionIDByTableID = `-- name: GetSessionIDByTableID :one
@@ -108,6 +125,33 @@ func (q *Queries) IsTableSessionExists(ctx context.Context, sessionid pgtype.UUI
 	var isExists bool
 	err := row.Scan(&isExists)
 	return isExists, err
+}
+
+const updateSessionExpireBySessionID = `-- name: UpdateSessionExpireBySessionID :exec
+UPDATE public.table_session
+SET extend_count =  extend_count + 1,
+    extend_total_minutes = extend_total_minutes + $1::integer,
+    last_reason_code = $2::text,
+    lock_version = lock_version + 1,
+    expires_at = $3::timestamp with time zone
+where session_id=$4::uuid
+`
+
+type UpdateSessionExpireBySessionIDParams struct {
+	RequestedMinutes int32              `json:"requested_minutes"`
+	LastReasonCode   string             `json:"last_reason_code"`
+	ExpiresAt        pgtype.Timestamptz `json:"expires_at"`
+	Sessionid        pgtype.UUID        `json:"sessionid"`
+}
+
+func (q *Queries) UpdateSessionExpireBySessionID(ctx context.Context, arg UpdateSessionExpireBySessionIDParams) error {
+	_, err := q.db.Exec(ctx, updateSessionExpireBySessionID,
+		arg.RequestedMinutes,
+		arg.LastReasonCode,
+		arg.ExpiresAt,
+		arg.Sessionid,
+	)
+	return err
 }
 
 const updateStatusCloseTableSession = `-- name: UpdateStatusCloseTableSession :exec

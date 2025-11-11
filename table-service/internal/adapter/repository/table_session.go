@@ -23,7 +23,7 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 		TableID:        payload.TableID,
 		NumberOfPeople: payload.NumberOfPeople,
 		SessionID:      utils.UUIDToPgUUID(sessionID),
-		ExpireAt:       pgtype.Timestamptz{Time: expiry, Valid: true},
+		ExpiresAt:      pgtype.Timestamptz{Time: expiry, Valid: true},
 	})
 	if err != nil {
 		return &exceptions.CustomError{
@@ -77,4 +77,105 @@ func (i *Implement) GetCurrentDateTime(ctx context.Context) (time.Time, *excepti
 	}
 
 	return currentTime.Time, nil
+}
+
+func (i *Implement) GetSessionIDByTableID(ctx context.Context, tableID int64) (uuid.UUID, *exceptions.CustomError) {
+	sessionID, err := i.repository.GetSessionIDByTableID(ctx, tableID)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return uuid.UUID{}, &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: errors.New("table session id not found"),
+			}
+		}
+		return uuid.UUID{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get session id: %w", err),
+		}
+	}
+
+	v, err := utils.PareStringToUUID(sessionID.String())
+	if err != nil {
+		return uuid.UUID{}, &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: fmt.Errorf("failed to parse session id: %w", err),
+		}
+	}
+
+	return v, nil
+}
+
+func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension) *exceptions.CustomError {
+	tableExp, err := i.repository.GetExpiresAtByTableID(ctx, payload.TableID)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return &exceptions.CustomError{
+				Status: exceptions.ERRNOTFOUND,
+				Errors: errors.New("table session not found"),
+			}
+		}
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get expires at by table id: %w", err),
+		}
+	}
+
+	if tableExp.ExtendTotalMinutes >= tableExp.MaxExtendMinutes {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: errors.New("table extension is not allowed"),
+		}
+	} else if int32(payload.RequestedMinutes) > tableExp.MaxExtendMinutes {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRBUSSINESS,
+			Errors: errors.New("requested minutes is not allowed"),
+		}
+	}
+
+	expireAt, err := utils.PgTimestampToTime(tableExp.ExpiresAt)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: fmt.Errorf("failed to parse expires at: %w", err),
+		}
+	}
+
+	totalExpiresAt := expireAt.Add(time.Duration(payload.RequestedMinutes) * time.Minute)
+
+	reasonResult, err := i.repository.GetSessionExtensionModeByReasonCode(ctx, payload.ReasonCode)
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get session extension mode by reason code: %w", err),
+		}
+	}
+
+	if reasonResult.SessionExtensionModeID.Int64 == 0 {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRNOTFOUND,
+			Errors: errors.New("session extension mode not found"),
+		}
+	}
+
+	createSessionExtensionParams := database.CreateSessionExtensionParams{
+		ID:               i.snowflakeID.Generate(),
+		RequestedMinutes: int32(payload.RequestedMinutes),
+		ReasonID:         utils.Int64ToPgInt8(reasonResult.ID),
+		ModeID:           utils.Int64ToPgInt8(reasonResult.SessionExtensionModeID.Int64),
+	}
+
+	err = i.repository.TXSessionsExtension(ctx, database.TXSessionsExtensionParams{
+		TableID:                payload.TableID,
+		RequestedMinutes:       payload.RequestedMinutes,
+		ReasonCode:             payload.ReasonCode,
+		ExpiresAt:              totalExpiresAt,
+		CreateSessionExtension: createSessionExtensionParams,
+	})
+	if err != nil {
+		return &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to session extension: %w", err),
+		}
+	}
+	return nil
 }

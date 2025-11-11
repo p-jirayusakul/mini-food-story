@@ -18,6 +18,8 @@ type UseCase interface {
 	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError)
 	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError)
 	UpdateTableStatusAvailable(ctx context.Context, tableID int64) (customError *exceptions.CustomError)
+	ListSessionExtensionReason(ctx context.Context) (result []*domain.ListSessionExtensionReason, customError *exceptions.CustomError)
+	SessionExtension(ctx context.Context, payload domain.SessionExtension) *exceptions.CustomError
 }
 
 type Implement struct {

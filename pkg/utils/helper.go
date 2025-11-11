@@ -262,6 +262,13 @@ func UUIDToPgUUID(value uuid.UUID) pgtype.UUID {
 	}
 }
 
+func Int64ToPgInt8(v int64) pgtype.Int8 {
+	return pgtype.Int8{
+		Valid: true,
+		Int64: v,
+	}
+}
+
 func PgTimestampToThaiISO8601(ts pgtype.Timestamptz) (string, error) {
 	if !ts.Valid {
 		return "", fmt.Errorf("timestamp is null")
@@ -280,6 +287,26 @@ func PgTimestampToThaiISO8601(ts pgtype.Timestamptz) (string, error) {
 	}
 
 	return t.In(loc).Format(time.RFC3339), nil
+}
+
+func PgTimestampToTime(ts pgtype.Timestamptz) (time.Time, error) {
+	if !ts.Valid {
+		return time.Time{}, fmt.Errorf("timestamp is null")
+	}
+
+	t := ts.Time
+
+	timeZone := "Asia/Bangkok"
+	if os.Getenv("TZ") != "" {
+		timeZone = os.Getenv("TZ")
+	}
+
+	loc, err := time.LoadLocation(timeZone)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return t.In(loc), nil
 }
 
 func PareStringToUUID(str string) (uuid.UUID, error) {

@@ -24,3 +24,9 @@ type SearchTable struct {
 	OrderBy        string   `query:"orderBy" validate:"omitempty,oneof=id tableNumber seats status" example:"id"`
 	OrderByType    string   `query:"orderType" validate:"omitempty,oneof=asc desc" example:"asc"`
 }
+
+type SessionExtensionRequest struct {
+	TableID          string `json:"tableID" validate:"required" example:"1923564209627467776"`
+	RequestedMinutes int64  `json:"requestedMinutes" validate:"required,gte=1,max=120" example:"15"`
+	ReasonCode       string `json:"reasonCode" validate:"required,oneof=CUSTOMER_REQUEST LATE_SERVICE SYSTEM_ERROR PARTIAL_COMP" example:"LATE_SERVICE"`
+}

@@ -1,5 +1,5 @@
 # Stage 1: Build stage
-FROM golang:1.25.1-alpine AS build
+FROM golang:1.25.3-alpine AS build
 
 ARG SERVICE_NAME
 
@@ -28,7 +28,7 @@ RUN go mod tidy
 RUN go build -o app cmd/main.go
 
 # Stage 2: Create lightweight production image
-FROM alpine:3.20.1 AS prod
+FROM alpine:3.22.2 AS prod
 
 ARG SERVICE_NAME
 

@@ -10,3 +10,9 @@ type TableSession struct {
 	SessionID      uuid.UUID
 	NumberOfPeople int32
 }
+
+type SessionExtension struct {
+	TableID          int64
+	RequestedMinutes int64
+	ReasonCode       string
+}
