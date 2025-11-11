@@ -330,6 +330,7 @@ func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []sha
 			Note:            utils.StringPtrToPgText(item.Note),
 			CreatedAt:       currentTime,
 			ProductImageUrl: product.ImageUrl,
+			IsVisible:       true,
 		}
 	}
 

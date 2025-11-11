@@ -105,7 +105,7 @@ SELECT p.id,
        p.image_url
 FROM public.products as p
          INNER JOIN public.md_categories as c ON c.id = p.categories
-WHERE p.id = $1::bigint LIMIT 1
+WHERE p.id = $1::bigint AND p.is_available IS TRUE LIMIT 1
 `
 
 type GetProductByIDRow struct {
@@ -143,7 +143,8 @@ const getTotalPageSearchProducts = `-- name: GetTotalPageSearchProducts :one
 SELECT COUNT(*)
 FROM public.products as p
          INNER JOIN public.md_categories as c ON c.id = p.categories
-WHERE (($1::varchar IS NULL OR p."name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR p.name_en ILIKE '%' || $1::varchar || '%'))
+WHERE p.is_available IS TRUE AND p.is_visible IS TRUE
+  AND (($1::varchar IS NULL OR p."name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR p.name_en ILIKE '%' || $1::varchar || '%'))
   AND ($2::boolean IS NULL OR p.is_available = $2::boolean)
   AND (
     $3::bigint[] IS NULL
@@ -176,6 +177,66 @@ func (q *Queries) IsProductExists(ctx context.Context, id int64) (bool, error) {
 	return isExists, err
 }
 
+const listProductTimeExtension = `-- name: ListProductTimeExtension :many
+SELECT p.id,
+       p."name",
+       p.name_en,
+       p.categories,
+       c.name as "categoryName",
+       c.name_en as "categoryNameEN",
+       p.description,
+       p.price,
+       p.is_available,
+       p.image_url
+FROM public.products as p
+         INNER JOIN public.md_categories as c ON c.id = p.categories
+WHERE p.is_available IS TRUE AND c.code = 'TIME_EXTENSION'
+`
+
+type ListProductTimeExtensionRow struct {
+	ID             int64          `json:"id"`
+	Name           string         `json:"name"`
+	NameEn         string         `json:"name_en"`
+	Categories     int64          `json:"categories"`
+	CategoryName   string         `json:"categoryName"`
+	CategoryNameEN string         `json:"categoryNameEN"`
+	Description    pgtype.Text    `json:"description"`
+	Price          pgtype.Numeric `json:"price"`
+	IsAvailable    bool           `json:"is_available"`
+	ImageUrl       pgtype.Text    `json:"image_url"`
+}
+
+func (q *Queries) ListProductTimeExtension(ctx context.Context) ([]*ListProductTimeExtensionRow, error) {
+	rows, err := q.db.Query(ctx, listProductTimeExtension)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []*ListProductTimeExtensionRow{}
+	for rows.Next() {
+		var i ListProductTimeExtensionRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.NameEn,
+			&i.Categories,
+			&i.CategoryName,
+			&i.CategoryNameEN,
+			&i.Description,
+			&i.Price,
+			&i.IsAvailable,
+			&i.ImageUrl,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, &i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchProducts = `-- name: SearchProducts :many
 SELECT p.id,
        p."name",
@@ -189,7 +250,8 @@ SELECT p.id,
        p.image_url
 FROM public.products as p
          INNER JOIN public.md_categories as c ON c.id = p.categories
-WHERE (($1::varchar IS NULL OR p."name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR p.name_en ILIKE '%' || $1::varchar || '%'))
+WHERE p.is_available IS TRUE AND p.is_visible IS TRUE
+  AND (($1::varchar IS NULL OR p."name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR p.name_en ILIKE '%' || $1::varchar || '%'))
   AND ($2::boolean IS NULL OR p.is_available = $2::boolean)
   AND (
     $3::bigint[] IS NULL

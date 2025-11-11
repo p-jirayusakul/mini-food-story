@@ -125,7 +125,17 @@ func (i *Implement) getTableNumberFromCache(ctx context.Context, tableID int64) 
 
 func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension) *exceptions.CustomError {
 
+	requestedMinutes, customErr := i.repository.GetDurationMinutesByProductID(ctx, payload.ProductID)
+	if customErr != nil {
+		return customErr
+	}
+
 	sessionID, customErr := i.repository.GetSessionIDByTableID(ctx, payload.TableID)
+	if customErr != nil {
+		return customErr
+	}
+
+	orderID, customErr := i.repository.GetOrderIDBySessionID(ctx, sessionID)
 	if customErr != nil {
 		return customErr
 	}
@@ -135,13 +145,13 @@ func (i *Implement) SessionExtension(ctx context.Context, payload domain.Session
 		return customErr
 	}
 
-	newTTLMinutes := oldTTL + time.Duration(payload.RequestedMinutes)*time.Minute
+	newTTLMinutes := oldTTL + time.Duration(requestedMinutes)*time.Minute
 	customErr = i.cache.ExtensionTTL(sessionID, newTTLMinutes)
 	if customErr != nil {
 		return customErr
 	}
 
-	customErr = i.repository.SessionExtension(ctx, payload)
+	customErr = i.repository.SessionExtension(ctx, payload, requestedMinutes, orderID)
 	if customErr != nil {
 		extensionTTLErr := i.cache.ExtensionTTL(sessionID, oldTTL)
 		if extensionTTLErr != nil {

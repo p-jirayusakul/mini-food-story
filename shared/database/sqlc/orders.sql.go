@@ -72,6 +72,17 @@ func (q *Queries) GetOrderByID(ctx context.Context, id int64) (*GetOrderByIDRow,
 	return &i, err
 }
 
+const getOrderIDBySessionID = `-- name: GetOrderIDBySessionID :one
+select id from public.orders where session_id = $1::uuid LIMIT 1
+`
+
+func (q *Queries) GetOrderIDBySessionID(ctx context.Context, sessionID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, getOrderIDBySessionID, sessionID)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getOrderItemsByOrderID = `-- name: GetOrderItemsByOrderID :many
 SELECT o.id  AS "orderID",
        o.order_number as "orderNumber",
@@ -174,7 +185,7 @@ FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
 JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = $1::bigint
+WHERE o.id = $1::bigint AND oi.is_visible IS TRUE
 order by oi.id DESC
 OFFSET $2 LIMIT $3
 `
@@ -334,7 +345,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
         JOIN public.tables t ON o.table_id = t.id
-WHERE oi.id = ANY($1::bigint[])
+WHERE oi.id = ANY($1::bigint[]) AND oi.is_visible IS TRUE
 order by oi.id DESC
 `
 
@@ -436,7 +447,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = $1::bigint
+WHERE o.id = $1::bigint AND oi.is_visible IS TRUE
 `
 
 func (q *Queries) GetTotalItemOrderWithItems(ctx context.Context, orderID int64) (int64, error) {
@@ -452,7 +463,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE  DATE(oi.created_at) = CURRENT_DATE
+WHERE  DATE(oi.created_at) = CURRENT_DATE AND oi.is_visible IS TRUE
   AND (($1::varchar IS NULL OR oi."product_name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR oi.product_name_en ILIKE '%' || $1::varchar || '%'))
   AND (
     $2::int[] IS NULL
@@ -485,7 +496,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED') AND oi.is_visible IS TRUE
   AND (($2::varchar IS NULL OR oi."product_name" ILIKE '%' || $2::varchar || '%') OR ($2::varchar IS NULL OR oi.product_name_en ILIKE '%' || $2::varchar || '%'))
   AND (
     $3::varchar[] IS NULL
@@ -574,7 +585,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE  DATE(oi.created_at) = CURRENT_DATE
+WHERE  DATE(oi.created_at) = CURRENT_DATE AND oi.is_visible IS TRUE
   AND (($1::varchar IS NULL OR oi."product_name" ILIKE '%' || $1::varchar || '%') OR ($1::varchar IS NULL OR oi.product_name_en ILIKE '%' || $1::varchar || '%'))
   AND (
     $2::int[] IS NULL
@@ -706,7 +717,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+WHERE o.id = $1::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED') AND oi.is_visible IS TRUE
   AND (($2::varchar IS NULL OR oi."product_name" ILIKE '%' || $2::varchar || '%') OR ($2::varchar IS NULL OR oi.product_name_en ILIKE '%' || $2::varchar || '%'))
   AND (
     $3::varchar[] IS NULL

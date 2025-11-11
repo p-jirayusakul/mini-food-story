@@ -12,7 +12,7 @@ type TableSession struct {
 }
 
 type SessionExtension struct {
-	TableID          int64
-	RequestedMinutes int64
-	ReasonCode       string
+	TableID    int64
+	ProductID  int64
+	ReasonCode string
 }

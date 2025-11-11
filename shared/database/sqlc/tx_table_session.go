@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"food-story/pkg/exceptions"
+	"food-story/pkg/utils"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
@@ -28,6 +30,9 @@ func (store *SQLStore) TXCreateTableSession(ctx context.Context, arg CreateTable
 
 type TXSessionsExtensionParams struct {
 	TableID                int64
+	OrderID                int64
+	NewOrderItemsID        int64
+	ProductID              int64
 	RequestedMinutes       int64
 	ReasonCode             string
 	ExpiresAt              time.Time
@@ -59,6 +64,59 @@ func (store *SQLStore) TXSessionsExtension(ctx context.Context, arg TXSessionsEx
 			ExpiresAt:        expiresAt,
 			Sessionid:        sessionID,
 		})
+		if err != nil {
+			return err
+		}
+
+		product, err := q.GetProductByID(ctx, arg.ProductID)
+		if err != nil {
+			return err
+		}
+
+		if product == nil {
+			return exceptions.ErrProductNotFound
+		}
+
+		statusCompletedID, err := q.GetOrderStatusCompleted(ctx)
+		if err != nil {
+			return err
+		}
+
+		currentTime, err := q.GetTimeNow(ctx)
+		if err != nil {
+			return err
+		}
+
+		isFree, err := q.IsSessionExtensionModeFree(ctx, arg.CreateSessionExtension.ModeID.Int64)
+		if err != nil {
+			return err
+		}
+
+		var price pgtype.Numeric
+		if isFree {
+			price = utils.Float64ToPgNumeric(0)
+		} else {
+			productPrice, fErr := product.Price.Float64Value()
+			if fErr != nil {
+				return fErr
+			}
+			price = utils.Float64ToPgNumeric(productPrice.Float64)
+		}
+
+		createOrderItemsParams := CreateOrderItemsPerRowParams{
+			ID:              arg.NewOrderItemsID,
+			OrderID:         arg.OrderID,
+			ProductID:       product.ID,
+			StatusID:        statusCompletedID,
+			ProductName:     product.Name,
+			ProductNameEn:   product.NameEn,
+			Price:           price,
+			Quantity:        1,
+			CreatedAt:       currentTime,
+			ProductImageUrl: product.ImageUrl,
+			IsVisible:       false,
+		}
+		err = q.CreateOrderItemsPerRow(ctx, createOrderItemsParams)
 		if err != nil {
 			return err
 		}

@@ -105,7 +105,7 @@ func (i *Implement) GetSessionIDByTableID(ctx context.Context, tableID int64) (u
 	return v, nil
 }
 
-func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension) *exceptions.CustomError {
+func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension, requestedMinutes int32, orderID int64) *exceptions.CustomError {
 	tableExp, err := i.repository.GetExpiresAtByTableID(ctx, payload.TableID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
@@ -125,7 +125,7 @@ func (i *Implement) SessionExtension(ctx context.Context, payload domain.Session
 			Status: exceptions.ERRBUSSINESS,
 			Errors: errors.New("table extension is not allowed"),
 		}
-	} else if int32(payload.RequestedMinutes) > tableExp.MaxExtendMinutes {
+	} else if requestedMinutes > tableExp.MaxExtendMinutes {
 		return &exceptions.CustomError{
 			Status: exceptions.ERRBUSSINESS,
 			Errors: errors.New("requested minutes is not allowed"),
@@ -140,7 +140,7 @@ func (i *Implement) SessionExtension(ctx context.Context, payload domain.Session
 		}
 	}
 
-	totalExpiresAt := expireAt.Add(time.Duration(payload.RequestedMinutes) * time.Minute)
+	totalExpiresAt := expireAt.Add(time.Duration(requestedMinutes) * time.Minute)
 
 	reasonResult, err := i.repository.GetSessionExtensionModeByReasonCode(ctx, payload.ReasonCode)
 	if err != nil {
@@ -159,17 +159,20 @@ func (i *Implement) SessionExtension(ctx context.Context, payload domain.Session
 
 	createSessionExtensionParams := database.CreateSessionExtensionParams{
 		ID:               i.snowflakeID.Generate(),
-		RequestedMinutes: int32(payload.RequestedMinutes),
+		RequestedMinutes: requestedMinutes,
 		ReasonID:         utils.Int64ToPgInt8(reasonResult.ID),
 		ModeID:           utils.Int64ToPgInt8(reasonResult.SessionExtensionModeID.Int64),
 	}
 
 	err = i.repository.TXSessionsExtension(ctx, database.TXSessionsExtensionParams{
 		TableID:                payload.TableID,
-		RequestedMinutes:       payload.RequestedMinutes,
+		RequestedMinutes:       int64(requestedMinutes),
 		ReasonCode:             payload.ReasonCode,
 		ExpiresAt:              totalExpiresAt,
 		CreateSessionExtension: createSessionExtensionParams,
+		ProductID:              payload.ProductID,
+		OrderID:                orderID,
+		NewOrderItemsID:        i.snowflakeID.Generate(),
 	})
 	if err != nil {
 		return &exceptions.CustomError{

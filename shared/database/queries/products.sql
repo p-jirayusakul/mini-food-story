@@ -35,7 +35,8 @@ SELECT p.id,
        p.image_url
 FROM public.products as p
          INNER JOIN public.md_categories as c ON c.id = p.categories
-WHERE ((sqlc.narg(name)::varchar IS NULL OR p."name" ILIKE '%' || sqlc.narg(name)::varchar || '%') OR (sqlc.narg(name)::varchar IS NULL OR p.name_en ILIKE '%' || sqlc.narg(name)::varchar || '%'))
+WHERE p.is_available IS TRUE AND p.is_visible IS TRUE
+  AND ((sqlc.narg(name)::varchar IS NULL OR p."name" ILIKE '%' || sqlc.narg(name)::varchar || '%') OR (sqlc.narg(name)::varchar IS NULL OR p.name_en ILIKE '%' || sqlc.narg(name)::varchar || '%'))
   AND (sqlc.narg(is_available)::boolean IS NULL OR p.is_available = sqlc.narg(is_available)::boolean)
   AND (
     sqlc.narg(category_id)::bigint[] IS NULL
@@ -66,7 +67,8 @@ OFFSET sqlc.arg(page_number) LIMIT sqlc.arg(page_size);
 SELECT COUNT(*)
 FROM public.products as p
          INNER JOIN public.md_categories as c ON c.id = p.categories
-WHERE ((sqlc.narg(name)::varchar IS NULL OR p."name" ILIKE '%' || sqlc.narg(name)::varchar || '%') OR (sqlc.narg(name)::varchar IS NULL OR p.name_en ILIKE '%' || sqlc.narg(name)::varchar || '%'))
+WHERE p.is_available IS TRUE AND p.is_visible IS TRUE
+  AND ((sqlc.narg(name)::varchar IS NULL OR p."name" ILIKE '%' || sqlc.narg(name)::varchar || '%') OR (sqlc.narg(name)::varchar IS NULL OR p.name_en ILIKE '%' || sqlc.narg(name)::varchar || '%'))
   AND (sqlc.narg(is_available)::boolean IS NULL OR p.is_available = sqlc.narg(is_available)::boolean)
   AND (
     sqlc.narg(category_id)::bigint[] IS NULL
@@ -87,7 +89,7 @@ SELECT p.id,
        p.image_url
 FROM public.products as p
          INNER JOIN public.md_categories as c ON c.id = p.categories
-WHERE p.id = sqlc.arg(id)::bigint LIMIT 1;
+WHERE p.id = sqlc.arg(id)::bigint AND p.is_available IS TRUE LIMIT 1;
 
 -- name: GetProductAvailableByID :one
 SELECT p.id,
@@ -106,3 +108,18 @@ WHERE p.id = sqlc.arg(id)::bigint AND p.is_available IS TRUE LIMIT 1;
 
 -- name: IsProductExists :one
 SELECT count(*) > 0 as "isExists" FROM public.products WHERE id = $1;
+
+-- name: ListProductTimeExtension :many
+SELECT p.id,
+       p."name",
+       p.name_en,
+       p.categories,
+       c.name as "categoryName",
+       c.name_en as "categoryNameEN",
+       p.description,
+       p.price,
+       p.is_available,
+       p.image_url
+FROM public.products as p
+         INNER JOIN public.md_categories as c ON c.id = p.categories
+WHERE p.is_available IS TRUE AND c.code = 'TIME_EXTENSION';

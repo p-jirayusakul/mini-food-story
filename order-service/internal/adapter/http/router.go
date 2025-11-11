@@ -48,6 +48,8 @@ func (s *Handler) setupRoutes() {
 	s.router.Patch("/current/items/:orderItemsID<int>/status/cancel", middleware.CheckSessionHeader(secretKey), s.handleSessionID, s.UpdateCurrentOrderItemsStatusCancel)
 
 	var roles = []string{"WAITER", "CASHIER"}
+	s.router.Post("/:id<int>", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.CreateOrderByStaff)
+	s.router.Post("/:id<int>/items", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.CreateOrderItemsByStaff)
 	s.router.Get("/:id<int>/items/status/incomplete", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.SearchOrderItemsInComplete)
 	s.router.Get("/:id<int>/items", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.GetOrderItems)
 	s.router.Patch("/:id<int>/items/:orderItemsID<int>/status/cancel", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.UpdateOrderItemsStatusCancel)

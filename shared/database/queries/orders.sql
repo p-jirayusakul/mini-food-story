@@ -51,7 +51,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE  DATE(oi.created_at) = CURRENT_DATE
+WHERE  DATE(oi.created_at) = CURRENT_DATE AND oi.is_visible IS TRUE
   AND ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
   AND (
     sqlc.narg(table_number)::int[] IS NULL
@@ -93,7 +93,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE  DATE(oi.created_at) = CURRENT_DATE
+WHERE  DATE(oi.created_at) = CURRENT_DATE AND oi.is_visible IS TRUE
   AND ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
   AND (
     sqlc.narg(table_number)::int[] IS NULL
@@ -158,7 +158,7 @@ FROM public.orders o
 JOIN public.order_items oi ON oi.order_id = o.id
 JOIN public.md_order_statuses mos ON oi.status_id = mos.id
 JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = sqlc.arg(order_id)::bigint
+WHERE o.id = sqlc.arg(order_id)::bigint AND oi.is_visible IS TRUE
 order by oi.id DESC
 OFFSET sqlc.arg(pageNumber) LIMIT sqlc.arg(pageSize);
 
@@ -168,7 +168,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = sqlc.arg(order_id)::bigint;
+WHERE o.id = sqlc.arg(order_id)::bigint AND oi.is_visible IS TRUE;
 
 -- name: GetOrderWithItemsByID :one
 SELECT o.id  AS "orderID",
@@ -214,7 +214,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
         JOIN public.tables t ON o.table_id = t.id
-WHERE oi.id = ANY(sqlc.arg(order_items_id)::bigint[])
+WHERE oi.id = ANY(sqlc.arg(order_items_id)::bigint[]) AND oi.is_visible IS TRUE
 order by oi.id DESC;
 
 -- name: IsOrderWithItemsExists :one
@@ -244,7 +244,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = sqlc.arg(order_id)::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+WHERE o.id = sqlc.arg(order_id)::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED') AND oi.is_visible IS TRUE
   AND ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
   AND (
     sqlc.narg(status_code)::varchar[] IS NULL
@@ -280,7 +280,7 @@ FROM public.orders o
          JOIN public.order_items oi ON oi.order_id = o.id
          JOIN public.md_order_statuses mos ON oi.status_id = mos.id
          JOIN public.tables t ON o.table_id = t.id
-WHERE o.id = sqlc.arg(order_id)::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED')
+WHERE o.id = sqlc.arg(order_id)::bigint AND (mos.code != 'SERVED' AND mos.code != 'CANCELLED') AND oi.is_visible IS TRUE
   AND ((sqlc.narg(product_name)::varchar IS NULL OR oi."product_name" ILIKE '%' || sqlc.narg(product_name)::varchar || '%') OR (sqlc.narg(product_name)::varchar IS NULL OR oi.product_name_en ILIKE '%' || sqlc.narg(product_name)::varchar || '%'))
   AND (
     sqlc.narg(status_code)::varchar[] IS NULL
@@ -300,3 +300,6 @@ SELECT table_id FROM public.orders WHERE id = sqlc.arg(order_id)::bigint;
 
 -- name: GetSessionIDByOrderID :one
 select session_id as "sessionID" from public.orders where id = sqlc.arg(id)::bigint LIMIT 1;
+
+-- name: GetOrderIDBySessionID :one
+select id from public.orders where session_id = sqlc.arg(session_id)::uuid LIMIT 1;

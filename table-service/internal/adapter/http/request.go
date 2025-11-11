@@ -26,7 +26,7 @@ type SearchTable struct {
 }
 
 type SessionExtensionRequest struct {
-	TableID          string `json:"tableID" validate:"required" example:"1923564209627467776"`
-	RequestedMinutes int64  `json:"requestedMinutes" validate:"required,gte=1,max=120" example:"15"`
-	ReasonCode       string `json:"reasonCode" validate:"required,oneof=CUSTOMER_REQUEST LATE_SERVICE SYSTEM_ERROR PARTIAL_COMP" example:"LATE_SERVICE"`
+	TableID    string `json:"tableID" validate:"required" example:"1923564209627467776"`
+	ProductID  string `json:"productID" validate:"required" example:"1923564209627467776"`
+	ReasonCode string `json:"reasonCode" validate:"required,oneof=CUSTOMER_REQUEST LATE_SERVICE SYSTEM_ERROR PARTIAL_COMP" example:"LATE_SERVICE"`
 }

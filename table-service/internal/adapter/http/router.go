@@ -37,6 +37,8 @@ func (s *Handler) setupRoutes() {
 
 	group.Get("/status", s.ListTableStatus)
 	group.Post("", s.CreateTable)
+	group.Get("/extension", s.ListProductTimeExtension)
+
 	group.Post("/session", s.CreateTableSession)
 	group.Post("/session/extension", s.SessionExtension)
 

@@ -13,8 +13,8 @@ import (
 
 const createTableSession = `-- name: CreateTableSession :exec
 INSERT INTO public.table_session
-(id, table_id, number_of_people, session_id, status, started_at, expires_at, ended_at)
-VALUES($1, $2, $3, $4, 'active', NOW(), $5, NULL)
+(id, table_id, number_of_people, session_id, status, started_at, expires_at)
+VALUES($1, $2, $3, $4, 'active', NOW(), $5)
 `
 
 type CreateTableSessionParams struct {

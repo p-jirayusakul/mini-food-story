@@ -40,6 +40,8 @@ CREATE TABLE md_categories (
     ,updated_at TIMESTAMP WITH TIME zone
     ,icon_name VARCHAR(50)
     ,sort_order INT DEFAULT 1 NOT NULL UNIQUE
+    ,is_visible boolean DEFAULT true NOT NULL
+    ,code VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE md_order_statuses (
@@ -100,27 +102,24 @@ CREATE TABLE tables (
 
 
 CREATE TABLE table_session (
-                               id BIGINT NOT NULL PRIMARY KEY
-    ,table_id BIGINT NOT NULL REFERENCES tables
-    ,session_id uuid DEFAULT gen_random_uuid() NOT NULL UNIQUE
-    ,number_of_people INT DEFAULT 1 NOT NULL
-    ,STATUS table_session_status
-    ,started_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
-    ,expires_at TIMESTAMP WITH TIME zone NOT NULL
-    ,ended_at TIMESTAMP WITH TIME zone
-    ,hard_expires_at TIMESTAMP WITH TIME zone
-    ,max_extend_minutes INT DEFAULT 120 NOT NULL
-    ,extend_count INT DEFAULT 0 NOT NULL
-    ,extend_total_minutes INT DEFAULT 0 NOT NULL
-    ,last_reason_code TEXT
-    ,last_action_by TEXT
-    ,lock_version INT DEFAULT 1 NOT NULL
+       id                   bigint                                             not null
+           primary key,
+       table_id             bigint                                             not null
+           references tables,
+       session_id           uuid                     default gen_random_uuid() not null
+           unique,
+       number_of_people     integer                  default 1                 not null,
+       status               table_session_status,
+       started_at           timestamp with time zone default now()             not null,
+       expires_at           timestamp with time zone                           not null,
+       ended_at           timestamp with time zone                           ,
+       max_extend_minutes   integer                  default 120               not null,
+       extend_count         integer                  default 0                 not null,
+       extend_total_minutes integer                  default 0                 not null,
+       last_reason_code     text,
+       lock_version         integer                  default 1                 not null
     ,CONSTRAINT chk_time_order CHECK (
         (started_at <= expires_at)
-            AND (
-            (hard_expires_at IS NULL)
-                OR (expires_at <= hard_expires_at)
-            )
         )
 );
 
@@ -132,6 +131,7 @@ CREATE TABLE products (
     ,description TEXT
     ,price NUMERIC(10, 2) DEFAULT 0 NOT NULL
     ,is_available boolean DEFAULT false NOT NULL
+    ,is_visible boolean DEFAULT true NOT NULL
     ,image_url TEXT
     ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
     ,updated_at TIMESTAMP WITH TIME zone
@@ -162,6 +162,7 @@ CREATE TABLE order_items (
     ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
     ,updated_at TIMESTAMP WITH TIME zone
     ,product_image_url TEXT
+    ,is_visible boolean DEFAULT true NOT NULL
 );
 
 comment ON COLUMN order_items.prepared_at IS 'เวลาที่ทำอาหารเสร็จ';
@@ -178,6 +179,19 @@ CREATE TABLE payments (
     ,note TEXT
     ,created_at TIMESTAMP WITH TIME zone DEFAULT now() NOT NULL
     ,updated_at TIMESTAMP WITH TIME zone
+);
+
+create table product_time_extension
+(
+    id               bigint                                 not null
+        constraint product_time_extension_pk
+            primary key,
+    duration_minutes integer                  default 0     not null,
+    products_id      bigint
+        constraint product_time_extension_products_id_fk
+            references products,
+    created_at       timestamp with time zone default now() not null,
+    updated_at       timestamp with time zone
 );
 
 ALTER TABLE md_table_statuses OWNER TO postgres;

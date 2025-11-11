@@ -10,6 +10,7 @@ import (
 	database "food-story/shared/database/sqlc"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -178,4 +179,25 @@ func (i *Implement) getOrderSequence(ctx context.Context) (string, *exceptions.C
 	}
 
 	return fmt.Sprintf("FS-%s-%04d", currentTime.In(currentLocation).Format("20060102"), sequence), nil
+}
+
+func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, customError *exceptions.CustomError) {
+	sessionIDData, err := i.repository.GetSessionIDByOrderID(ctx, orderID)
+	if err != nil {
+		return uuid.Nil, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: fmt.Errorf("failed to get table by order id: %w", err),
+		}
+	}
+
+	sessionIDString := sessionIDData.String()
+	sessionID, err := uuid.Parse(sessionIDString)
+	if err != nil {
+		return uuid.Nil, &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: fmt.Errorf("failed to get session by order id: %w", err),
+		}
+	}
+
+	return sessionID, nil
 }

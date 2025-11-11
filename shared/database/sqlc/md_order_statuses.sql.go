@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const getOrderStatusCompleted = `-- name: GetOrderStatusCompleted :one
+SELECT id FROM public.md_order_statuses WHERE code = 'COMPLETED' LIMIT 1
+`
+
+func (q *Queries) GetOrderStatusCompleted(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getOrderStatusCompleted)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const getOrderStatusPreparing = `-- name: GetOrderStatusPreparing :one
 SELECT id FROM public.md_order_statuses WHERE code = 'PREPARING' LIMIT 1
 `

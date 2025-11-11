@@ -62,6 +62,8 @@ type MdCategory struct {
 	UpdatedAt pgtype.Timestamptz `json:"updated_at"`
 	IconName  pgtype.Text        `json:"icon_name"`
 	SortOrder int32              `json:"sort_order"`
+	IsVisible bool               `json:"is_visible"`
+	Code      string             `json:"code"`
 }
 
 type MdOrderStatus struct {
@@ -153,6 +155,7 @@ type OrderItem struct {
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 	ProductImageUrl pgtype.Text        `json:"product_image_url"`
+	IsVisible       bool               `json:"is_visible"`
 }
 
 type OrderSequence struct {
@@ -182,9 +185,18 @@ type Product struct {
 	Description pgtype.Text        `json:"description"`
 	Price       pgtype.Numeric     `json:"price"`
 	IsAvailable bool               `json:"is_available"`
+	IsVisible   bool               `json:"is_visible"`
 	ImageUrl    pgtype.Text        `json:"image_url"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+}
+
+type ProductTimeExtension struct {
+	ID              int64              `json:"id"`
+	DurationMinutes int32              `json:"duration_minutes"`
+	ProductsID      pgtype.Int8        `json:"products_id"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `json:"updated_at"`
 }
 
 type SessionExtension struct {
@@ -214,11 +226,9 @@ type TableSession struct {
 	StartedAt          pgtype.Timestamptz     `json:"started_at"`
 	ExpiresAt          pgtype.Timestamptz     `json:"expires_at"`
 	EndedAt            pgtype.Timestamptz     `json:"ended_at"`
-	HardExpiresAt      pgtype.Timestamptz     `json:"hard_expires_at"`
 	MaxExtendMinutes   int32                  `json:"max_extend_minutes"`
 	ExtendCount        int32                  `json:"extend_count"`
 	ExtendTotalMinutes int32                  `json:"extend_total_minutes"`
 	LastReasonCode     pgtype.Text            `json:"last_reason_code"`
-	LastActionBy       pgtype.Text            `json:"last_action_by"`
 	LockVersion        int32                  `json:"lock_version"`
 }

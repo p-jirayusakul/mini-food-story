@@ -54,6 +54,28 @@ func (s *Handler) ListSessionExtensionReason(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "get list session extension reason success", result)
 }
 
+// ListProductTimeExtension godoc
+// @Summary Get list of table status
+// @Description Get list of all available table statuses
+// @Tags Table
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} middleware.SuccessResponse{data=[]domain.Status}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /status [get]
+func (s *Handler) ListProductTimeExtension(c *fiber.Ctx) error {
+	result, customError := s.useCase.ListProductTimeExtension(c.Context())
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseOK(c, "get list product time extension success", result)
+}
+
 // CreateTable godoc
 // @Summary Create new table
 // @Description Create a new table with specified number and seats
@@ -399,10 +421,15 @@ func (s *Handler) SessionExtension(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
+	productID, err := utils.StrToInt64(body.ProductID)
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
 	customError := s.useCase.SessionExtension(c.Context(), domain.SessionExtension{
-		TableID:          tableID,
-		RequestedMinutes: body.RequestedMinutes,
-		ReasonCode:       body.ReasonCode,
+		TableID:    tableID,
+		ProductID:  productID,
+		ReasonCode: body.ReasonCode,
 	})
 	if customError != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())

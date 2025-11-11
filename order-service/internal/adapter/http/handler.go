@@ -426,6 +426,116 @@ func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, "update order item status success", nil)
 }
 
+// CreateOrderByStaff godoc
+// @Summary Create new order
+// @Description Create a new order with items for current table session
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param X-Session-Id header string true "Session ID"
+// @Param order body OrderItems true "Order item details"
+// @Success 201 {object} middleware.SuccessResponse
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /{id} [post]
+func (s *Handler) CreateOrderByStaff(c *fiber.Ctx) error {
+
+	orderID, err := utils.StrToInt64(c.Params("id"))
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	body := new(OrderItems)
+	if err := c.BodyParser(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	sessionID, customErr := s.useCase.GetSessionIDByOrderID(c.Context(), orderID)
+	if customErr != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customErr.Status), customErr.Errors.Error())
+	}
+
+	var items []shareModel.OrderItems
+	for _, item := range body.Items {
+		productID, err := utils.StrToInt64(item.ProductID)
+		if err != nil {
+			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		}
+		items = append(items, shareModel.OrderItems{
+			ProductID: productID,
+			Quantity:  item.Quantity,
+			Note:      item.Note,
+		})
+	}
+
+	_, customError := s.useCase.CreateOrder(c.Context(), sessionID, items)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseCreated(c, "create order success", nil)
+}
+
+// CreateOrderItemsByStaff godoc
+// @Summary Add items to an existing order
+// @Description Add new items to an existing order for current table session
+// @Tags Order
+// @Accept json
+// @Produce json
+// @Param X-Session-Id header string true "Session ID"
+// @Param order body OrderItems true "Order items to add"
+// @Success 201 {object} middleware.SuccessResponse
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /{id}/items [post]
+func (s *Handler) CreateOrderItemsByStaff(c *fiber.Ctx) error {
+	orderID, err := utils.StrToInt64(c.Params("id"))
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	body := new(OrderItems)
+	if err := c.BodyParser(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	if err := s.validator.Validate(body); err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	sessionID, customErr := s.useCase.GetSessionIDByOrderID(c.Context(), orderID)
+	if customErr != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customErr.Status), customErr.Errors.Error())
+	}
+
+	var items []shareModel.OrderItems
+	for _, item := range body.Items {
+		productID, err := utils.StrToInt64(item.ProductID)
+		if err != nil {
+			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		}
+		items = append(items, shareModel.OrderItems{
+			ProductID: productID,
+			Quantity:  item.Quantity,
+			Note:      item.Note,
+		})
+	}
+	customError := s.useCase.CreateOrderItems(c.Context(), sessionID, items)
+	if customError != nil {
+		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	}
+
+	return middleware.ResponseCreated(c, "create order item success", nil)
+}
+
 func getSession(c *fiber.Ctx) (uuid.UUID, error) {
 	sessionIDAny, ok := c.Locals("sessionID").(string)
 	if !ok {

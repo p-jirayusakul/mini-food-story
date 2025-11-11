@@ -1,11 +1,17 @@
 -- name: CreateOrderItems :copyfrom
 INSERT INTO public.order_items
-(id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note, created_at, product_image_url)
-VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+(id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note, created_at, product_image_url, is_visible)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
+
+-- name: CreateOrderItemsPerRow :exec
+INSERT INTO public.order_items
+(id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note, created_at, product_image_url, is_visible)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
+
 
 -- name: GetOrderItemsByID :one
 SELECT id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note
-FROM public.order_items WHERE id = $1;
+FROM public.order_items WHERE id = $1 AND is_visible IS TRUE;
 
 -- name: IsOrderItemsExist :one
 SELECT COUNT(id) > 0 as "isExist"

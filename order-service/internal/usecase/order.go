@@ -90,3 +90,7 @@ func (i *Implement) GetOrderByID(ctx context.Context, sessionID uuid.UUID) (resu
 
 	return i.repository.GetOrderByID(ctx, orderID)
 }
+
+func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, customError *exceptions.CustomError) {
+	return i.repository.GetSessionIDByOrderID(ctx, orderID)
+}

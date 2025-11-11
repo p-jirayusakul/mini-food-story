@@ -23,11 +23,51 @@ type CreateOrderItemsParams struct {
 	Note            pgtype.Text        `json:"note"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 	ProductImageUrl pgtype.Text        `json:"product_image_url"`
+	IsVisible       bool               `json:"is_visible"`
+}
+
+const createOrderItemsPerRow = `-- name: CreateOrderItemsPerRow :exec
+INSERT INTO public.order_items
+(id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note, created_at, product_image_url, is_visible)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+`
+
+type CreateOrderItemsPerRowParams struct {
+	ID              int64              `json:"id"`
+	OrderID         int64              `json:"order_id"`
+	ProductID       int64              `json:"product_id"`
+	StatusID        int64              `json:"status_id"`
+	ProductName     string             `json:"product_name"`
+	ProductNameEn   string             `json:"product_name_en"`
+	Price           pgtype.Numeric     `json:"price"`
+	Quantity        int32              `json:"quantity"`
+	Note            pgtype.Text        `json:"note"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	ProductImageUrl pgtype.Text        `json:"product_image_url"`
+	IsVisible       bool               `json:"is_visible"`
+}
+
+func (q *Queries) CreateOrderItemsPerRow(ctx context.Context, arg CreateOrderItemsPerRowParams) error {
+	_, err := q.db.Exec(ctx, createOrderItemsPerRow,
+		arg.ID,
+		arg.OrderID,
+		arg.ProductID,
+		arg.StatusID,
+		arg.ProductName,
+		arg.ProductNameEn,
+		arg.Price,
+		arg.Quantity,
+		arg.Note,
+		arg.CreatedAt,
+		arg.ProductImageUrl,
+		arg.IsVisible,
+	)
+	return err
 }
 
 const getOrderItemsByID = `-- name: GetOrderItemsByID :one
 SELECT id, order_id, product_id, status_id, product_name, product_name_en, price, quantity, note
-FROM public.order_items WHERE id = $1
+FROM public.order_items WHERE id = $1 AND is_visible IS TRUE
 `
 
 type GetOrderItemsByIDRow struct {
