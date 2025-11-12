@@ -442,12 +442,7 @@ func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
 // @Router /{id} [post]
 func (s *Handler) CreateOrderByStaff(c *fiber.Ctx) error {
 
-	orderID, err := utils.StrToInt64(c.Params("id"))
-	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	body := new(OrderItems)
+	body := new(OrderItemsByStaff)
 	if err := c.BodyParser(body); err != nil {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
@@ -456,7 +451,12 @@ func (s *Handler) CreateOrderByStaff(c *fiber.Ctx) error {
 		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
 	}
 
-	sessionID, customErr := s.useCase.GetSessionIDByOrderID(c.Context(), orderID)
+	tableID, err := utils.StrToInt64(body.TableID)
+	if err != nil {
+		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+	}
+
+	sessionID, customErr := s.useCase.GetSessionIDByTableID(c.Context(), tableID)
 	if customErr != nil {
 		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customErr.Status), customErr.Errors.Error())
 	}

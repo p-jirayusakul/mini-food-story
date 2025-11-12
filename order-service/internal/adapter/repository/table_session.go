@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 
@@ -18,4 +19,24 @@ func (i *Implement) UpdateStatusCloseTableSession(ctx context.Context, sessionID
 	}
 
 	return nil
+}
+
+func (i *Implement) GetSessionIDByTableID(ctx context.Context, tableID int64) (result uuid.UUID, customError *exceptions.CustomError) {
+	sessionID, err := i.repository.GetSessionIDByTableID(ctx, tableID)
+	if err != nil {
+		return uuid.UUID{}, &exceptions.CustomError{
+			Status: exceptions.ERRREPOSITORY,
+			Errors: err,
+		}
+	}
+
+	v, err := utils.PareStringToUUID(sessionID.String())
+	if err != nil {
+		return uuid.UUID{}, &exceptions.CustomError{
+			Status: exceptions.ERRSYSTEM,
+			Errors: fmt.Errorf("failed to parse session id: %w", err),
+		}
+	}
+
+	return v, nil
 }

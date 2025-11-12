@@ -57,19 +57,33 @@ func (mr *MockRedisTableCacheInterfaceMockRecorder) DeleteCachedTable(key any) *
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteCachedTable", reflect.TypeOf((*MockRedisTableCacheInterface)(nil).DeleteCachedTable), key)
 }
 
-// GetCachedTable mocks base method.
-func (m *MockRedisTableCacheInterface) GetCachedTable(key string) (*model.CurrentTableSession, *exceptions.CustomError) {
+// ExtensionTTL mocks base method.
+func (m *MockRedisTableCacheInterface) ExtensionTTL(sessionID uuid.UUID, newTTL time.Duration) *exceptions.CustomError {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCachedTable", key)
+	ret := m.ctrl.Call(m, "ExtensionTTL", sessionID, newTTL)
+	ret0, _ := ret[0].(*exceptions.CustomError)
+	return ret0
+}
+
+// ExtensionTTL indicates an expected call of ExtensionTTL.
+func (mr *MockRedisTableCacheInterfaceMockRecorder) ExtensionTTL(sessionID, newTTL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExtensionTTL", reflect.TypeOf((*MockRedisTableCacheInterface)(nil).ExtensionTTL), sessionID, newTTL)
+}
+
+// GetCachedTable mocks base method.
+func (m *MockRedisTableCacheInterface) GetCachedTable(sessionID uuid.UUID) (*model.CurrentTableSession, *exceptions.CustomError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCachedTable", sessionID)
 	ret0, _ := ret[0].(*model.CurrentTableSession)
 	ret1, _ := ret[1].(*exceptions.CustomError)
 	return ret0, ret1
 }
 
 // GetCachedTable indicates an expected call of GetCachedTable.
-func (mr *MockRedisTableCacheInterfaceMockRecorder) GetCachedTable(key any) *gomock.Call {
+func (mr *MockRedisTableCacheInterfaceMockRecorder) GetCachedTable(sessionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCachedTable", reflect.TypeOf((*MockRedisTableCacheInterface)(nil).GetCachedTable), key)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCachedTable", reflect.TypeOf((*MockRedisTableCacheInterface)(nil).GetCachedTable), sessionID)
 }
 
 // GetCachedTableNumber mocks base method.
@@ -85,6 +99,21 @@ func (m *MockRedisTableCacheInterface) GetCachedTableNumber(key string) (int32, 
 func (mr *MockRedisTableCacheInterfaceMockRecorder) GetCachedTableNumber(key any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCachedTableNumber", reflect.TypeOf((*MockRedisTableCacheInterface)(nil).GetCachedTableNumber), key)
+}
+
+// GetTTL mocks base method.
+func (m *MockRedisTableCacheInterface) GetTTL(sessionID uuid.UUID) (time.Duration, *exceptions.CustomError) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTTL", sessionID)
+	ret0, _ := ret[0].(time.Duration)
+	ret1, _ := ret[1].(*exceptions.CustomError)
+	return ret0, ret1
+}
+
+// GetTTL indicates an expected call of GetTTL.
+func (mr *MockRedisTableCacheInterfaceMockRecorder) GetTTL(sessionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTTL", reflect.TypeOf((*MockRedisTableCacheInterface)(nil).GetTTL), sessionID)
 }
 
 // IsCachedTableExist mocks base method.

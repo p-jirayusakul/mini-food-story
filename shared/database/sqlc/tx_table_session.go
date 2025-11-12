@@ -77,7 +77,7 @@ func (store *SQLStore) TXSessionsExtension(ctx context.Context, arg TXSessionsEx
 			return exceptions.ErrProductNotFound
 		}
 
-		statusCompletedID, err := q.GetOrderStatusCompleted(ctx)
+		statusServedID, err := q.GetOrderStatusServed(ctx)
 		if err != nil {
 			return err
 		}
@@ -107,7 +107,7 @@ func (store *SQLStore) TXSessionsExtension(ctx context.Context, arg TXSessionsEx
 			ID:              arg.NewOrderItemsID,
 			OrderID:         arg.OrderID,
 			ProductID:       product.ID,
-			StatusID:        statusCompletedID,
+			StatusID:        statusServedID,
 			ProductName:     product.Name,
 			ProductNameEn:   product.NameEn,
 			Price:           price,

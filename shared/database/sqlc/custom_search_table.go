@@ -1,5 +1,9 @@
 package database
 
+import (
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
 // GetID Implement TableRow for QuickSearchTablesRow
 func (q *QuickSearchTablesRow) GetID() int64 {
 	return q.ID
@@ -32,6 +36,17 @@ func (q *QuickSearchTablesRow) GetOrderID() *int64 {
 	return nil
 }
 
+func (q *QuickSearchTablesRow) GetExpiresAt() pgtype.Timestamptz {
+	return q.ExpiresAt
+}
+
+func (q *QuickSearchTablesRow) GetExtendTotalMinutes() int32 {
+	if q.ExtendTotalMinutes.Valid {
+		return q.ExtendTotalMinutes.Int32
+	}
+	return 0
+}
+
 // GetID Implement TableRow for SearchTablesRow
 func (s *SearchTablesRow) GetID() int64 {
 	return s.ID
@@ -57,9 +72,20 @@ func (s *SearchTablesRow) GetSeats() int32 {
 	return s.Seats
 }
 
-func (q *SearchTablesRow) GetOrderID() *int64 {
-	if q.OrderID.Valid {
-		return &q.OrderID.Int64
+func (s *SearchTablesRow) GetOrderID() *int64 {
+	if s.OrderID.Valid {
+		return &s.OrderID.Int64
 	}
 	return nil
+}
+
+func (s *SearchTablesRow) GetExpiresAt() pgtype.Timestamptz {
+	return s.ExpiresAt
+}
+
+func (s *SearchTablesRow) GetExtendTotalMinutes() int32 {
+	if s.ExtendTotalMinutes.Valid {
+		return s.ExtendTotalMinutes.Int32
+	}
+	return 0
 }

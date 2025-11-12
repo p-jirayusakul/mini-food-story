@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"fmt"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
@@ -83,6 +84,7 @@ func (i *Implement) UpdateOrderItemsStatusByID(ctx context.Context, payload shar
 	}
 
 	if !isOrderItemsNotFinal {
+		fmt.Println("update table status food served")
 		tableID, tableIDErr := i.repository.GetTableIDByOrderID(ctx, payload.OrderID)
 		if tableIDErr != nil {
 			return tableIDErr

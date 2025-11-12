@@ -23,6 +23,8 @@ type TableRow interface {
 	GetStatusCode() string
 	GetSeats() int32
 	GetOrderID() *int64
+	GetExpiresAt() pgtype.Timestamptz
+	GetExtendTotalMinutes() int32
 }
 
 func (i *Implement) IsTableAvailableOrReserved(ctx context.Context, tableID int64) *exceptions.CustomError {
@@ -301,14 +303,21 @@ func (i *Implement) fetchQuickSearchTablesTotalItems(ctx context.Context, number
 func transformSearchResults[T TableRow](results []T) []*domain.Table {
 	data := make([]*domain.Table, len(results))
 	for index, row := range results {
+		var expiredAt *string
+		expiredAtDB, expErr := utils.PgTimestampToThaiISO8601(row.GetExpiresAt())
+		if expErr == nil {
+			expiredAt = &expiredAtDB
+		}
 		data[index] = &domain.Table{
-			ID:          row.GetID(),
-			TableNumber: row.GetTableNumber(),
-			Status:      row.GetStatus(),
-			StatusEn:    row.GetStatusEN(),
-			StatusCode:  row.GetStatusCode(),
-			Seats:       row.GetSeats(),
-			OrderID:     row.GetOrderID(),
+			ID:                 row.GetID(),
+			TableNumber:        row.GetTableNumber(),
+			Status:             row.GetStatus(),
+			StatusEn:           row.GetStatusEN(),
+			StatusCode:         row.GetStatusCode(),
+			Seats:              row.GetSeats(),
+			OrderID:            row.GetOrderID(),
+			ExpiredAt:          expiredAt,
+			ExtendTotalMinutes: row.GetExtendTotalMinutes(),
 		}
 	}
 	return data

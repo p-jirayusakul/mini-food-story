@@ -4,6 +4,11 @@ type OrderItems struct {
 	Items []OrderItemsData `json:"items" validate:"required,gt=0,dive"`
 }
 
+type OrderItemsByStaff struct {
+	TableID string           `json:"tableID" validate:"required" example:"1921828287366041600"`
+	Items   []OrderItemsData `json:"items" validate:"required,gt=0,dive"`
+}
+
 type OrderItemsData struct {
 	ProductID string  `json:"productID" validate:"required,gt=0" example:"1921828287366041600"`
 	Quantity  int32   `json:"quantity" validate:"required,gt=0" example:"1"`

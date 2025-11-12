@@ -72,6 +72,20 @@ func (mr *MockStoreMockRecorder) CreateOrderItems(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrderItems", reflect.TypeOf((*MockStore)(nil).CreateOrderItems), ctx, arg)
 }
 
+// CreateOrderItemsPerRow mocks base method.
+func (m *MockStore) CreateOrderItemsPerRow(ctx context.Context, arg database.CreateOrderItemsPerRowParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOrderItemsPerRow", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateOrderItemsPerRow indicates an expected call of CreateOrderItemsPerRow.
+func (mr *MockStoreMockRecorder) CreateOrderItemsPerRow(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrderItemsPerRow", reflect.TypeOf((*MockStore)(nil).CreateOrderItemsPerRow), ctx, arg)
+}
+
 // CreatePayment mocks base method.
 func (m *MockStore) CreatePayment(ctx context.Context, arg database.CreatePaymentParams) (int64, error) {
 	m.ctrl.T.Helper()
@@ -100,6 +114,21 @@ func (m *MockStore) CreateProduct(ctx context.Context, arg database.CreateProduc
 func (mr *MockStoreMockRecorder) CreateProduct(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateProduct", reflect.TypeOf((*MockStore)(nil).CreateProduct), ctx, arg)
+}
+
+// CreateSessionExtension mocks base method.
+func (m *MockStore) CreateSessionExtension(ctx context.Context, arg database.CreateSessionExtensionParams) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSessionExtension", ctx, arg)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSessionExtension indicates an expected call of CreateSessionExtension.
+func (mr *MockStoreMockRecorder) CreateSessionExtension(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSessionExtension", reflect.TypeOf((*MockStore)(nil).CreateSessionExtension), ctx, arg)
 }
 
 // CreateTable mocks base method.
@@ -146,6 +175,36 @@ func (mr *MockStoreMockRecorder) CreateTableStatus(ctx, arg any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTableStatus", reflect.TypeOf((*MockStore)(nil).CreateTableStatus), ctx, arg)
 }
 
+// GetDurationMinutesByProductID mocks base method.
+func (m *MockStore) GetDurationMinutesByProductID(ctx context.Context, productsID int64) (int32, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDurationMinutesByProductID", ctx, productsID)
+	ret0, _ := ret[0].(int32)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDurationMinutesByProductID indicates an expected call of GetDurationMinutesByProductID.
+func (mr *MockStoreMockRecorder) GetDurationMinutesByProductID(ctx, productsID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDurationMinutesByProductID", reflect.TypeOf((*MockStore)(nil).GetDurationMinutesByProductID), ctx, productsID)
+}
+
+// GetExpiresAtByTableID mocks base method.
+func (m *MockStore) GetExpiresAtByTableID(ctx context.Context, tableID int64) (*database.GetExpiresAtByTableIDRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetExpiresAtByTableID", ctx, tableID)
+	ret0, _ := ret[0].(*database.GetExpiresAtByTableIDRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetExpiresAtByTableID indicates an expected call of GetExpiresAtByTableID.
+func (mr *MockStoreMockRecorder) GetExpiresAtByTableID(ctx, tableID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExpiresAtByTableID", reflect.TypeOf((*MockStore)(nil).GetExpiresAtByTableID), ctx, tableID)
+}
+
 // GetOrderByID mocks base method.
 func (m *MockStore) GetOrderByID(ctx context.Context, id int64) (*database.GetOrderByIDRow, error) {
 	m.ctrl.T.Helper()
@@ -159,6 +218,21 @@ func (m *MockStore) GetOrderByID(ctx context.Context, id int64) (*database.GetOr
 func (mr *MockStoreMockRecorder) GetOrderByID(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderByID", reflect.TypeOf((*MockStore)(nil).GetOrderByID), ctx, id)
+}
+
+// GetOrderIDBySessionID mocks base method.
+func (m *MockStore) GetOrderIDBySessionID(ctx context.Context, sessionID pgtype.UUID) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderIDBySessionID", ctx, sessionID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderIDBySessionID indicates an expected call of GetOrderIDBySessionID.
+func (mr *MockStoreMockRecorder) GetOrderIDBySessionID(ctx, sessionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderIDBySessionID", reflect.TypeOf((*MockStore)(nil).GetOrderIDBySessionID), ctx, sessionID)
 }
 
 // GetOrderItemsByID mocks base method.
@@ -204,6 +278,21 @@ func (m *MockStore) GetOrderSequence(ctx context.Context, orderDate pgtype.Date)
 func (mr *MockStoreMockRecorder) GetOrderSequence(ctx, orderDate any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderSequence", reflect.TypeOf((*MockStore)(nil).GetOrderSequence), ctx, orderDate)
+}
+
+// GetOrderStatusCompleted mocks base method.
+func (m *MockStore) GetOrderStatusCompleted(ctx context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetOrderStatusCompleted", ctx)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetOrderStatusCompleted indicates an expected call of GetOrderStatusCompleted.
+func (mr *MockStoreMockRecorder) GetOrderStatusCompleted(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderStatusCompleted", reflect.TypeOf((*MockStore)(nil).GetOrderStatusCompleted), ctx)
 }
 
 // GetOrderStatusPreparing mocks base method.
@@ -266,6 +355,36 @@ func (mr *MockStoreMockRecorder) GetOrderWithItemsGroupID(ctx, orderItemsID any)
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetOrderWithItemsGroupID", reflect.TypeOf((*MockStore)(nil).GetOrderWithItemsGroupID), ctx, orderItemsID)
 }
 
+// GetPaymentAmountByTransaction mocks base method.
+func (m *MockStore) GetPaymentAmountByTransaction(ctx context.Context, transactionID string) (pgtype.Numeric, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPaymentAmountByTransaction", ctx, transactionID)
+	ret0, _ := ret[0].(pgtype.Numeric)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPaymentAmountByTransaction indicates an expected call of GetPaymentAmountByTransaction.
+func (mr *MockStoreMockRecorder) GetPaymentAmountByTransaction(ctx, transactionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentAmountByTransaction", reflect.TypeOf((*MockStore)(nil).GetPaymentAmountByTransaction), ctx, transactionID)
+}
+
+// GetPaymentLastStatusCodeByTransaction mocks base method.
+func (m *MockStore) GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (pgtype.Text, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPaymentLastStatusCodeByTransaction", ctx, transactionID)
+	ret0, _ := ret[0].(pgtype.Text)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPaymentLastStatusCodeByTransaction indicates an expected call of GetPaymentLastStatusCodeByTransaction.
+func (mr *MockStoreMockRecorder) GetPaymentLastStatusCodeByTransaction(ctx, transactionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentLastStatusCodeByTransaction", reflect.TypeOf((*MockStore)(nil).GetPaymentLastStatusCodeByTransaction), ctx, transactionID)
+}
+
 // GetPaymentOrderIDByTransaction mocks base method.
 func (m *MockStore) GetPaymentOrderIDByTransaction(ctx context.Context, transactionID string) (int64, error) {
 	m.ctrl.T.Helper()
@@ -279,6 +398,21 @@ func (m *MockStore) GetPaymentOrderIDByTransaction(ctx context.Context, transact
 func (mr *MockStoreMockRecorder) GetPaymentOrderIDByTransaction(ctx, transactionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentOrderIDByTransaction", reflect.TypeOf((*MockStore)(nil).GetPaymentOrderIDByTransaction), ctx, transactionID)
+}
+
+// GetPaymentStatusPending mocks base method.
+func (m *MockStore) GetPaymentStatusPending(ctx context.Context) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPaymentStatusPending", ctx)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetPaymentStatusPending indicates an expected call of GetPaymentStatusPending.
+func (mr *MockStoreMockRecorder) GetPaymentStatusPending(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPaymentStatusPending", reflect.TypeOf((*MockStore)(nil).GetPaymentStatusPending), ctx)
 }
 
 // GetProductAvailableByID mocks base method.
@@ -309,6 +443,66 @@ func (m *MockStore) GetProductByID(ctx context.Context, id int64) (*database.Get
 func (mr *MockStoreMockRecorder) GetProductByID(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetProductByID", reflect.TypeOf((*MockStore)(nil).GetProductByID), ctx, id)
+}
+
+// GetSessionExtensionModeByReasonCode mocks base method.
+func (m *MockStore) GetSessionExtensionModeByReasonCode(ctx context.Context, code string) (*database.GetSessionExtensionModeByReasonCodeRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionExtensionModeByReasonCode", ctx, code)
+	ret0, _ := ret[0].(*database.GetSessionExtensionModeByReasonCodeRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSessionExtensionModeByReasonCode indicates an expected call of GetSessionExtensionModeByReasonCode.
+func (mr *MockStoreMockRecorder) GetSessionExtensionModeByReasonCode(ctx, code any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionExtensionModeByReasonCode", reflect.TypeOf((*MockStore)(nil).GetSessionExtensionModeByReasonCode), ctx, code)
+}
+
+// GetSessionIDByOrderID mocks base method.
+func (m *MockStore) GetSessionIDByOrderID(ctx context.Context, id int64) (pgtype.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionIDByOrderID", ctx, id)
+	ret0, _ := ret[0].(pgtype.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSessionIDByOrderID indicates an expected call of GetSessionIDByOrderID.
+func (mr *MockStoreMockRecorder) GetSessionIDByOrderID(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionIDByOrderID", reflect.TypeOf((*MockStore)(nil).GetSessionIDByOrderID), ctx, id)
+}
+
+// GetSessionIDByTableID mocks base method.
+func (m *MockStore) GetSessionIDByTableID(ctx context.Context, tableID int64) (pgtype.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSessionIDByTableID", ctx, tableID)
+	ret0, _ := ret[0].(pgtype.UUID)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSessionIDByTableID indicates an expected call of GetSessionIDByTableID.
+func (mr *MockStoreMockRecorder) GetSessionIDByTableID(ctx, tableID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSessionIDByTableID", reflect.TypeOf((*MockStore)(nil).GetSessionIDByTableID), ctx, tableID)
+}
+
+// GetTableIDByOrderID mocks base method.
+func (m *MockStore) GetTableIDByOrderID(ctx context.Context, orderID int64) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTableIDByOrderID", ctx, orderID)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTableIDByOrderID indicates an expected call of GetTableIDByOrderID.
+func (mr *MockStoreMockRecorder) GetTableIDByOrderID(ctx, orderID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTableIDByOrderID", reflect.TypeOf((*MockStore)(nil).GetTableIDByOrderID), ctx, orderID)
 }
 
 // GetTableNumber mocks base method.
@@ -596,6 +790,36 @@ func (mr *MockStoreMockRecorder) IsProductExists(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsProductExists", reflect.TypeOf((*MockStore)(nil).IsProductExists), ctx, id)
 }
 
+// IsSessionExtensionModeFree mocks base method.
+func (m *MockStore) IsSessionExtensionModeFree(ctx context.Context, id int64) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSessionExtensionModeFree", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsSessionExtensionModeFree indicates an expected call of IsSessionExtensionModeFree.
+func (mr *MockStoreMockRecorder) IsSessionExtensionModeFree(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSessionExtensionModeFree", reflect.TypeOf((*MockStore)(nil).IsSessionExtensionModeFree), ctx, id)
+}
+
+// IsSessionExtensionReasonExist mocks base method.
+func (m *MockStore) IsSessionExtensionReasonExist(ctx context.Context, id int64) (int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsSessionExtensionReasonExist", ctx, id)
+	ret0, _ := ret[0].(int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsSessionExtensionReasonExist indicates an expected call of IsSessionExtensionReasonExist.
+func (mr *MockStoreMockRecorder) IsSessionExtensionReasonExist(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsSessionExtensionReasonExist", reflect.TypeOf((*MockStore)(nil).IsSessionExtensionReasonExist), ctx, id)
+}
+
 // IsTableAvailableOrReserved mocks base method.
 func (m *MockStore) IsTableAvailableOrReserved(ctx context.Context, id int64) (bool, error) {
 	m.ctrl.T.Helper()
@@ -699,6 +923,36 @@ func (m *MockStore) ListPaymentMethods(ctx context.Context) ([]*database.ListPay
 func (mr *MockStoreMockRecorder) ListPaymentMethods(ctx any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPaymentMethods", reflect.TypeOf((*MockStore)(nil).ListPaymentMethods), ctx)
+}
+
+// ListProductTimeExtension mocks base method.
+func (m *MockStore) ListProductTimeExtension(ctx context.Context) ([]*database.ListProductTimeExtensionRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListProductTimeExtension", ctx)
+	ret0, _ := ret[0].([]*database.ListProductTimeExtensionRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListProductTimeExtension indicates an expected call of ListProductTimeExtension.
+func (mr *MockStoreMockRecorder) ListProductTimeExtension(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListProductTimeExtension", reflect.TypeOf((*MockStore)(nil).ListProductTimeExtension), ctx)
+}
+
+// ListSessionExtensionReason mocks base method.
+func (m *MockStore) ListSessionExtensionReason(ctx context.Context) ([]*database.ListSessionExtensionReasonRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListSessionExtensionReason", ctx)
+	ret0, _ := ret[0].([]*database.ListSessionExtensionReasonRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListSessionExtensionReason indicates an expected call of ListSessionExtensionReason.
+func (mr *MockStoreMockRecorder) ListSessionExtensionReason(ctx any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListSessionExtensionReason", reflect.TypeOf((*MockStore)(nil).ListSessionExtensionReason), ctx)
 }
 
 // ListTableStatus mocks base method.
@@ -820,6 +1074,20 @@ func (mr *MockStoreMockRecorder) TXCreateTableSession(ctx, arg any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TXCreateTableSession", reflect.TypeOf((*MockStore)(nil).TXCreateTableSession), ctx, arg)
 }
 
+// TXSessionsExtension mocks base method.
+func (m *MockStore) TXSessionsExtension(ctx context.Context, arg database.TXSessionsExtensionParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TXSessionsExtension", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// TXSessionsExtension indicates an expected call of TXSessionsExtension.
+func (mr *MockStoreMockRecorder) TXSessionsExtension(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TXSessionsExtension", reflect.TypeOf((*MockStore)(nil).TXSessionsExtension), ctx, arg)
+}
+
 // UpdateOrderItemsStatus mocks base method.
 func (m *MockStore) UpdateOrderItemsStatus(ctx context.Context, arg database.UpdateOrderItemsStatusParams) error {
 	m.ctrl.T.Helper()
@@ -918,6 +1186,20 @@ func (mr *MockStoreMockRecorder) UpdateProductAvailability(ctx, arg any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateProductAvailability", reflect.TypeOf((*MockStore)(nil).UpdateProductAvailability), ctx, arg)
 }
 
+// UpdateSessionExpireBySessionID mocks base method.
+func (m *MockStore) UpdateSessionExpireBySessionID(ctx context.Context, arg database.UpdateSessionExpireBySessionIDParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSessionExpireBySessionID", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSessionExpireBySessionID indicates an expected call of UpdateSessionExpireBySessionID.
+func (mr *MockStoreMockRecorder) UpdateSessionExpireBySessionID(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSessionExpireBySessionID", reflect.TypeOf((*MockStore)(nil).UpdateSessionExpireBySessionID), ctx, arg)
+}
+
 // UpdateStatusCloseTableSession mocks base method.
 func (m *MockStore) UpdateStatusCloseTableSession(ctx context.Context, sessionid pgtype.UUID) error {
 	m.ctrl.T.Helper()
@@ -932,46 +1214,88 @@ func (mr *MockStoreMockRecorder) UpdateStatusCloseTableSession(ctx, sessionid an
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusCloseTableSession", reflect.TypeOf((*MockStore)(nil).UpdateStatusCloseTableSession), ctx, sessionid)
 }
 
-// UpdateStatusPaymentFail mocks base method.
-func (m *MockStore) UpdateStatusPaymentFail(ctx context.Context, id int64) error {
+// UpdateStatusPaymentCancelledByTransactionID mocks base method.
+func (m *MockStore) UpdateStatusPaymentCancelledByTransactionID(ctx context.Context, transactionID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateStatusPaymentFail", ctx, id)
+	ret := m.ctrl.Call(m, "UpdateStatusPaymentCancelledByTransactionID", ctx, transactionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateStatusPaymentFail indicates an expected call of UpdateStatusPaymentFail.
-func (mr *MockStoreMockRecorder) UpdateStatusPaymentFail(ctx, id any) *gomock.Call {
+// UpdateStatusPaymentCancelledByTransactionID indicates an expected call of UpdateStatusPaymentCancelledByTransactionID.
+func (mr *MockStoreMockRecorder) UpdateStatusPaymentCancelledByTransactionID(ctx, transactionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentFail", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentFail), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentCancelledByTransactionID", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentCancelledByTransactionID), ctx, transactionID)
 }
 
-// UpdateStatusPaymentPaidByID mocks base method.
-func (m *MockStore) UpdateStatusPaymentPaidByID(ctx context.Context, id int64) error {
+// UpdateStatusPaymentConfirmedByTransactionID mocks base method.
+func (m *MockStore) UpdateStatusPaymentConfirmedByTransactionID(ctx context.Context, transactionID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateStatusPaymentPaidByID", ctx, id)
+	ret := m.ctrl.Call(m, "UpdateStatusPaymentConfirmedByTransactionID", ctx, transactionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateStatusPaymentPaidByID indicates an expected call of UpdateStatusPaymentPaidByID.
-func (mr *MockStoreMockRecorder) UpdateStatusPaymentPaidByID(ctx, id any) *gomock.Call {
+// UpdateStatusPaymentConfirmedByTransactionID indicates an expected call of UpdateStatusPaymentConfirmedByTransactionID.
+func (mr *MockStoreMockRecorder) UpdateStatusPaymentConfirmedByTransactionID(ctx, transactionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentPaidByID", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentPaidByID), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentConfirmedByTransactionID", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentConfirmedByTransactionID), ctx, transactionID)
 }
 
-// UpdateStatusPaymentPaidByTransactionID mocks base method.
-func (m *MockStore) UpdateStatusPaymentPaidByTransactionID(ctx context.Context, transactionID string) error {
+// UpdateStatusPaymentFailedByTransactionID mocks base method.
+func (m *MockStore) UpdateStatusPaymentFailedByTransactionID(ctx context.Context, transactionID string) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateStatusPaymentPaidByTransactionID", ctx, transactionID)
+	ret := m.ctrl.Call(m, "UpdateStatusPaymentFailedByTransactionID", ctx, transactionID)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateStatusPaymentPaidByTransactionID indicates an expected call of UpdateStatusPaymentPaidByTransactionID.
-func (mr *MockStoreMockRecorder) UpdateStatusPaymentPaidByTransactionID(ctx, transactionID any) *gomock.Call {
+// UpdateStatusPaymentFailedByTransactionID indicates an expected call of UpdateStatusPaymentFailedByTransactionID.
+func (mr *MockStoreMockRecorder) UpdateStatusPaymentFailedByTransactionID(ctx, transactionID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentPaidByTransactionID", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentPaidByTransactionID), ctx, transactionID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentFailedByTransactionID", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentFailedByTransactionID), ctx, transactionID)
+}
+
+// UpdateStatusPaymentPendingByTransactionID mocks base method.
+func (m *MockStore) UpdateStatusPaymentPendingByTransactionID(ctx context.Context, transactionID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatusPaymentPendingByTransactionID", ctx, transactionID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStatusPaymentPendingByTransactionID indicates an expected call of UpdateStatusPaymentPendingByTransactionID.
+func (mr *MockStoreMockRecorder) UpdateStatusPaymentPendingByTransactionID(ctx, transactionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentPendingByTransactionID", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentPendingByTransactionID), ctx, transactionID)
+}
+
+// UpdateStatusPaymentSuccessByTransactionID mocks base method.
+func (m *MockStore) UpdateStatusPaymentSuccessByTransactionID(ctx context.Context, transactionID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatusPaymentSuccessByTransactionID", ctx, transactionID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStatusPaymentSuccessByTransactionID indicates an expected call of UpdateStatusPaymentSuccessByTransactionID.
+func (mr *MockStoreMockRecorder) UpdateStatusPaymentSuccessByTransactionID(ctx, transactionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentSuccessByTransactionID", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentSuccessByTransactionID), ctx, transactionID)
+}
+
+// UpdateStatusPaymentTimeOutByTransactionID mocks base method.
+func (m *MockStore) UpdateStatusPaymentTimeOutByTransactionID(ctx context.Context, transactionID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateStatusPaymentTimeOutByTransactionID", ctx, transactionID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateStatusPaymentTimeOutByTransactionID indicates an expected call of UpdateStatusPaymentTimeOutByTransactionID.
+func (mr *MockStoreMockRecorder) UpdateStatusPaymentTimeOutByTransactionID(ctx, transactionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateStatusPaymentTimeOutByTransactionID", reflect.TypeOf((*MockStore)(nil).UpdateStatusPaymentTimeOutByTransactionID), ctx, transactionID)
 }
 
 // UpdateTables mocks base method.
@@ -1016,6 +1340,20 @@ func (mr *MockStoreMockRecorder) UpdateTablesStatusAvailable(ctx, id any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusAvailable", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusAvailable), ctx, id)
 }
 
+// UpdateTablesStatusCleaning mocks base method.
+func (m *MockStore) UpdateTablesStatusCleaning(ctx context.Context, id int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTablesStatusCleaning", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTablesStatusCleaning indicates an expected call of UpdateTablesStatusCleaning.
+func (mr *MockStoreMockRecorder) UpdateTablesStatusCleaning(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusCleaning", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusCleaning), ctx, id)
+}
+
 // UpdateTablesStatusDisabled mocks base method.
 func (m *MockStore) UpdateTablesStatusDisabled(ctx context.Context, id int64) error {
 	m.ctrl.T.Helper()
@@ -1030,32 +1368,18 @@ func (mr *MockStoreMockRecorder) UpdateTablesStatusDisabled(ctx, id any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusDisabled", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusDisabled), ctx, id)
 }
 
-// UpdateTablesStatusOccupied mocks base method.
-func (m *MockStore) UpdateTablesStatusOccupied(ctx context.Context, id int64) error {
+// UpdateTablesStatusFoodServed mocks base method.
+func (m *MockStore) UpdateTablesStatusFoodServed(ctx context.Context, id int64) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTablesStatusOccupied", ctx, id)
+	ret := m.ctrl.Call(m, "UpdateTablesStatusFoodServed", ctx, id)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// UpdateTablesStatusOccupied indicates an expected call of UpdateTablesStatusOccupied.
-func (mr *MockStoreMockRecorder) UpdateTablesStatusOccupied(ctx, id any) *gomock.Call {
+// UpdateTablesStatusFoodServed indicates an expected call of UpdateTablesStatusFoodServed.
+func (mr *MockStoreMockRecorder) UpdateTablesStatusFoodServed(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusOccupied", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusOccupied), ctx, id)
-}
-
-// UpdateTablesStatusOrdered mocks base method.
-func (m *MockStore) UpdateTablesStatusOrdered(ctx context.Context, id int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UpdateTablesStatusOrdered", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// UpdateTablesStatusOrdered indicates an expected call of UpdateTablesStatusOrdered.
-func (mr *MockStoreMockRecorder) UpdateTablesStatusOrdered(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusOrdered", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusOrdered), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusFoodServed", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusFoodServed), ctx, id)
 }
 
 // UpdateTablesStatusReserved mocks base method.
@@ -1070,4 +1394,46 @@ func (m *MockStore) UpdateTablesStatusReserved(ctx context.Context, id int64) er
 func (mr *MockStoreMockRecorder) UpdateTablesStatusReserved(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusReserved", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusReserved), ctx, id)
+}
+
+// UpdateTablesStatusWaitToOrder mocks base method.
+func (m *MockStore) UpdateTablesStatusWaitToOrder(ctx context.Context, id int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTablesStatusWaitToOrder", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTablesStatusWaitToOrder indicates an expected call of UpdateTablesStatusWaitToOrder.
+func (mr *MockStoreMockRecorder) UpdateTablesStatusWaitToOrder(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusWaitToOrder", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusWaitToOrder), ctx, id)
+}
+
+// UpdateTablesStatusWaitingForPayment mocks base method.
+func (m *MockStore) UpdateTablesStatusWaitingForPayment(ctx context.Context, id int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTablesStatusWaitingForPayment", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTablesStatusWaitingForPayment indicates an expected call of UpdateTablesStatusWaitingForPayment.
+func (mr *MockStoreMockRecorder) UpdateTablesStatusWaitingForPayment(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusWaitingForPayment", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusWaitingForPayment), ctx, id)
+}
+
+// UpdateTablesStatusWaitingToBeServed mocks base method.
+func (m *MockStore) UpdateTablesStatusWaitingToBeServed(ctx context.Context, id int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateTablesStatusWaitingToBeServed", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateTablesStatusWaitingToBeServed indicates an expected call of UpdateTablesStatusWaitingToBeServed.
+func (mr *MockStoreMockRecorder) UpdateTablesStatusWaitingToBeServed(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateTablesStatusWaitingToBeServed", reflect.TypeOf((*MockStore)(nil).UpdateTablesStatusWaitingToBeServed), ctx, id)
 }

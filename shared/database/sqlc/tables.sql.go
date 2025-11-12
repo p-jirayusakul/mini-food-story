@@ -107,23 +107,35 @@ func (q *Queries) IsTableExists(ctx context.Context, id int64) (bool, error) {
 const quickSearchTables = `-- name: QuickSearchTables :many
 SELECT
     t.id,
-    t.table_number AS "tableNumber",
-    s.name         AS status,
-    s.name_en      AS "statusEN",
-    s.code         AS "statusCode",
+    t.table_number                         AS "tableNumber",
+    s.name                                  AS status,
+    s.name_en                               AS "statusEN",
+    s.code                                  AS "statusCode",
     t.seats,
-    CASE WHEN o_latest.id IS NOT NULL THEN o_latest.id END AS "orderID"
+    CASE WHEN sess.order_id IS NOT NULL THEN sess.order_id  END AS "orderID",
+    sess.expires_at                         AS "expiresAt",
+    CASE WHEN sess.extend_total_minutes IS NOT NULL THEN sess.extend_total_minutes  END AS "extendTotalMinutes"
 FROM public.tables t
-         JOIN public.md_table_statuses s ON t.status_id = s.id
+         JOIN public.md_table_statuses s
+              ON t.status_id = s.id
          LEFT JOIN LATERAL (
-    SELECT o.id
+    SELECT
+        ts.session_id,
+        ts.expires_at,
+        ts.extend_total_minutes,
+        (
+            SELECT o.id
+            FROM public.orders o
+            WHERE o.session_id = ts.session_id
+            ORDER BY o.created_at DESC
+            LIMIT 1
+        ) AS order_id
     FROM public.table_session ts
-             JOIN public.orders o ON o.session_id = ts.session_id
     WHERE ts.table_id = t.id
-      AND ts.status = 'active'
-    ORDER BY o.created_at DESC
+        AND ts.status   = 'active' or ts.status = 'expired'
+    ORDER BY ts.started_at DESC
     LIMIT 1
-    ) AS o_latest ON TRUE
+    ) AS sess ON TRUE
 WHERE t.seats >= $1::integer AND s.code = 'AVAILABLE'
 ORDER BY CASE
              WHEN $2::text = 'asc' THEN
@@ -157,13 +169,15 @@ type QuickSearchTablesParams struct {
 }
 
 type QuickSearchTablesRow struct {
-	ID          int64       `json:"id"`
-	TableNumber int32       `json:"tableNumber"`
-	Status      string      `json:"status"`
-	StatusEN    string      `json:"statusEN"`
-	StatusCode  string      `json:"statusCode"`
-	Seats       int32       `json:"seats"`
-	OrderID     pgtype.Int8 `json:"orderID"`
+	ID                 int64              `json:"id"`
+	TableNumber        int32              `json:"tableNumber"`
+	Status             string             `json:"status"`
+	StatusEN           string             `json:"statusEN"`
+	StatusCode         string             `json:"statusCode"`
+	Seats              int32              `json:"seats"`
+	OrderID            pgtype.Int8        `json:"orderID"`
+	ExpiresAt          pgtype.Timestamptz `json:"expiresAt"`
+	ExtendTotalMinutes pgtype.Int4        `json:"extendTotalMinutes"`
 }
 
 func (q *Queries) QuickSearchTables(ctx context.Context, arg QuickSearchTablesParams) ([]*QuickSearchTablesRow, error) {
@@ -189,6 +203,8 @@ func (q *Queries) QuickSearchTables(ctx context.Context, arg QuickSearchTablesPa
 			&i.StatusCode,
 			&i.Seats,
 			&i.OrderID,
+			&i.ExpiresAt,
+			&i.ExtendTotalMinutes,
 		); err != nil {
 			return nil, err
 		}
@@ -203,23 +219,35 @@ func (q *Queries) QuickSearchTables(ctx context.Context, arg QuickSearchTablesPa
 const searchTables = `-- name: SearchTables :many
 SELECT
     t.id,
-    t.table_number AS "tableNumber",
-    s.name         AS status,
-    s.name_en      AS "statusEN",
-    s.code         AS "statusCode",
+    t.table_number                         AS "tableNumber",
+    s.name                                  AS status,
+    s.name_en                               AS "statusEN",
+    s.code                                  AS "statusCode",
     t.seats,
-    CASE WHEN o_latest.id IS NOT NULL THEN o_latest.id END AS "orderID"
+    CASE WHEN sess.order_id IS NOT NULL THEN sess.order_id  END AS "orderID",
+    sess.expires_at                         AS "expiresAt",
+    CASE WHEN sess.extend_total_minutes IS NOT NULL THEN sess.extend_total_minutes  END AS "extendTotalMinutes"
 FROM public.tables t
-         JOIN public.md_table_statuses s ON t.status_id = s.id
+         JOIN public.md_table_statuses s
+              ON t.status_id = s.id
          LEFT JOIN LATERAL (
-    SELECT o.id
+    SELECT
+        ts.session_id,
+        ts.expires_at,
+        ts.extend_total_minutes,
+        (
+            SELECT o.id
+            FROM public.orders o
+            WHERE o.session_id = ts.session_id
+            ORDER BY o.created_at DESC
+            LIMIT 1
+        ) AS order_id
     FROM public.table_session ts
-             JOIN public.orders o ON o.session_id = ts.session_id
     WHERE ts.table_id = t.id
-      AND ts.status = 'active'
-    ORDER BY o.created_at DESC
+        AND ts.status   = 'active' or ts.status = 'expired'
+    ORDER BY ts.started_at DESC
     LIMIT 1
-    ) AS o_latest ON TRUE
+    ) AS sess ON TRUE
 WHERE ($1::int IS NULL OR t.table_number = $1::int)
   AND ($2::int IS NULL OR t.seats = $2::int)
   AND (
@@ -261,13 +289,15 @@ type SearchTablesParams struct {
 }
 
 type SearchTablesRow struct {
-	ID          int64       `json:"id"`
-	TableNumber int32       `json:"tableNumber"`
-	Status      string      `json:"status"`
-	StatusEN    string      `json:"statusEN"`
-	StatusCode  string      `json:"statusCode"`
-	Seats       int32       `json:"seats"`
-	OrderID     pgtype.Int8 `json:"orderID"`
+	ID                 int64              `json:"id"`
+	TableNumber        int32              `json:"tableNumber"`
+	Status             string             `json:"status"`
+	StatusEN           string             `json:"statusEN"`
+	StatusCode         string             `json:"statusCode"`
+	Seats              int32              `json:"seats"`
+	OrderID            pgtype.Int8        `json:"orderID"`
+	ExpiresAt          pgtype.Timestamptz `json:"expiresAt"`
+	ExtendTotalMinutes pgtype.Int4        `json:"extendTotalMinutes"`
 }
 
 func (q *Queries) SearchTables(ctx context.Context, arg SearchTablesParams) ([]*SearchTablesRow, error) {
@@ -295,6 +325,8 @@ func (q *Queries) SearchTables(ctx context.Context, arg SearchTablesParams) ([]*
 			&i.StatusCode,
 			&i.Seats,
 			&i.OrderID,
+			&i.ExpiresAt,
+			&i.ExtendTotalMinutes,
 		); err != nil {
 			return nil, err
 		}

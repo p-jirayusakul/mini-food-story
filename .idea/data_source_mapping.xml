@@ -11,5 +11,6 @@
     <file url="file://$PROJECT_DIR$/shared/database/queries/products.sql" value="bda72426-7c46-46de-a6b5-b3ab42fd6325" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/session_extension.sql" value="bda72426-7c46-46de-a6b5-b3ab42fd6325" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/table_session.sql" value="bda72426-7c46-46de-a6b5-b3ab42fd6325" />
+    <file url="file://$PROJECT_DIR$/shared/database/queries/tables.sql" value="bda72426-7c46-46de-a6b5-b3ab42fd6325" />
   </component>
 </project>

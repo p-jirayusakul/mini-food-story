@@ -31,6 +31,17 @@ func (q *Queries) GetOrderStatusPreparing(ctx context.Context) (int64, error) {
 	return id, err
 }
 
+const getOrderStatusServed = `-- name: GetOrderStatusServed :one
+SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1
+`
+
+func (q *Queries) GetOrderStatusServed(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, getOrderStatusServed)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
 const isOrderStatusExist = `-- name: IsOrderStatusExist :one
 SELECT (COUNT(id) > 0)  as isExist FROM public.md_order_statuses WHERE code = $1::varchar
 `

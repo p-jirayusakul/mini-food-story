@@ -29,6 +29,7 @@ type Querier interface {
 	GetOrderSequence(ctx context.Context, orderDate pgtype.Date) (int32, error)
 	GetOrderStatusCompleted(ctx context.Context) (int64, error)
 	GetOrderStatusPreparing(ctx context.Context) (int64, error)
+	GetOrderStatusServed(ctx context.Context) (int64, error)
 	GetOrderWithItems(ctx context.Context, arg GetOrderWithItemsParams) ([]*GetOrderWithItemsRow, error)
 	GetOrderWithItemsByID(ctx context.Context, arg GetOrderWithItemsByIDParams) (*GetOrderWithItemsByIDRow, error)
 	GetOrderWithItemsGroupID(ctx context.Context, orderItemsID []int64) ([]*GetOrderWithItemsGroupIDRow, error)
