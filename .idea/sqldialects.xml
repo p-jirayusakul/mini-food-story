@@ -3,6 +3,7 @@
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/shared/database/migrations/000001_init_schema.up.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/md_categories.sql" dialect="PostgreSQL" />
+    <file url="file://$PROJECT_DIR$/shared/database/queries/md_payment_statuses.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/md_session_extension_mode.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/md_session_extension_reason.sql" dialect="PostgreSQL" />
     <file url="file://$PROJECT_DIR$/shared/database/queries/md_table_statuses.sql" dialect="PostgreSQL" />
