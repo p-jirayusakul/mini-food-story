@@ -293,14 +293,11 @@ CREATE TABLE public.product_time_extension (
 
 ALTER TABLE public.product_time_extension OWNER TO postgres;
 
-
--- Insert Master Data
---
-insert into public.md_categories (id, name, name_en, icon_name, sort_order, created_at, updated_at, code)
-values  (1921143886227443712, 'อาหาร', 'Food', 'soup', 1, '2025-10-10 05:34:36.643495 +00:00', null, 'FOOD'),
-        (1921144050476388352, 'เครื่องดื่ม', 'Drink', 'glass-water', 2, '2025-10-10 05:34:36.643495 +00:00', null, 'DRINK'),
-        (1921144250070732800, 'ขนม', 'Dessert', 'cake-slice', 3, '2025-10-10 05:34:36.643495 +00:00', null, 'DESSERT'),
-        (1921144250070732801, 'ต่อเวลา', 'Time extension', 'timer', 4, '2025-10-10 05:34:36.643495 +00:00', null, 'TIME_EXTENSION');
+insert into public.md_categories (id, name, name_en, created_at, updated_at, icon_name, sort_order, is_visible, code)
+values  (1921143886227443712, 'อาหาร', 'Food', '2025-10-10 05:34:36.643495 +00:00', null, 'soup', 1, true, 'FOOD'),
+        (1921144050476388352, 'เครื่องดื่ม', 'Drink', '2025-10-10 05:34:36.643495 +00:00', null, 'glass-water', 2, true, 'DRINK'),
+        (1921144250070732800, 'ขนม', 'Dessert', '2025-10-10 05:34:36.643495 +00:00', null, 'cake-slice', 3, true, 'DESSERT'),
+        (1921144250070732801, 'ต่อเวลา', 'Time extension', '2025-10-10 05:34:36.643495 +00:00', null, 'timer', 4, false, 'TIME_EXTENSION');
 
 insert into public.md_order_statuses (id, code, name, name_en, sort_order, is_final, created_at, updated_at)
 values  (1921868485739155456, 'PENDING', 'รอยืนยันออเดอร์', 'Pending', 1, false, '2025-09-18 11:43:59.552632 +00:00', null),
@@ -310,6 +307,19 @@ values  (1921868485739155456, 'PENDING', 'รอยืนยันออเด�
         (1921868485739155460, 'WAITING_PAYMENT', 'รอชำระเงิน', 'Waiting for Payment', 5, false, '2025-09-18 11:43:59.552632 +00:00', null),
         (1921868485739155461, 'COMPLETED', 'เสร็จสิ้น', 'Completed', 6, true, '2025-09-18 11:43:59.552632 +00:00', null),
         (1921868485739155462, 'CANCELLED', 'ยกเลิก', 'Cancelled', 7, true, '2025-09-18 11:43:59.552632 +00:00', null);
+
+insert into public.md_payment_methods (id, code, name, name_en, enable, created_at, updated_at)
+values  (1923732004537372672, 'CASH', 'เงินสด', 'Cash', true, '2025-11-14 08:41:17.586336 +00:00', null),
+        (1923732004537372675, 'PROMPTPAY', 'พร้อมเพย์', 'PromptPay', true, '2025-11-14 08:41:17.586336 +00:00', null);
+
+insert into public.md_session_extension_mode (id, code, name, name_en, sort_order, created_at, updated_at)
+values  (1989547119583523322, 'COMP_FREE', 'ขยายเวลา (ฟรี)', 'Complimentary Free Extension', 1, '2025-11-14 08:59:08.870989 +00:00', null),
+        (1989547119580791291, 'PAID', 'ขยายเวลา (เสียเงิน)', 'Paid Extension', 2, '2025-11-14 08:59:08.870989 +00:00', null);
+
+insert into public.md_session_extension_reason (id, code, name, name_en, category, mode_code, is_active, sort_order, created_at, updated_at)
+values  (1989546983509878172, 'DELAYED_SERVING', 'เสิร์ฟอาหารล่าช้า', 'Food Serving Delay', 'SERVICE', 'COMP_FREE', true, 2, '2025-11-14 09:01:39.538663 +00:00', null),
+        (1989546983510861211, 'CUSTOMER_REQUEST', 'ลูกค้าขอขยายเวลาเอง', 'Customer Requested Extension', 'CUSTOMER', 'PAID', true, 1, '2025-11-14 09:01:39.538663 +00:00', null),
+        (1989546983509939613, 'SYSTEM_ISSUE', 'ระบบมีปัญหา', 'System Issue', 'SYSTEM', 'COMP_FREE', true, 3, '2025-11-14 09:01:39.538663 +00:00', null);
 
 insert into public.md_table_statuses (id, code, name, name_en, created_at, updated_at)
 values  (1919968486671519744, 'AVAILABLE', 'ว่าง', 'Available', '2025-09-18 11:43:59.552632 +00:00', null),
@@ -322,22 +332,59 @@ values  (1919968486671519744, 'AVAILABLE', 'ว่าง', 'Available', '2025-09
         (1919968486847680517, 'FOOD_SERVED', 'อาหารครบแล้ว', 'Food Served', '2025-09-18 16:10:29.071839 +00:00', null),
         (1919968486847680518, 'CALL_WAITER', 'เรียกพนักงาน', 'Call Waiter', '2025-09-18 16:10:29.071839 +00:00', null);
 
---
--- insert into public.products (id, name, name_en, categories, description, price, is_available, image_url, created_at, updated_at)
--- values  (1921822053405560832, 'ข้าวผัด', 'Fried rice', 1921143886227443712, 'lorem ipso', 60.00, true, 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null),
---         (1921828287366041600, 'ข้าวผัดกระเพรา', 'Phat kaphrao', 1921143886227443712, 'lorem ipso', 70.50, true, 'https://images.unsplash.com/photo-1694499792070-48e64a00cf0a?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null),
---         (1921821817723424768, 'ข้าวมันไก่', 'Chicken rice', 1921143886227443712, 'lorem ipso', 80.00, true, 'https://images.unsplash.com/photo-1749640566096-5d8098d452b4?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null),
---         (1921822608437809152, 'แป๊ปซี่', 'Pepsi', 1921144050476388352, 'lorem ipso', 30.00, true, 'https://images.unsplash.com/photo-1651000877733-fe2c0a70b3cd?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null),
---         (1921822481287483392, 'เค้กแครอท', 'Carrot cake', 1921144250070732800, 'lorem ipso', 120.00, true, 'https://images.unsplash.com/photo-1622926421334-6829deee4b4b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null);
---
--- INSERT INTO public."tables" (id,table_number,status_id,seats,created_at,updated_at) VALUES
---                                                                                         (1920153361642950656,5,1919968486671519744,4,NOW(),NULL),
---                                                                                         (1919972141986484224,3,1919968486671519744,4,NOW(),NULL),
---                                                                                         (1919996486741921792,4,1919968486671519744,5,NOW(),NULL),
---                                                                                         (1919968785813475328,1,1919968486671519744,5,NOW(),NULL),
---                                                                                         (1919971956241731584,2,1919968486671519744,3,NOW(),NULL);
---
---
-INSERT INTO public.md_payment_methods (id,code,"name",name_en,"enable",created_at,updated_at) VALUES
-                                                                                               (1923732004537372672,'CASH','เงินสด','Cash',true,NOW(),NULL),
-                                                                                               (1923732004537372675,'PROMPTPAY','พร้อมเพย์','PromptPay',true,NOW(),NULL);
+insert into public.products (id, name, name_en, categories, description, price, is_available, image_url, created_at, updated_at, is_visible)
+values  (1921822053405560832, 'ข้าวผัด', 'Fried rice', 1921143886227443712, 'lorem ipso', 60.00, true, 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null, true),
+        (1921828287366041600, 'ข้าวผัดกระเพรา', 'Phat kaphrao', 1921143886227443712, 'lorem ipso', 70.50, true, 'https://images.unsplash.com/photo-1694499792070-48e64a00cf0a?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null, true),
+        (1921821817723424768, 'ข้าวมันไก่', 'Chicken rice', 1921143886227443712, 'lorem ipso', 80.00, true, 'https://images.unsplash.com/photo-1749640566096-5d8098d452b4?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null, true),
+        (1921822608437809152, 'แป๊ปซี่', 'Pepsi', 1921144050476388352, 'lorem ipso', 30.00, true, 'https://images.unsplash.com/photo-1651000877733-fe2c0a70b3cd?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null, true),
+        (1921822481287483392, 'เค้กแครอท', 'Carrot cake', 1921144250070732800, 'lorem ipso', 120.00, true, 'https://images.unsplash.com/photo-1622926421334-6829deee4b4b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-10-10 05:34:36.692235 +00:00', null, true),
+        (1921822481287483393, 'ต่อเวลา 15 นาที', 'Extension 15min', 1921144250070732801, null, 15.00, true, null, '2025-11-14 09:05:04.123826 +00:00', null, false),
+        (1921822481287483394, 'ต่อเวลา 30 นาที', 'Extension 30min', 1921144250070732801, null, 30.00, true, null, '2025-11-14 09:05:04.123826 +00:00', null, false),
+        (1921822481287483395, 'ต่อเวลา 60 นาที', 'Extension 60min', 1921144250070732801, null, 60.00, true, null, '2025-11-14 09:05:04.123826 +00:00', null, false),
+        (1921829000000000104, 'ข้าวหน้าไก่เทอริยากิ', 'Teriyaki Chicken Rice', 1921143886227443712, 'Rice with teriyaki chicken', 90.00, true, 'https://images.unsplash.com/photo-1646809156467-6e825869b29f?q=80&w=2670&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000101, 'ผัดไทกุ้ง', 'Pad Thai Shrimp', 1921143886227443712, 'Signature Thai stir-fried noodles', 85.00, true, 'https://images.unsplash.com/photo-1729708475167-71a6eb3cd741?q=80&w=1470&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000108, 'บราวนี่', 'Brownie', 1921144250070732800, 'Chocolate brownie', 55.00, true, 'https://images.unsplash.com/photo-1560788843-8928d12b1600?q=80&w=1706&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000105, 'แกงเผ็ดเป็ดย่าง', 'Red Curry Roasted Duck', 1921143886227443712, 'Thai red curry duck', 140.00, true, 'https://images.unsplash.com/photo-1708782344490-9026aaa5eec7?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000114, 'ชาเขียวมะลิ', 'Jasmine Green Tea', 1921144050476388352, 'Fragrant jasmine tea', 35.00, true, 'https://images.unsplash.com/photo-1630209712184-00101e51f374?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000111, 'อเมริกาโน่เย็น', 'Iced Americano', 1921144050476388352, 'Strong black coffee', 45.00, true, 'https://images.unsplash.com/photo-1632789395770-20e6f63be806?q=80&w=1678&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000107, 'ฮันนี่โทสต์', 'Honey Toast', 1921144250070732800, 'Crispy toast with ice cream', 150.00, true, 'https://images.unsplash.com/photo-1737053566442-81cfe61f3357?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000113, 'มัทฉะลาเต้', 'Matcha Latte', 1921144050476388352, 'Green tea latte', 65.00, true, 'https://images.unsplash.com/photo-1686794154608-e45c831ef567?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000112, 'คาปูชิโน่ร้อน', 'Hot Cappuccino', 1921144050476388352, 'Milk coffee with foam', 50.00, true, 'https://images.unsplash.com/photo-1751976803077-2da275a7ad2c?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000110, 'ชีสพายสตรอว์เบอร์รี', 'Strawberry Cheese Pie', 1921144250070732800, 'Fresh strawberry pie', 75.00, true, 'https://images.unsplash.com/photo-1622621746668-59fb299bc4d7?q=80&w=1833&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000102, 'ต้มยำกุ้ง', 'Tom Yum Kung', 1921143886227443712, 'Spicy Thai soup with shrimp', 120.00, true, 'https://images.unsplash.com/photo-1628430043175-0e8820df47c3?q=80&w=2671&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000103, 'ลาบหมู', 'Larb Moo', 1921143886227443712, 'Spicy minced pork salad', 70.00, true, 'https://images.unsplash.com/photo-1673238111115-18d3da6ec22b?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000106, 'เครปเค้กสายรุ้ง', 'Rainbow Crepe Cake', 1921144250070732800, 'Colorful crepe cake with sauce', 95.00, true, 'https://images.unsplash.com/photo-1587131791788-ec0cb04e0a52?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000109, 'ไอศกรีมชาไทย', 'Thai Tea Ice Cream', 1921144250070732800, 'Thai tea flavored ice cream', 45.00, true, 'https://images.unsplash.com/photo-1561230101-2c841778f9ae?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000115, 'น้ำแดงโซดา', 'Red Soda', 1921144050476388352, 'Refreshing soda drink', 25.00, true, 'https://images.unsplash.com/photo-1631503190221-0f6a15367926?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000201, 'ผัดกะเพราไก่ไข่ดาว', 'Basil Chicken with Fried Egg', 1921143886227443712, 'Spicy stir-fried chicken with basil and fried egg', 75.00, true, 'https://images.unsplash.com/photo-1707897634981-39bcfe435268?q=80&w=1796&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000203, 'เกี๊ยวน้ำหมูสับ', 'Pork Dumpling Soup', 1921143886227443712, 'Dumplings with minced pork in clear soup', 65.00, true, 'https://images.unsplash.com/photo-1571809864118-d0a73b090d6e?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000202, 'หมูทอดกระเทียม', 'Garlic Fried Pork', 1921143886227443712, 'Deep-fried pork with garlic', 80.00, true, 'https://images.unsplash.com/photo-1709392975965-00889c6aa545?q=80&w=1724&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000204, 'ปลาทอดสมุนไพร', 'Fried Fish with Herbs', 1921143886227443712, 'Crispy fried fish with Thai herbs', 150.00, true, 'https://images.unsplash.com/photo-1700760933848-194ad3408fc4?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true),
+        (1921829000000000205, 'คอหมูย่าง', 'Grilled Pork Neck', 1921143886227443712, 'Thai-style grilled pork neck with dipping sauce', 95.00, true, 'https://images.unsplash.com/photo-1708615017161-2eff302d0389?q=80&w=1760&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80&w=500', '2025-11-14 09:05:04.123826 +00:00', null, true);
+
+insert into public.product_time_extension (id, duration_minutes, products_id, created_at, updated_at)
+values  (1921822481287483396, 15, 1921822481287483393, '2025-11-14 09:05:56.706476 +00:00', null),
+        (1921822481287483397, 30, 1921822481287483394, '2025-11-14 09:05:56.706476 +00:00', null),
+        (1921822481287483398, 60, 1921822481287483395, '2025-11-14 09:05:56.706476 +00:00', null);
+
+insert into public.tables (id, table_number, status_id, seats, created_at, updated_at)
+values  (1920153361642950656, 5, 1919968486671519744, 4, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1919972141986484224, 3, 1919968486671519744, 4, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1919996486741921792, 4, 1919968486671519744, 5, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1919971956241731584, 2, 1919968486671519744, 3, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1919968785813475328, 1, 1919968486847680512, 5, '2025-11-14 09:06:41.530788 +00:00', '2025-11-15 04:34:22.802407 +00:00'),
+        (1923000000000000001, 6, 1919968486671519744, 2, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000002, 7, 1919968486671519744, 4, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000003, 8, 1919968486671519744, 4, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000004, 9, 1919968486671519744, 6, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000005, 10, 1919968486671519744, 3, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000006, 11, 1919968486671519744, 5, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000007, 12, 1919968486671519744, 2, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000008, 13, 1919968486671519744, 4, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000009, 14, 1919968486671519744, 6, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000010, 15, 1919968486671519744, 8, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000011, 16, 1919968486671519744, 2, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000012, 17, 1919968486671519744, 4, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000013, 18, 1919968486671519744, 5, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000014, 19, 1919968486671519744, 3, '2025-11-14 09:06:41.530788 +00:00', null),
+        (1923000000000000015, 20, 1919968486671519744, 4, '2025-11-14 09:06:41.530788 +00:00', null);
