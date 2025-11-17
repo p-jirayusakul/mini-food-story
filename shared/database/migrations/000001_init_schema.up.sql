@@ -317,9 +317,9 @@ values  (1989547119583523322, 'COMP_FREE', 'ขยายเวลา (ฟรี)
         (1989547119580791291, 'PAID', 'ขยายเวลา (เสียเงิน)', 'Paid Extension', 2, '2025-11-14 08:59:08.870989 +00:00', null);
 
 insert into public.md_session_extension_reason (id, code, name, name_en, category, mode_code, is_active, sort_order, created_at, updated_at)
-values  (1989546983509878172, 'DELAYED_SERVING', 'เสิร์ฟอาหารล่าช้า', 'Food Serving Delay', 'SERVICE', 'COMP_FREE', true, 2, '2025-11-14 09:01:39.538663 +00:00', null),
-        (1989546983510861211, 'CUSTOMER_REQUEST', 'ลูกค้าขอขยายเวลาเอง', 'Customer Requested Extension', 'CUSTOMER', 'PAID', true, 1, '2025-11-14 09:01:39.538663 +00:00', null),
-        (1989546983509939613, 'SYSTEM_ISSUE', 'ระบบมีปัญหา', 'System Issue', 'SYSTEM', 'COMP_FREE', true, 3, '2025-11-14 09:01:39.538663 +00:00', null);
+values  (1989546983510861211, 'CUSTOMER_REQUEST', 'ลูกค้าขอขยายเวลาเอง', 'Customer Requested Extension', 'CUSTOMER', 'PAID', true, 1, '2025-11-14 09:01:39.538663 +00:00', null),
+        (1989546983509878172, 'LATE_SERVICE', 'เสิร์ฟอาหารล่าช้า', 'Food Serving Delay', 'SERVICE', 'COMP_FREE', true, 2, '2025-11-14 09:01:39.538663 +00:00', null),
+        (1989546983509939613, 'SYSTEM_ERROR', 'ระบบมีปัญหา', 'System Issue', 'SYSTEM', 'COMP_FREE', true, 3, '2025-11-14 09:01:39.538663 +00:00', null);
 
 insert into public.md_table_statuses (id, code, name, name_en, created_at, updated_at)
 values  (1919968486671519744, 'AVAILABLE', 'ว่าง', 'Available', '2025-09-18 11:43:59.552632 +00:00', null),
