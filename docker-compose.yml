@@ -22,7 +22,7 @@ x-common-env: &common-env
 services:
   dragonfly:
     container_name: redis
-    image: docker.dragonflydb.io/dragonflydb/dragonfly
+    image: docker.dragonflydb.io/dragonflydb/dragonfly:latest
     ulimits:
       memlock: -1
     ports:
@@ -62,7 +62,7 @@ services:
 #      - mini_food_story
 #
 #  grafana:
-#    image: grafana/grafana:12.4.0-19350470871
+#    image: grafana/grafana
 #    ports:
 #      - "3000:3000"
 #    volumes:
@@ -135,7 +135,7 @@ services:
 
 #  traefik:
 #    container_name: "api-gateway"
-#    image: traefik:v3.6.1
+#    image: traefik:v3.6.2
 #    command:
 #      - "--api.dashboard=true"
 #      - "--api.insecure=true"
