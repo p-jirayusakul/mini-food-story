@@ -24,12 +24,12 @@ import (
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /status [get]
 func (s *Handler) ListTableStatus(c *fiber.Ctx) error {
-	result, customError := s.useCase.ListTableStatus(c.Context())
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.ListTableStatus(c.Context())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get list task status success", result)
+	return middleware.ResponseOK(c, result)
 }
 
 // ListSessionExtensionReason godoc
@@ -46,12 +46,12 @@ func (s *Handler) ListTableStatus(c *fiber.Ctx) error {
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /status [get]
 func (s *Handler) ListSessionExtensionReason(c *fiber.Ctx) error {
-	result, customError := s.useCase.ListSessionExtensionReason(c.Context())
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.ListSessionExtensionReason(c.Context())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get list session extension reason success", result)
+	return middleware.ResponseOK(c, result)
 }
 
 // ListProductTimeExtension godoc
@@ -68,92 +68,12 @@ func (s *Handler) ListSessionExtensionReason(c *fiber.Ctx) error {
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /status [get]
 func (s *Handler) ListProductTimeExtension(c *fiber.Ctx) error {
-	result, customError := s.useCase.ListProductTimeExtension(c.Context())
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
-	}
-
-	return middleware.ResponseOK(c, "get list product time extension success", result)
-}
-
-// CreateTable godoc
-// @Summary Create new table
-// @Description Create a new table with specified number and seats
-// @Tags Table
-// @Security BearerAuth
-// @Accept json
-// @Produce json
-// @Param table body Table true "Table details"
-// @Success 201 {object} middleware.SuccessResponse{data=createResponse}
-// @Failure 400 {object} middleware.ErrorResponse
-// @Failure 401 {object} middleware.ErrorResponse
-// @Failure 403 {object} middleware.ErrorResponse
-// @Failure 500 {object} middleware.ErrorResponse
-// @Router / [post]
-func (s *Handler) CreateTable(c *fiber.Ctx) error {
-	body := new(Table)
-	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	result, customError := s.useCase.CreateTable(c.Context(), domain.Table{
-		TableNumber: body.TableNumber,
-		Seats:       body.Seats,
-	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
-	}
-
-	return middleware.ResponseCreated(c, "create table success", createResponse{
-		ID: strconv.FormatInt(result, 10),
-	})
-}
-
-// UpdateTable godoc
-// @Summary Update table details
-// @Description Update table number and seats for existing table
-// @Tags Table
-// @Security BearerAuth
-// @Accept json
-// @Produce json
-// @Param id path string true "Table ID"
-// @Param table body Table true "Table details"
-// @Success 200 {object} middleware.SuccessResponse
-// @Failure 400 {object} middleware.ErrorResponse
-// @Failure 401 {object} middleware.ErrorResponse
-// @Failure 403 {object} middleware.ErrorResponse
-// @Failure 404 {object} middleware.ErrorResponse
-// @Failure 500 {object} middleware.ErrorResponse
-// @Router /{id} [put]
-func (s *Handler) UpdateTable(c *fiber.Ctx) error {
-	id, err := utils.StrToInt64(c.Params("id"))
+	result, err := s.useCase.ListProductTimeExtension(c.Context())
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, err)
 	}
 
-	body := new(Table)
-	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	customError := s.useCase.UpdateTable(c.Context(), domain.Table{
-		ID:          id,
-		TableNumber: body.TableNumber,
-		Seats:       body.Seats,
-	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
-	}
-
-	return middleware.ResponseOK(c, "update table success", nil)
+	return middleware.ResponseOK(c, result)
 }
 
 // UpdateTableStatus godoc
@@ -175,31 +95,31 @@ func (s *Handler) UpdateTable(c *fiber.Ctx) error {
 func (s *Handler) UpdateTableStatus(c *fiber.Ctx) error {
 	id, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	body := new(updateTableStatus)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	statusID, err := utils.StrToInt64(body.StatusID)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
-	customError := s.useCase.UpdateTableStatus(c.Context(), domain.TableStatus{
+	err = s.useCase.UpdateTableStatus(c.Context(), domain.TableStatus{
 		ID:       id,
 		StatusID: statusID,
 	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "update table status success", nil)
+	return middleware.ResponseOK(c, nil)
 }
 
 // SearchTable godoc
@@ -226,11 +146,11 @@ func (s *Handler) UpdateTableStatus(c *fiber.Ctx) error {
 func (s *Handler) SearchTable(c *fiber.Ctx) error {
 	body := new(SearchTable)
 	if err := c.QueryParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	payload := domain.SearchTables{
@@ -245,7 +165,7 @@ func (s *Handler) SearchTable(c *fiber.Ctx) error {
 	if body.Search != "" {
 		pareValue, err := strconv.ParseInt(body.Search, 10, 32)
 		if err != nil {
-			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+			return middleware.ResponseError(c, validateFail(err))
 		}
 		value := int32(pareValue)
 		payload.TableNumber = &value
@@ -254,18 +174,24 @@ func (s *Handler) SearchTable(c *fiber.Ctx) error {
 	if body.Seats != "" {
 		pareValue, err := strconv.ParseInt(body.Seats, 10, 32)
 		if err != nil {
-			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+			return middleware.ResponseError(c, validateFail(err))
 		}
 		value := int32(pareValue)
 		payload.Seats = &value
 	}
 
-	result, customError := s.useCase.SearchTableByFilters(c.Context(), payload)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.SearchTableByFilters(c.Context(), payload)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "search table success", result)
+	return middleware.ResponseOKWithPagination(c, middleware.ResponseWithPaginationPayload{
+		PageNumber: result.PageNumber,
+		PageSize:   result.PageSize,
+		TotalItems: result.TotalItems,
+		TotalPages: result.TotalPages,
+		Data:       result.Data,
+	})
 }
 
 // QuickSearchTable godoc
@@ -289,15 +215,11 @@ func (s *Handler) SearchTable(c *fiber.Ctx) error {
 func (s *Handler) QuickSearchTable(c *fiber.Ctx) error {
 	body := new(SearchTable)
 	if err := c.QueryParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
-	}
-
-	if body.NumberOfPeople == 0 {
-		return middleware.ResponseError(fiber.StatusBadRequest, "number of people must be greater than 0")
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	payload := domain.SearchTables{
@@ -308,12 +230,18 @@ func (s *Handler) QuickSearchTable(c *fiber.Ctx) error {
 		PageSize:       body.PageSize,
 	}
 
-	result, customError := s.useCase.QuickSearchAvailableTable(c.Context(), payload)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.QuickSearchAvailableTable(c.Context(), payload)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "search table success", result)
+	return middleware.ResponseOKWithPagination(c, middleware.ResponseWithPaginationPayload{
+		PageNumber: result.PageNumber,
+		PageSize:   result.PageSize,
+		TotalItems: result.TotalItems,
+		TotalPages: result.TotalPages,
+		Data:       result.Data,
+	})
 }
 
 // CreateTableSession godoc
@@ -334,27 +262,27 @@ func (s *Handler) QuickSearchTable(c *fiber.Ctx) error {
 func (s *Handler) CreateTableSession(c *fiber.Ctx) error {
 	body := new(TableSession)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	tableID, err := utils.StrToInt64(body.TableID)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
-	result, customError := s.useCase.CreateTableSession(c.Context(), domain.TableSession{
+	result, err := s.useCase.CreateTableSession(c.Context(), domain.TableSession{
 		TableID:        tableID,
 		NumberOfPeople: body.NumberOfPeople,
 	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseCreated(c, "create table success", createSessionResponse{
+	return middleware.ResponseCreated(c, createSessionResponse{
 		URL: result,
 	})
 }
@@ -378,15 +306,15 @@ func (s *Handler) CreateTableSession(c *fiber.Ctx) error {
 func (s *Handler) UpdateTableStatusAvailable(c *fiber.Ctx) error {
 	id, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
-	customError := s.useCase.UpdateTableStatusAvailable(c.Context(), id)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	err = s.useCase.UpdateTableStatusAvailable(c.Context(), id)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "update table status success", nil)
+	return middleware.ResponseOK(c, nil)
 }
 
 // SessionExtension godoc
@@ -409,30 +337,34 @@ func (s *Handler) SessionExtension(c *fiber.Ctx) error {
 
 	body := new(SessionExtensionRequest)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	tableID, err := utils.StrToInt64(body.TableID)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
 	productID, err := utils.StrToInt64(body.ProductID)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, validateFail(err))
 	}
 
-	customError := s.useCase.SessionExtension(c.Context(), domain.SessionExtension{
+	err = s.useCase.SessionExtension(c.Context(), domain.SessionExtension{
 		TableID:    tableID,
 		ProductID:  productID,
 		ReasonCode: body.ReasonCode,
 	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
-	return middleware.ResponseOK(c, "update session extension success", nil)
+	return middleware.ResponseOK(c, nil)
+}
+
+func validateFail(err error) error {
+	return exceptions.Error(exceptions.CodeBusiness, err.Error())
 }

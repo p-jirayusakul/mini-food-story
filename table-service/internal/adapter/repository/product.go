@@ -3,38 +3,28 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	"food-story/table-service/internal/domain"
 )
 
-func (i *Implement) ListProductTimeExtension(ctx context.Context) (result []*domain.Product, customError *exceptions.CustomError) {
+func (i *Implement) ListProductTimeExtension(ctx context.Context) (result []*domain.Product, err error) {
 	data, err := i.repository.ListProductTimeExtension(ctx)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch product time extension: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch product time extension", err)
 	}
 
 	return transformListProductTimeExtension(data), nil
 }
 
-func (i *Implement) GetDurationMinutesByProductID(ctx context.Context, productID int64) (durationMinutes int32, customError *exceptions.CustomError) {
+func (i *Implement) GetDurationMinutesByProductID(ctx context.Context, productID int64) (durationMinutes int32, err error) {
 	data, err := i.repository.GetDurationMinutesByProductID(ctx, productID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return 0, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: errors.New("product id not found"),
-			}
+			return 0, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrProductNotFound.Error())
 		}
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch duration minutes by product id: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch duration minutes by product id", err)
 	}
 	return data, nil
 }

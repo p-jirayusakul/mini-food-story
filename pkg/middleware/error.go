@@ -21,7 +21,11 @@ func HandleError(c *fiber.Ctx, err error) error {
 		}
 		message = getMessage(err, code)
 	}
-	return c.Status(code).JSON(ErrorResponse{Message: message, Status: "error"})
+	reqID, ok := c.Locals(CtxRequestIDKey).(string)
+	if !ok {
+		reqID = ""
+	}
+	return c.Status(code).JSON(ErrorResponse{Error: errorDetail{Code: string(exceptions.CodeUnauthorized), Message: message, TraceId: reqID}})
 }
 
 func getMessage(err error, code int) string {

@@ -2,27 +2,21 @@ package repository
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	"food-story/table-service/internal/domain"
 )
 
-func (i *Implement) ListSessionExtensionReason(ctx context.Context) (result []*domain.ListSessionExtensionReason, customError *exceptions.CustomError) {
+func (i *Implement) ListSessionExtensionReason(ctx context.Context) (result []*domain.ListSessionExtensionReason, err error) {
+	const _errMessage = "failed to fetch session extension reason"
+
 	data, err := i.repository.ListSessionExtensionReason(ctx)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch session extension reason: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMessage, err)
 	}
 
 	if data == nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: errors.New("session extension reason not found"),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMessage, err)
 	}
 
 	result = make([]*domain.ListSessionExtensionReason, len(data))

@@ -16,41 +16,39 @@ import (
 )
 
 const (
-	SessionStatusActive = "active"
+	SessionStatusActive     = "active"
+	_errInvalidTableSession = "invalid table session payload"
 )
 
-func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError) {
+func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, err error) {
 
 	if payload.TableID <= 0 || payload.NumberOfPeople <= 0 {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: errors.New("invalid table session payload"),
-		}
+		return "", exceptions.Error(exceptions.CodeBusiness, _errInvalidTableSession)
 	}
 
-	customError = i.repository.IsTableAvailableOrReserved(ctx, payload.TableID)
-	if customError != nil {
-		return "", customError
+	err = i.repository.IsTableAvailableOrReserved(ctx, payload.TableID)
+	if err != nil {
+		return "", err
 	}
 
 	sessionID, sessionExpiry := i.generateSessionDetails()
-	encryptedSessionID, customError := encryptSessionID(sessionID, sessionExpiry, i.config.SecretKey)
-	if customError != nil {
-		return "", customError
+	encryptedSessionID, err := encryptSessionID(sessionID, sessionExpiry, i.config.SecretKey)
+	if err != nil {
+		return "", err
 	}
 
-	tableNumber, customError := i.getTableNumberFromCache(ctx, payload.TableID)
-	if customError != nil {
-		return "", customError
+	tableNumber, err := i.getTableNumberFromCache(ctx, payload.TableID)
+	if err != nil {
+		return "", err
 	}
 
-	startedAt, customError := i.repository.GetCurrentDateTime(ctx)
-	if customError != nil {
-		return "", customError
+	startedAt, err := i.repository.GetCurrentDateTime(ctx)
+	if err != nil {
+		return "", err
 	}
 
 	key := redis.KeyTable + sessionID.String()
-	customError = i.cache.SetCachedTable(key, &shareModel.CurrentTableSession{
+	err = i.cache.SetCachedTable(key, &shareModel.CurrentTableSession{
 		SessionID:   sessionID,
 		TableID:     payload.TableID,
 		TableNumber: tableNumber,
@@ -58,17 +56,17 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 		StartedAt:   startedAt,
 		OrderID:     nil,
 	}, i.config.TableSessionDuration)
-	if customError != nil {
-		return "", customError
+	if err != nil {
+		return "", err
 	}
 
-	customError = i.repository.CreateTableSession(ctx, payload, sessionID, sessionExpiry)
-	if customError != nil {
+	err = i.repository.CreateTableSession(ctx, payload, sessionID, sessionExpiry)
+	if err != nil {
 		cacheErr := i.cache.DeleteCachedTable(key)
 		if cacheErr != nil {
 			slog.Error("failed to delete cache table session: ", "error", cacheErr)
 		}
-		return "", customError
+		return "", err
 	}
 
 	return i.config.FrontendURL + "?s=" + encryptedSessionID, nil
@@ -78,27 +76,24 @@ func (i *Implement) generateSessionDetails() (uuid.UUID, time.Time) {
 	return uuid.New(), time.Now().Add(i.config.TableSessionDuration)
 }
 
-func encryptSessionID(sessionID uuid.UUID, expiry time.Time, key string) (string, *exceptions.CustomError) {
+func encryptSessionID(sessionID uuid.UUID, expiry time.Time, key string) (string, error) {
 	result, err := utils.EncryptSession(utils.SessionData{
 		SessionID: sessionID.String(),
 		Expiry:    expiry,
 	}, []byte(key))
 
 	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: fmt.Errorf("failed to encrypt session ID: %w", err),
-		}
+		return "", exceptions.Errorf(exceptions.CodeSystem, "failed to encrypt session ID", err)
 	}
 
 	return result, nil
 }
 
-func (i *Implement) getTableNumberFromCache(ctx context.Context, tableID int64) (int32, *exceptions.CustomError) {
+func (i *Implement) getTableNumberFromCache(ctx context.Context, tableID int64) (int32, error) {
 	keyTableNumber := fmt.Sprintf("%s:%d", redis.KeyTable, tableID)
-	tableNumber, customError := i.cache.GetCachedTableNumber(keyTableNumber)
-	if customError != nil {
-		if errors.Is(customError.Errors, exceptions.ErrRedisKeyNotFound) {
+	tableNumber, err := i.cache.GetCachedTableNumber(keyTableNumber)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRedisKeyNotFoundException) {
 			tableNumberDB, getTableNumberErr := i.repository.GetTableNumber(ctx, tableID)
 			if getTableNumberErr != nil {
 				return 0, getTableNumberErr
@@ -109,21 +104,18 @@ func (i *Implement) getTableNumberFromCache(ctx context.Context, tableID int64) 
 			}
 			tableNumber = tableNumberDB
 		} else {
-			return 0, customError
+			return 0, err
 		}
 	}
 
 	if tableNumber == 0 {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: errors.New("table not found"),
-		}
+		return 0, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrTableNotFound.Error())
 	}
 
 	return tableNumber, nil
 }
 
-func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension) *exceptions.CustomError {
+func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension) error {
 
 	requestedMinutes, customErr := i.repository.GetDurationMinutesByProductID(ctx, payload.ProductID)
 	if customErr != nil {

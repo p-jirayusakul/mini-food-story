@@ -324,6 +324,25 @@ func CalculateTotalPages(totalItems int64, pageSize int64) int64 {
 	return int64(math.Ceil(float64(totalItems) / float64(pageSize)))
 }
 
+func GetPageNumber(pageNumber int64) int64 {
+	if pageNumber <= 0 {
+		return 1
+	}
+	return pageNumber
+}
+
+func GetPageSize(pageSize int64) int64 {
+	if pageSize <= 0 {
+		return common.DefaultPageSize
+	}
+
+	if pageSize > common.MaxPageSize {
+		return common.MaxPageSize
+	}
+
+	return pageSize
+}
+
 func IsValidTimeZone(timeZone string) bool {
 	if timeZone == "" {
 		slog.Error("timeZone is empty")

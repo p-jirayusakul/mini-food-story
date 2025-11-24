@@ -1,4 +1,4 @@
-package internal
+package app
 
 import (
 	"context"
@@ -6,10 +6,9 @@ import (
 	"food-story/pkg/common"
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
-	"food-story/shared/database/sqlc"
+	database "food-story/shared/database/sqlc"
 	"food-story/shared/redis"
 	"food-story/shared/snowflakeid"
-	_ "food-story/table-service/docs"
 	"food-story/table-service/internal/adapter/cache"
 	tablehd "food-story/table-service/internal/adapter/http"
 	"food-story/table-service/internal/adapter/repository"
@@ -66,6 +65,9 @@ func New() *FiberServer {
 
 	// add custom CORS
 	app.Use(cors.New(middleware.DefaultCorsConfig()))
+
+	// add request id
+	app.Use(middleware.RequestIDMiddleware())
 
 	// add log handler
 	app.Use(middleware.LogHandler(configApp.BaseURL))
@@ -135,7 +137,7 @@ func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.Redis
 func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
 	tableCache := cache.NewRedisTableCache(redisConn)
 	tableRepo := repository.NewRepository(configApp, store, snowflakeNode)
-	tableUseCase := usecase.NewUsecase(configApp, *tableRepo, tableCache)
+	tableUseCase := usecase.NewUseCase(configApp, *tableRepo, tableCache)
 
 	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
 	tablehd.NewHTTPHandler(router, tableUseCase, validator, authInstance)

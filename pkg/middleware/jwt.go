@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"food-story/pkg/exceptions"
 	"io"
 	"net/http"
 	"strings"
@@ -48,17 +49,17 @@ func (i *AuthInstance) JWTMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		authHeader := c.Get("Authorization")
 		if !strings.HasPrefix(authHeader, PrefixAuth) {
-			return ResponseError(fiber.StatusUnauthorized, "missing token")
+			return ResponseError(c, exceptions.Error(exceptions.CodeUnauthorized, "Authorization header is required"))
 		}
 
 		tokenString := strings.TrimPrefix(authHeader, PrefixAuth)
 		token, err := jwt.Parse(tokenString, i.auth.Keyfunc)
 		if err != nil {
-			return ResponseError(fiber.StatusUnauthorized, "Failed to parse the JWT.")
+			return ResponseError(c, exceptions.Error(exceptions.CodeUnauthorized, "failed to parse the JWT"))
 		}
 
 		if !token.Valid {
-			return ResponseError(fiber.StatusUnauthorized, "The token is not valid.")
+			return ResponseError(c, exceptions.Error(exceptions.CodeUnauthorized, "the token is not valid"))
 		}
 
 		c.Locals("jwt", token)
@@ -73,12 +74,12 @@ func (i *AuthInstance) RequireRole(findRoles []string) fiber.Handler {
 
 		realmAccess, ok := claims["realm_access"].(map[string]interface{})
 		if !ok {
-			return ResponseError(fiber.StatusForbidden, "no roles")
+			return ResponseError(c, exceptions.Error(exceptions.CodeForbidden, "no roles"))
 		}
 
 		rolesData, ok := realmAccess["roles"].([]interface{})
 		if !ok {
-			return ResponseError(fiber.StatusForbidden, "invalid roles")
+			return ResponseError(c, exceptions.Error(exceptions.CodeForbidden, "invalid roles"))
 		}
 
 		roles := make([]string, len(rolesData))
@@ -97,6 +98,6 @@ func (i *AuthInstance) RequireRole(findRoles []string) fiber.Handler {
 			}
 		}
 
-		return ResponseError(fiber.StatusForbidden, "permission denied")
+		return ResponseError(c, exceptions.Error(exceptions.CodeForbidden, "permission denied"))
 	}
 }

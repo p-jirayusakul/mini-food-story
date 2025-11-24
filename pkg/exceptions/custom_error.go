@@ -1,55 +1,48 @@
 package exceptions
 
 import (
-	"net/http"
+	"fmt"
 )
+
+type Code string
 
 const (
-	ERRDOMAIN       Status = 1
-	ERRBUSSINESS    Status = 2
-	ERRSYSTEM       Status = 3
-	ERRNOTFOUND     Status = 4
-	ERRREPOSITORY   Status = 5
-	ERRUNKNOWN      Status = 6
-	ERRAUTHORIZED   Status = 7
-	ERRFORBIDDEN    Status = 8
-	ERRDATACONFLICT Status = 9
-	ERRCACHE        Status = 10
+	CodeDomain       Code = "10000"
+	CodeBusiness     Code = "11000"
+	CodeSystem       Code = "12000"
+	CodeRepository   Code = "13000"
+	CodeNotFound     Code = "14000"
+	CodeUnauthorized Code = "15000"
+	CodeForbidden    Code = "16000"
+	CodeConflict     Code = "17000"
+	CodeRedis        Code = "18000"
+	CodeUnknown      Code = "90000"
 )
 
-type Status int
-
-type CustomError struct {
-	Status Status
-	Errors error
+type AppError struct {
+	Code    Code
+	Message string
+	Err     error
 }
 
-func MapToHTTPStatusCode(status Status) int {
-	var httpStatusCode int
-	switch status {
-	case ERRDOMAIN:
-		httpStatusCode = http.StatusBadRequest
-	case ERRBUSSINESS:
-		httpStatusCode = http.StatusBadRequest
-	case ERRSYSTEM:
-		httpStatusCode = http.StatusInternalServerError
-	case ERRNOTFOUND:
-		httpStatusCode = http.StatusNotFound
-	case ERRREPOSITORY:
-		httpStatusCode = http.StatusInternalServerError
-	case ERRUNKNOWN:
-		httpStatusCode = http.StatusInternalServerError
-	case ERRAUTHORIZED:
-		httpStatusCode = http.StatusUnauthorized
-	case ERRFORBIDDEN:
-		httpStatusCode = http.StatusForbidden
-	case ERRDATACONFLICT:
-		httpStatusCode = http.StatusConflict
-	case ERRCACHE:
-		httpStatusCode = http.StatusInternalServerError
-	default:
-		httpStatusCode = http.StatusInternalServerError
+func (e *AppError) Error() string {
+	if e.Err != nil {
+		return fmt.Sprintf("[%s] %s | root: %v", e.Code, e.Message, e.Err)
 	}
+	return fmt.Sprintf("[%s] %s", e.Code, e.Message)
+}
 
-	return httpStatusCode
+func Error(code Code, message string) *AppError {
+	return &AppError{
+		Code:    code,
+		Message: message,
+	}
+}
+
+func Errorf(code Code, message string, err error) *AppError {
+	return &AppError{
+		Code:    code,
+		Message: message,
+		Err:     err,
+	}
 }

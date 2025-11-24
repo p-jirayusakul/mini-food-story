@@ -19,7 +19,7 @@ type SearchTable struct {
 	PageSize       int64    `query:"pageSize" example:"10"`
 	Search         string   `query:"search" validate:"omitempty,no_special_char,max=255" example:"1"`
 	Seats          string   `query:"seats" validate:"omitempty,no_special_char,max=255" example:"5"`
-	NumberOfPeople int32    `query:"numberOfPeople" example:"3"`
+	NumberOfPeople int32    `query:"numberOfPeople" validate:"omitempty,gte=1" example:"3"`
 	Status         []string `query:"status" example:"1919968486671519744"`
 	OrderBy        string   `query:"orderBy" validate:"omitempty,oneof=id tableNumber seats status" example:"id"`
 	OrderByType    string   `query:"orderType" validate:"omitempty,oneof=asc desc" example:"asc"`

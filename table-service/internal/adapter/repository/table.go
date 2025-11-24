@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
@@ -11,8 +10,17 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
+)
+
+var (
+	_errTableNotFound = exceptions.Error(exceptions.CodeNotFound, exceptions.ErrTableNotFound.Error())
+)
+
+const (
+	_errMsgUpdateTableStatusFailed    = "failed to update table status"
+	_errMsgFailToFetchTable           = "failed to fetch table"
+	_errMsgFailToFetchTotalItemsTable = "failed to fetch total items table"
 )
 
 type TableRow interface {
@@ -27,76 +35,52 @@ type TableRow interface {
 	GetExtendTotalMinutes() int32
 }
 
-func (i *Implement) IsTableAvailableOrReserved(ctx context.Context, tableID int64) *exceptions.CustomError {
+func (i *Implement) IsTableAvailableOrReserved(ctx context.Context, tableID int64) error {
 	isAvailableOrReserved, err := i.repository.IsTableAvailableOrReserved(ctx, tableID)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check table status: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to check table status", err)
 	}
 
 	if !isAvailableOrReserved {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: errors.New("table not available or reserved"),
-		}
+		return exceptions.Errorf(exceptions.CodeBusiness, "table not available or reserved", err)
 	}
 
 	return nil
 }
 
-func (i *Implement) IsTableExists(ctx context.Context, id int64) *exceptions.CustomError {
+func (i *Implement) IsTableExists(ctx context.Context, id int64) error {
 	isTableExists, err := i.repository.IsTableExists(ctx, id)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check table exists: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to check table exists", err)
 	}
 
 	if !isTableExists {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: errors.New("table not found"),
-		}
+		return _errTableNotFound
 	}
 
 	return nil
 }
 
-func (i *Implement) GetTableNumber(ctx context.Context, tableID int64) (int32, *exceptions.CustomError) {
+func (i *Implement) GetTableNumber(ctx context.Context, tableID int64) (int32, error) {
 	data, err := i.repository.GetTableNumber(ctx, tableID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return 0, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: errors.New("table id not found"),
-			}
+			return 0, _errTableNotFound
 		}
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get table number: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to get table number", err)
 	}
 
 	return data, nil
 }
 
-func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Status, customError *exceptions.CustomError) {
+func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Status, err error) {
 	data, err := i.repository.ListTableStatus(ctx)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch table status: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get table status", err)
 	}
 
 	if data == nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: errors.New("table status not found"),
-		}
+		return nil, _errTableNotFound
 	}
 
 	result = make([]*domain.Status, len(data))
@@ -112,60 +96,29 @@ func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Statu
 	return result, nil
 }
 
-func (i *Implement) CreateTable(ctx context.Context, table domain.Table) (result int64, customError *exceptions.CustomError) {
-	tableParams := database.CreateTableParams{
-		ID:          i.snowflakeID.Generate(),
-		TableNumber: table.TableNumber,
-		Seats:       table.Seats,
-	}
-
-	result, err := i.repository.CreateTable(ctx, tableParams)
-	if err != nil {
-		return 0, handleUpsertError(err, "tables")
-	}
-
-	return result, nil
-}
-
-func (i *Implement) UpdateTables(ctx context.Context, table domain.Table) (customError *exceptions.CustomError) {
-
-	tableParams := database.UpdateTablesParams{
-		ID:          table.ID,
-		TableNumber: table.TableNumber,
-		Seats:       table.Seats,
-	}
-
-	err := i.repository.UpdateTables(ctx, tableParams)
-	if err != nil {
-		return handleUpsertError(err, "tables")
-	}
-
-	return nil
-}
-
-func (i *Implement) UpdateTablesStatus(ctx context.Context, tableStatus domain.TableStatus) (customError *exceptions.CustomError) {
+func (i *Implement) UpdateTablesStatus(ctx context.Context, tableStatus domain.TableStatus) (err error) {
 
 	tableStatusParams := database.UpdateTablesStatusParams{
 		ID:       tableStatus.ID,
 		StatusID: tableStatus.StatusID,
 	}
 
-	err := i.repository.UpdateTablesStatus(ctx, tableStatusParams)
+	err = i.repository.UpdateTablesStatus(ctx, tableStatusParams)
 	if err != nil {
-		return handleUpsertError(err, "tables")
+		return exceptions.Errorf(exceptions.CodeRepository, _errMsgUpdateTableStatusFailed, err)
 	}
 
 	return nil
 }
 
-func (i *Implement) SearchTables(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
+func (i *Implement) SearchTables(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, error) {
 	searchParams := buildSearchParams(search)
 
 	var (
 		searchResult  []*database.SearchTablesRow
-		searchErr     *exceptions.CustomError
+		searchErr     error
 		totalItems    int64
-		totalItemsErr *exceptions.CustomError
+		totalItemsErr error
 	)
 
 	wg := sync.WaitGroup{}
@@ -192,20 +145,22 @@ func (i *Implement) SearchTables(ctx context.Context, search domain.SearchTables
 	}
 
 	return domain.SearchTablesResult{
+		PageNumber: utils.GetPageNumber(search.PageNumber),
+		PageSize:   utils.GetPageSize(search.PageSize),
 		TotalItems: totalItems,
 		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
 		Data:       transformSearchResults(searchResult),
 	}, nil
 }
 
-func (i *Implement) QuickSearchAvailableTable(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError) {
+func (i *Implement) QuickSearchAvailableTable(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, error) {
 	searchParams := buildQuickSearchParams(search)
 
 	var (
 		searchResult  []*database.QuickSearchTablesRow
-		searchErr     *exceptions.CustomError
+		searchErr     error
 		totalItems    int64
-		totalItemsErr *exceptions.CustomError
+		totalItemsErr error
 	)
 
 	wg := sync.WaitGroup{}
@@ -232,35 +187,31 @@ func (i *Implement) QuickSearchAvailableTable(ctx context.Context, search domain
 	}
 
 	return domain.SearchTablesResult{
+		PageNumber: utils.GetPageNumber(search.PageNumber),
+		PageSize:   utils.GetPageSize(search.PageSize),
 		TotalItems: totalItems,
 		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
 		Data:       transformSearchResults(searchResult),
 	}, nil
 }
 
-func (i *Implement) UpdateTablesStatusAvailable(ctx context.Context, tableID int64) (customError *exceptions.CustomError) {
-	err := i.repository.UpdateTablesStatusAvailable(ctx, tableID)
+func (i *Implement) UpdateTablesStatusAvailable(ctx context.Context, tableID int64) (err error) {
+	err = i.repository.UpdateTablesStatusAvailable(ctx, tableID)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to update table status: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, _errMsgUpdateTableStatusFailed, err)
 	}
 	return nil
 }
 
-func (i *Implement) fetchTables(ctx context.Context, params database.SearchTablesParams) ([]*database.SearchTablesRow, *exceptions.CustomError) {
+func (i *Implement) fetchTables(ctx context.Context, params database.SearchTablesParams) ([]*database.SearchTablesRow, error) {
 	result, err := i.repository.SearchTables(ctx, params)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch products: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMsgFailToFetchTable, err)
 	}
 	return result, nil
 }
 
-func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchTablesParams) (int64, *exceptions.CustomError) {
+func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchTablesParams) (int64, error) {
 	totalParams := database.GetTotalPageSearchTablesParams{
 		TableNumber: params.TableNumber,
 		Seats:       params.Seats,
@@ -268,33 +219,24 @@ func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchT
 	}
 	totalItems, err := i.repository.GetTotalPageSearchTables(ctx, totalParams)
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch total items: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, _errMsgFailToFetchTotalItemsTable, err)
 	}
 
 	return totalItems, nil
 }
 
-func (i *Implement) fetchQuickSearchTables(ctx context.Context, params database.QuickSearchTablesParams) ([]*database.QuickSearchTablesRow, *exceptions.CustomError) {
+func (i *Implement) fetchQuickSearchTables(ctx context.Context, params database.QuickSearchTablesParams) ([]*database.QuickSearchTablesRow, error) {
 	result, err := i.repository.QuickSearchTables(ctx, params)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch products: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMsgFailToFetchTable, err)
 	}
 	return result, nil
 }
 
-func (i *Implement) fetchQuickSearchTablesTotalItems(ctx context.Context, numberOfPeople int32) (int64, *exceptions.CustomError) {
+func (i *Implement) fetchQuickSearchTablesTotalItems(ctx context.Context, numberOfPeople int32) (int64, error) {
 	totalItems, err := i.repository.GetTotalPageQuickSearchTables(ctx, numberOfPeople)
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch total items: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, _errMsgFailToFetchTotalItemsTable, err)
 	}
 
 	return totalItems, nil
@@ -354,21 +296,5 @@ func buildQuickSearchParams(payload domain.SearchTables) database.QuickSearchTab
 		OrderBy:        payload.OrderBy,
 		PageSize:       pageSize,
 		PageNumber:     pageNumber,
-	}
-}
-
-func handleUpsertError(err error, tableName string) *exceptions.CustomError {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == exceptions.SqlstateUniqueViolation {
-		msg := fmt.Sprintf("%s already exists", utils.IndexToFieldName(pgErr.ConstraintName, tableName))
-		return &exceptions.CustomError{
-			Status: exceptions.ERRDATACONFLICT,
-			Errors: errors.New(msg),
-		}
-	}
-
-	return &exceptions.CustomError{
-		Status: exceptions.ERRREPOSITORY,
-		Errors: err,
 	}
 }

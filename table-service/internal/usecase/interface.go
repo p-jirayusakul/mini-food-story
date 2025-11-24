@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"food-story/pkg/exceptions"
 	"food-story/shared/config"
 	"food-story/table-service/internal/adapter/cache"
 	"food-story/table-service/internal/adapter/repository"
@@ -10,17 +9,15 @@ import (
 )
 
 type UseCase interface {
-	ListTableStatus(ctx context.Context) (result []*domain.Status, customError *exceptions.CustomError)
-	CreateTable(ctx context.Context, payload domain.Table) (result int64, customError *exceptions.CustomError)
-	UpdateTable(ctx context.Context, payload domain.Table) (customError *exceptions.CustomError)
-	UpdateTableStatus(ctx context.Context, payload domain.TableStatus) (customError *exceptions.CustomError)
-	SearchTableByFilters(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, customError *exceptions.CustomError)
-	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (domain.SearchTablesResult, *exceptions.CustomError)
-	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, customError *exceptions.CustomError)
-	UpdateTableStatusAvailable(ctx context.Context, tableID int64) (customError *exceptions.CustomError)
-	ListSessionExtensionReason(ctx context.Context) (result []*domain.ListSessionExtensionReason, customError *exceptions.CustomError)
-	SessionExtension(ctx context.Context, payload domain.SessionExtension) *exceptions.CustomError
-	ListProductTimeExtension(ctx context.Context) (result []*domain.Product, customError *exceptions.CustomError)
+	ListTableStatus(ctx context.Context) (result []*domain.Status, err error)
+	UpdateTableStatus(ctx context.Context, payload domain.TableStatus) (err error)
+	SearchTableByFilters(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, err error)
+	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, err error)
+	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, err error)
+	UpdateTableStatusAvailable(ctx context.Context, tableID int64) (err error)
+	ListSessionExtensionReason(ctx context.Context) (result []*domain.ListSessionExtensionReason, err error)
+	SessionExtension(ctx context.Context, payload domain.SessionExtension) error
+	ListProductTimeExtension(ctx context.Context) (result []*domain.Product, err error)
 }
 
 type Implement struct {
@@ -29,7 +26,7 @@ type Implement struct {
 	cache      cache.RedisTableCacheInterface
 }
 
-func NewUsecase(config config.Config, repository repository.Implement, cache cache.RedisTableCacheInterface) *Implement {
+func NewUseCase(config config.Config, repository repository.Implement, cache cache.RedisTableCacheInterface) *Implement {
 	return &Implement{
 		config,
 		repository,
