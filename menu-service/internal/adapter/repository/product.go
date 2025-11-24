@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
 	"food-story/menu-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
@@ -13,14 +12,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProduct) (domain.SearchProductResult, *exceptions.CustomError) {
+func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProduct) (domain.SearchProductResult, error) {
 	searchParams := buildSearchParams(payload)
 
 	var (
 		searchResult  []*database.SearchProductsRow
-		searchErr     *exceptions.CustomError
+		searchErr     error
 		totalItems    int64
-		totalItemsErr *exceptions.CustomError
+		totalItemsErr error
 	)
 
 	wg := sync.WaitGroup{}
@@ -47,33 +46,28 @@ func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProd
 	}
 
 	return domain.SearchProductResult{
+		PageNumber: utils.GetPageNumber(payload.PageNumber),
+		PageSize:   utils.GetPageSize(payload.PageSize),
 		TotalItems: totalItems,
 		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
 		Data:       transformSearchResults(searchResult),
 	}, nil
 }
 
-func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Product, *exceptions.CustomError) {
+func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Product, error) {
+
+	const _errorGetProductFailed = "failed to get product by id"
 
 	data, err := i.repository.GetProductAvailableByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: exceptions.ErrProductNotFound,
-			}
+			return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrProductNotFound.Error())
 		}
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: errorGetProductFailed(id, err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errorGetProductFailed, err)
 	}
 
 	if data == nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: errorGetProductFailed(id, err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errorGetProductFailed, err)
 	}
 
 	return &domain.Product{
@@ -90,18 +84,15 @@ func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Produ
 	}, nil
 }
 
-func (i *Implement) fetchProducts(ctx context.Context, params database.SearchProductsParams) ([]*database.SearchProductsRow, *exceptions.CustomError) {
+func (i *Implement) fetchProducts(ctx context.Context, params database.SearchProductsParams) ([]*database.SearchProductsRow, error) {
 	result, err := i.repository.SearchProducts(ctx, params)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch products: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch product", err)
 	}
 	return result, nil
 }
 
-func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchProductsParams) (int64, *exceptions.CustomError) {
+func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchProductsParams) (int64, error) {
 	totalParams := database.GetTotalPageSearchProductsParams{
 		Name:        params.Name,
 		IsAvailable: params.IsAvailable,
@@ -109,10 +100,7 @@ func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchP
 	}
 	totalItems, err := i.repository.GetTotalPageSearchProducts(ctx, totalParams)
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch total items: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch total items", err)
 	}
 	return totalItems, nil
 }
@@ -155,8 +143,4 @@ func transformSearchResults(results []*database.SearchProductsRow) []*domain.Pro
 		}
 	}
 	return data
-}
-
-func errorGetProductFailed(id int64, err error) error {
-	return fmt.Errorf("get product failed, id: %d, error: %w", id, err)
 }

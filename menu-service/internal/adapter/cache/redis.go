@@ -2,7 +2,6 @@ package cache
 
 import (
 	"errors"
-	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/shared/redis"
 
@@ -10,7 +9,7 @@ import (
 )
 
 type RedisTableCacheInterface interface {
-	IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError
+	IsCachedTableExist(sessionID uuid.UUID) error
 }
 
 type RedisTableCache struct {
@@ -23,19 +22,13 @@ func NewRedisTableCache(client *redis.RedisClient) *RedisTableCache {
 	}
 }
 
-func (r *RedisTableCache) IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError {
+func (r *RedisTableCache) IsCachedTableExist(sessionID uuid.UUID) error {
 	_, err := r.client.Get(redis.KeyTable + sessionID.String())
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
-			return &exceptions.CustomError{
-				Status: exceptions.ERRAUTHORIZED,
-				Errors: exceptions.ErrSessionExpired,
-			}
+			return exceptions.Error(exceptions.CodeUnauthorized, exceptions.ErrSessionExpired.Error())
 		}
-		return &exceptions.CustomError{
-			Status: exceptions.ERRCACHE,
-			Errors: fmt.Errorf("cache session: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRedis, "cache session", err)
 	}
 
 	return nil

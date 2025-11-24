@@ -24,12 +24,12 @@ import (
 // @Router /category [get]
 func (s *Handler) CategoryList(c *fiber.Ctx) error {
 
-	result, customError := s.useCase.ListCategory(c.Context())
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.ListCategory(c.Context())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get list category success", result)
+	return middleware.ResponseOK(c, result)
 }
 
 // SearchMenu godoc
@@ -54,11 +54,11 @@ func (s *Handler) CategoryList(c *fiber.Ctx) error {
 func (s *Handler) SearchMenu(c *fiber.Ctx) error {
 	body := new(SearchMenu)
 	if err := c.QueryParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	payload := domain.SearchProduct{
@@ -71,12 +71,18 @@ func (s *Handler) SearchMenu(c *fiber.Ctx) error {
 		PageNumber:  body.PageNumber,
 	}
 
-	result, customError := s.useCase.SearchProductByFilters(c.Context(), payload)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.SearchProductByFilters(c.Context(), payload)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "search menu success", result)
+	return middleware.ResponseOKWithPagination(c, middleware.ResponseWithPaginationPayload{
+		PageNumber: result.PageNumber,
+		PageSize:   result.PageSize,
+		TotalItems: result.TotalItems,
+		TotalPages: result.TotalPages,
+		Data:       result,
+	})
 }
 
 // GetProductByID godoc
@@ -97,15 +103,15 @@ func (s *Handler) SearchMenu(c *fiber.Ctx) error {
 func (s *Handler) GetProductByID(c *fiber.Ctx) error {
 	productID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	result, customError := s.useCase.GetProductByID(c.Context(), productID)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.GetProductByID(c.Context(), productID)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get menu success", result)
+	return middleware.ResponseOK(c, result)
 }
 
 // SessionCurrent godoc
@@ -122,5 +128,5 @@ func (s *Handler) GetProductByID(c *fiber.Ctx) error {
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /session/current [get]
 func (s *Handler) SessionCurrent(c *fiber.Ctx) error {
-	return middleware.ResponseOK(c, "get session success", nil)
+	return middleware.ResponseOK(c, nil)
 }

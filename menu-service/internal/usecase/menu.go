@@ -3,17 +3,16 @@ package usecase
 import (
 	"context"
 	"food-story/menu-service/internal/domain"
-	"food-story/pkg/exceptions"
 )
 
-func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category, customError *exceptions.CustomError) {
+func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category, err error) {
 	return i.repository.ListCategory(ctx)
 }
 
-func (i *Implement) SearchProductByFilters(ctx context.Context, payload domain.SearchProduct) (result domain.SearchProductResult, customError *exceptions.CustomError) {
+func (i *Implement) SearchProductByFilters(ctx context.Context, payload domain.SearchProduct) (result domain.SearchProductResult, err error) {
 	return i.repository.SearchProduct(ctx, payload)
 }
 
-func (i *Implement) GetProductByID(ctx context.Context, id int64) (result *domain.Product, customError *exceptions.CustomError) {
+func (i *Implement) GetProductByID(ctx context.Context, id int64) (result *domain.Product, err error) {
 	return i.repository.GetProductByID(ctx, id)
 }

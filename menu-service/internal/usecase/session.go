@@ -1,11 +1,9 @@
 package usecase
 
 import (
-	"food-story/pkg/exceptions"
-
 	"github.com/google/uuid"
 )
 
-func (i *Implement) IsSessionValid(sessionID uuid.UUID) *exceptions.CustomError {
+func (i *Implement) IsSessionValid(sessionID uuid.UUID) error {
 	return i.cache.IsCachedTableExist(sessionID)
 }

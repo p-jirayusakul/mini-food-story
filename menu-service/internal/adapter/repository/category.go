@@ -2,27 +2,22 @@ package repository
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"food-story/menu-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 )
 
-func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category, customError *exceptions.CustomError) {
+func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category, err error) {
+
+	const _errMsg = "failed to fetch category"
+
 	data, err := i.repository.ListCategory(ctx)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check product exists: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMsg, err)
 	}
 
 	if data == nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: errors.New("category not found"),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMsg, err)
 	}
 
 	result = make([]*domain.Category, len(data))

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"food-story/menu-service/internal/usecase"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
@@ -55,22 +54,17 @@ func (s *Handler) setupRoutes() {
 func (s *Handler) handleSessionID(c *fiber.Ctx) error {
 	sessionIDAny, ok := c.Locals("sessionID").(string)
 	if !ok {
-		fmt.Println("1")
-		return middleware.ResponseError(fiber.StatusInternalServerError, exceptions.ErrFailedToReadSession.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeUnauthorized, exceptions.ErrFailedToReadSession.Error()))
 	}
 
 	sessionID, err := utils.PareStringToUUID(sessionIDAny)
 	if err != nil {
-		fmt.Println("2")
-
-		return middleware.ResponseError(fiber.StatusInternalServerError, exceptions.ErrFailedToReadSession.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeSystem, exceptions.ErrFailedToReadSession.Error()))
 	}
 
-	customError := s.useCase.IsSessionValid(sessionID)
-	if customError != nil {
-		fmt.Println("3")
-
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	err = s.useCase.IsSessionValid(sessionID)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
 	return c.Next()

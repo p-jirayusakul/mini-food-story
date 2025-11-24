@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
-	"food-story/menu-service/internal"
+	"food-story/menu-service/internal/app"
 	"food-story/pkg/common"
 	"food-story/shared/config"
 	"log"
@@ -16,7 +16,7 @@ import (
 	"food-story/menu-service/docs"
 )
 
-func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
+func gracefulShutdown(fiberServer *app.FiberServer, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -47,7 +47,7 @@ func gracefulShutdown(fiberServer *internal.FiberServer, done chan bool) {
 
 func main() {
 
-	server := internal.New()
+	server := app.New()
 	port, _ := strconv.Atoi(server.Config.AppPort)
 
 	initSwagger(server.Config)

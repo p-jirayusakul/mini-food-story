@@ -1,4 +1,4 @@
-package internal
+package app
 
 import (
 	"context"
@@ -63,6 +63,9 @@ func New() *FiberServer {
 
 	// add rate limit
 	app.Use(limiter.New(middleware.DefaultLimiter()))
+
+	// add request id
+	app.Use(middleware.RequestIDMiddleware())
 
 	// add custom CORS
 	app.Use(cors.New(middleware.DefaultCorsConfig()))
