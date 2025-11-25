@@ -10,7 +10,6 @@ import (
 )
 
 func LogHandler(basePath string) func(*fiber.Ctx) error {
-
 	timeZone := "Asia/Bangkok"
 	if os.Getenv("TZ") != "" {
 		timeZone = os.Getenv("TZ")
@@ -30,7 +29,7 @@ func LogHandler(basePath string) func(*fiber.Ctx) error {
 				return false
 			}
 		},
-		Format:     "${time} | ${latency} | ${ip}:${port} -  ${status} ${method} ${path} | ${error}\n",
+		Format:     "${time} | ${locals:requestid} | INBOUND | ${latency} | ${ip}:${port} - ${status} ${method} ${path} | ${error}\n",
 		TimeFormat: "2006/01/02 15:04:05",
 		TimeZone:   timeZone,
 	})

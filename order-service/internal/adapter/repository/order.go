@@ -14,19 +14,19 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (i *Implement) CreateOrder(ctx context.Context, order domain.CreateOrder) (orderID int64, customError *exceptions.CustomError) {
+func (i *Implement) CreateOrder(ctx context.Context, order domain.CreateOrder) (orderID int64, err error) {
 
-	orderItems, buildParamErr := i.buildPayloadOrderItems(ctx, order.OrderItems)
-	if buildParamErr != nil {
-		return 0, buildParamErr
+	orderItems, err := i.buildPayloadOrderItems(ctx, order.OrderItems)
+	if err != nil {
+		return 0, err
 	}
 
-	orderNumber, sequenceError := i.getOrderSequence(ctx)
-	if sequenceError != nil {
-		return 0, sequenceError
+	orderNumber, err := i.getOrderSequence(ctx)
+	if err != nil {
+		return 0, err
 	}
 
-	orderID, err := i.repository.TXCreateOrder(ctx, database.TXCreateOrderParams{
+	orderID, err = i.repository.TXCreateOrder(ctx, database.TXCreateOrderParams{
 		CreateOrderItems: orderItems,
 		CreateOrder: database.CreateOrderParams{
 			ID:          i.snowflakeID.Generate(),
@@ -36,35 +36,22 @@ func (i *Implement) CreateOrder(ctx context.Context, order domain.CreateOrder) (
 		},
 	})
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to create order: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to create order", err)
 	}
 
 	return orderID, nil
 }
-
-func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.Order, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.Order, err error) {
 	order, err := i.repository.GetOrderByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: exceptions.ErrOrderNotFound,
-			}
+			return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
 		}
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check order exists: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to check order exists", err)
 	}
 
 	if order == nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: exceptions.ErrOrderNotFound,
-		}
+		return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
 	}
 
 	return &domain.Order{
@@ -78,92 +65,65 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 	}, nil
 }
 
-func (i *Implement) IsOrderExist(ctx context.Context, id int64) (customError *exceptions.CustomError) {
+func (i *Implement) IsOrderExist(ctx context.Context, id int64) (err error) {
 	isExist, err := i.repository.IsOrderExist(ctx, id)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check order exists: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to check order exists", err)
 	}
 
 	if !isExist {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: exceptions.ErrOrderNotFound,
-		}
+		return exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
 	}
 
 	return nil
 }
 
-func (i *Implement) IsOrderWithItemsExists(ctx context.Context, orderID, orderItemsID int64) (customError *exceptions.CustomError) {
+func (i *Implement) IsOrderWithItemsExists(ctx context.Context, orderID, orderItemsID int64) (err error) {
 	isExist, err := i.repository.IsOrderWithItemsExists(ctx, database.IsOrderWithItemsExistsParams{
 		OrderID:      orderID,
 		OrderItemsID: orderItemsID,
 	})
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check order item exists: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to check order item exists", err)
 	}
 
 	if !isExist {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: exceptions.ErrOrderItemsNotFound,
-		}
+		return exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderItemsNotFound.Error())
 	}
 
 	return nil
 }
 
-func (i *Implement) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (bool, *exceptions.CustomError) {
+func (i *Implement) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (bool, error) {
 	isExist, err := i.repository.IsOrderItemsNotFinal(ctx, orderID)
 	if err != nil {
-		return false, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check order items not final: %w", err),
-		}
+		return false, exceptions.Errorf(exceptions.CodeRepository, "failed to check order items not final", err)
 	}
 	return isExist, nil
 }
 
-func (i *Implement) GetTableIDByOrderID(ctx context.Context, orderID int64) (int64, *exceptions.CustomError) {
+func (i *Implement) GetTableIDByOrderID(ctx context.Context, orderID int64) (int64, error) {
 	tableID, err := i.repository.GetTableIDByOrderID(ctx, orderID)
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get table id by order id: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to get table id by order id", err)
 	}
 	return tableID, nil
 }
 
-func (i *Implement) getOrderSequence(ctx context.Context) (string, *exceptions.CustomError) {
+func (i *Implement) getOrderSequence(ctx context.Context) (string, error) {
 
 	currentTimeDB, err := i.repository.GetTimeNow(ctx)
 	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get current time: %w", err),
-		}
+		return "", exceptions.Errorf(exceptions.CodeRepository, "failed to get current time", err)
 	}
 
 	if !currentTimeDB.Valid {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("validation failed: current time is not valid"),
-		}
+		return "", exceptions.Errorf(exceptions.CodeRepository, "validation failed: current time is not valid", err)
 	}
 
 	currentLocation, err := time.LoadLocation(i.config.TimeZone)
 	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: fmt.Errorf("failed to load time zone: %w", err),
-		}
+		return "", exceptions.Errorf(exceptions.CodeSystem, "failed to load time zone", err)
 	}
 
 	currentTime := currentTimeDB.Time.In(currentLocation)
@@ -172,31 +132,22 @@ func (i *Implement) getOrderSequence(ctx context.Context) (string, *exceptions.C
 		Valid: true,
 	})
 	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get or create order sequence: %w", err),
-		}
+		return "", exceptions.Errorf(exceptions.CodeRepository, "failed to get or create order sequence", err)
 	}
 
 	return fmt.Sprintf("FS-%s-%04d", currentTime.In(currentLocation).Format("20060102"), sequence), nil
 }
 
-func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, customError *exceptions.CustomError) {
+func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, err error) {
 	sessionIDData, err := i.repository.GetSessionIDByOrderID(ctx, orderID)
 	if err != nil {
-		return uuid.Nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get table by order id: %w", err),
-		}
+		return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get table by order id", err)
 	}
 
 	sessionIDString := sessionIDData.String()
 	sessionID, err := uuid.Parse(sessionIDString)
 	if err != nil {
-		return uuid.Nil, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: fmt.Errorf("failed to get session by order id: %w", err),
-		}
+		return uuid.Nil, exceptions.Errorf(exceptions.CodeSystem, "failed to get session by order id", err)
 	}
 
 	return sessionID, nil

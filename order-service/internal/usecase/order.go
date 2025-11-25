@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"fmt"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
@@ -11,20 +10,14 @@ import (
 	"github.com/google/uuid"
 )
 
-func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderItems []shareModel.OrderItems) (result int64, customError *exceptions.CustomError) {
+func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderItems []shareModel.OrderItems) (result int64, err error) {
 
 	if len(orderItems) == 0 {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: fmt.Errorf("order items cannot be empty"),
-		}
+		return 0, exceptions.Error(exceptions.CodeBusiness, "order items cannot be empty")
 	}
 
 	if sessionID == uuid.Nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: fmt.Errorf("invalid table ID"),
-		}
+		return 0, exceptions.Error(exceptions.CodeBusiness, "invalid table ID")
 	}
 
 	sessionDetail, tableCacheErr := i.cache.GetCachedTable(sessionID)
@@ -36,10 +29,7 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderI
 	if sessionDetail.OrderID != nil {
 		orderID, sysErr := utils.StrToInt64(*sessionDetail.OrderID)
 		if sysErr != nil {
-			return 0, &exceptions.CustomError{
-				Status: exceptions.ERRSYSTEM,
-				Errors: sysErr,
-			}
+			return 0, exceptions.Error(exceptions.CodeSystem, sysErr.Error())
 		}
 
 		if len(orderItems) > 0 {
@@ -59,38 +49,38 @@ func (i *Implement) CreateOrder(ctx context.Context, sessionID uuid.UUID, orderI
 		OrderItems: orderItems,
 	}
 
-	orderID, customError := i.repository.CreateOrder(ctx, payloadCreateOrder)
-	if customError != nil {
-		return 0, customError
+	orderID, err := i.repository.CreateOrder(ctx, payloadCreateOrder)
+	if err != nil {
+		return 0, err
 	}
 
-	updateCacheErr := i.cache.UpdateOrderID(sessionID, orderID)
-	if updateCacheErr != nil {
-		return 0, updateCacheErr
+	err = i.cache.UpdateOrderID(sessionID, orderID)
+	if err != nil {
+		return 0, err
 	}
 
-	newOrderItems, getOrderItemsErr := i.repository.GetOrderItemsByOrderID(ctx, orderID)
-	if getOrderItemsErr != nil {
-		return 0, getOrderItemsErr
+	newOrderItems, err := i.repository.GetOrderItemsByOrderID(ctx, orderID)
+	if err != nil {
+		return 0, err
 	}
 
-	queueErr := i.PublishOrderToQueue(newOrderItems)
-	if queueErr != nil {
-		return 0, queueErr
+	err = i.PublishOrderToQueue(newOrderItems)
+	if err != nil {
+		return 0, err
 	}
 
 	return orderID, nil
 }
 
-func (i *Implement) GetOrderByID(ctx context.Context, sessionID uuid.UUID) (result *domain.Order, customError *exceptions.CustomError) {
-	orderID, customError := i.GetOrderIDFromSession(sessionID)
-	if customError != nil {
-		return nil, customError
+func (i *Implement) GetOrderByID(ctx context.Context, sessionID uuid.UUID) (result *domain.Order, err error) {
+	orderID, err := i.GetOrderIDFromSession(sessionID)
+	if err != nil {
+		return nil, err
 	}
 
 	return i.repository.GetOrderByID(ctx, orderID)
 }
 
-func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, customError *exceptions.CustomError) {
+func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, err error) {
 	return i.repository.GetSessionIDByOrderID(ctx, orderID)
 }

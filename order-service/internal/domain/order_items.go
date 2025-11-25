@@ -28,12 +28,16 @@ type SearchOrderItems struct {
 }
 
 type SearchOrderItemsResult struct {
+	PageNumber int64                    `json:"pageNumber" example:"1"`
+	PageSize   int64                    `json:"pageSize" example:"10"`
 	TotalItems int64                    `json:"totalItems" example:"10"`
 	TotalPages int64                    `json:"totalPages" example:"1"`
 	Data       []*shareModel.OrderItems `json:"data"`
 }
 
 type SearchCurrentOrderItemsResult struct {
+	PageNumber int64                `json:"pageNumber" example:"1"`
+	PageSize   int64                `json:"pageSize" example:"10"`
 	TotalItems int64                `json:"totalItems" example:"10"`
 	TotalPages int64                `json:"totalPages" example:"1"`
 	Data       []*CurrentOrderItems `json:"data"`

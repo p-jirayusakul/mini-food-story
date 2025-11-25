@@ -1,20 +1,16 @@
 package usecase
 
 import (
-	"errors"
 	"food-story/pkg/exceptions"
 	shareModel "food-story/shared/model"
 	"log/slog"
 	"sort"
 )
 
-func (i *Implement) PublishOrderToQueue(orderItems []*shareModel.OrderItems) *exceptions.CustomError {
+func (i *Implement) PublishOrderToQueue(orderItems []*shareModel.OrderItems) error {
 
 	if orderItems == nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: errors.New("order items is empty"),
-		}
+		return exceptions.Error(exceptions.CodeBusiness, "order items is empty")
 	}
 
 	sort.Slice(orderItems, func(i, j int) bool {

@@ -1,7 +1,6 @@
 package http
 
 import (
-	"errors"
 	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/middleware"
@@ -35,18 +34,18 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 
 	body := new(OrderItems)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	var items []shareModel.OrderItems
 	for _, item := range body.Items {
 		productID, err := utils.StrToInt64(item.ProductID)
 		if err != nil {
-			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+			return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 		}
 		items = append(items, shareModel.OrderItems{
 			ProductID: productID,
@@ -55,12 +54,12 @@ func (s *Handler) CreateOrder(c *fiber.Ctx) error {
 		})
 	}
 
-	_, customError := s.useCase.CreateOrder(c.Context(), sessionID, items)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	_, err = s.useCase.CreateOrder(c.Context(), sessionID, items)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseCreated(c, "create order success", nil)
+	return middleware.ResponseCreated(c, nil)
 }
 
 // GetCurrentOrderByID godoc
@@ -82,12 +81,12 @@ func (s *Handler) GetCurrentOrderByID(c *fiber.Ctx) error {
 		return err
 	}
 
-	result, customError := s.useCase.GetOrderByID(c.Context(), sessionID)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.GetOrderByID(c.Context(), sessionID)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get order success", CurrentOrderResponse{
+	return middleware.ResponseOK(c, CurrentOrderResponse{
 		TableNumber:  result.TableNumber,
 		StatusName:   result.StatusName,
 		StatusNameEN: result.StatusNameEN,
@@ -117,18 +116,18 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 
 	body := new(OrderItems)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	var items []shareModel.OrderItems
 	for _, item := range body.Items {
 		productID, err := utils.StrToInt64(item.ProductID)
 		if err != nil {
-			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+			return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 		}
 		items = append(items, shareModel.OrderItems{
 			ProductID: productID,
@@ -136,12 +135,12 @@ func (s *Handler) CreateOrderItems(c *fiber.Ctx) error {
 			Note:      item.Note,
 		})
 	}
-	customError := s.useCase.CreateOrderItems(c.Context(), sessionID, items)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	err = s.useCase.CreateOrderItems(c.Context(), sessionID, items)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseCreated(c, "create order item success", nil)
+	return middleware.ResponseCreated(c, nil)
 }
 
 // GetCurrentOrderItems godoc
@@ -165,23 +164,26 @@ func (s *Handler) GetCurrentOrderItems(c *fiber.Ctx) error {
 	}
 
 	body := new(SearchCurrentOrderItems)
-	if errValidate := c.QueryParser(body); errValidate != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, errValidate.Error())
+	if err := c.QueryParser(body); err != nil {
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err = s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	result, customError := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, body.PageNumber, body.PageSize)
-	if customError != nil {
-		if errors.Is(customError.Errors, exceptions.ErrOrderNotFound) {
-			return middleware.ResponseOK(c, "get order items success", []domain.SearchCurrentOrderItemsResult{})
-		}
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.GetCurrentOrderItems(c.Context(), sessionID, body.PageNumber, body.PageSize)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get order items success", result)
+	return middleware.ResponseOKWithPagination(c, middleware.ResponseWithPaginationPayload{
+		PageSize:   result.PageSize,
+		PageNumber: result.PageNumber,
+		TotalItems: result.TotalItems,
+		TotalPages: result.TotalPages,
+		Data:       result.Data,
+	})
 }
 
 // GetCurrentOrderItemsByID godoc
@@ -207,15 +209,15 @@ func (s *Handler) GetCurrentOrderItemsByID(c *fiber.Ctx) error {
 
 	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	result, customError := s.useCase.GetCurrentOrderItemsByID(c.Context(), sessionID, orderItemsID)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.GetCurrentOrderItemsByID(c.Context(), sessionID, orderItemsID)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get order item success", result)
+	return middleware.ResponseOK(c, result)
 }
 
 // UpdateCurrentOrderItemsStatusCancel godoc
@@ -241,18 +243,18 @@ func (s *Handler) UpdateCurrentOrderItemsStatusCancel(c *fiber.Ctx) error {
 
 	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	customError := s.useCase.UpdateOrderItemsStatus(c.Context(), sessionID, shareModel.OrderItemsStatus{
+	err = s.useCase.UpdateOrderItemsStatus(c.Context(), sessionID, shareModel.OrderItemsStatus{
 		ID:         orderItemsID,
 		StatusCode: "CANCELLED",
 	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "update order item status success", nil)
+	return middleware.ResponseOK(c, nil)
 }
 
 // SearchOrderItemsInComplete godoc
@@ -278,16 +280,16 @@ func (s *Handler) UpdateCurrentOrderItemsStatusCancel(c *fiber.Ctx) error {
 func (s *Handler) SearchOrderItemsInComplete(c *fiber.Ctx) error {
 	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	body := new(SearchOrderItemsIncomplete)
 	if err := c.QueryParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	orderByType := "desc"
@@ -304,12 +306,18 @@ func (s *Handler) SearchOrderItemsInComplete(c *fiber.Ctx) error {
 		PageNumber:  body.PageNumber,
 	}
 
-	result, customError := s.useCase.SearchOrderItemsIncomplete(c.Context(), orderID, payload)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.SearchOrderItemsIncomplete(c.Context(), orderID, payload)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get order items success", result)
+	return middleware.ResponseOKWithPagination(c, middleware.ResponseWithPaginationPayload{
+		PageSize:   result.PageSize,
+		PageNumber: result.PageNumber,
+		TotalItems: result.TotalItems,
+		TotalPages: result.TotalPages,
+		Data:       result.Data,
+	})
 }
 
 // GetOrderItems godoc
@@ -329,24 +337,30 @@ func (s *Handler) SearchOrderItemsInComplete(c *fiber.Ctx) error {
 func (s *Handler) GetOrderItems(c *fiber.Ctx) error {
 	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	body := new(SearchCurrentOrderItems)
-	if errValidate := c.QueryParser(body); errValidate != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, errValidate.Error())
+	if err := c.QueryParser(body); err != nil {
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err = s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	result, customError := s.useCase.GetOrderItems(c.Context(), orderID, body.PageNumber, body.PageSize)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.GetOrderItems(c.Context(), orderID, body.PageNumber, body.PageSize)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get order items success", result)
+	return middleware.ResponseOKWithPagination(c, middleware.ResponseWithPaginationPayload{
+		PageSize:   result.PageSize,
+		PageNumber: result.PageNumber,
+		TotalItems: result.TotalItems,
+		TotalPages: result.TotalPages,
+		Data:       result.Data,
+	})
 }
 
 // UpdateOrderItemsStatusCancel godoc
@@ -368,24 +382,24 @@ func (s *Handler) UpdateOrderItemsStatusCancel(c *fiber.Ctx) error {
 
 	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	customError := s.useCase.UpdateOrderItemsStatusByID(c.Context(), shareModel.OrderItemsStatus{
+	err = s.useCase.UpdateOrderItemsStatusByID(c.Context(), shareModel.OrderItemsStatus{
 		ID:         orderItemsID,
 		OrderID:    orderID,
 		StatusCode: "CANCELLED",
 	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "update order item status success", nil)
+	return middleware.ResponseOK(c, nil)
 }
 
 // UpdateOrderItemsStatusServed godoc
@@ -406,24 +420,24 @@ func (s *Handler) UpdateOrderItemsStatusServed(c *fiber.Ctx) error {
 
 	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	orderItemsID, err := utils.StrToInt64(c.Params("orderItemsID"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	customError := s.useCase.UpdateOrderItemsStatusByID(c.Context(), shareModel.OrderItemsStatus{
+	err = s.useCase.UpdateOrderItemsStatusByID(c.Context(), shareModel.OrderItemsStatus{
 		ID:         orderItemsID,
 		OrderID:    orderID,
 		StatusCode: "SERVED",
 	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "update order item status success", nil)
+	return middleware.ResponseOK(c, nil)
 }
 
 // CreateOrderByStaff godoc
@@ -444,28 +458,28 @@ func (s *Handler) CreateOrderByStaff(c *fiber.Ctx) error {
 
 	body := new(OrderItemsByStaff)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	tableID, err := utils.StrToInt64(body.TableID)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	sessionID, customErr := s.useCase.GetSessionIDByTableID(c.Context(), tableID)
-	if customErr != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customErr.Status), customErr.Errors.Error())
+	sessionID, err := s.useCase.GetSessionIDByTableID(c.Context(), tableID)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
 	var items []shareModel.OrderItems
 	for _, item := range body.Items {
 		productID, err := utils.StrToInt64(item.ProductID)
 		if err != nil {
-			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+			return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 		}
 		items = append(items, shareModel.OrderItems{
 			ProductID: productID,
@@ -474,12 +488,12 @@ func (s *Handler) CreateOrderByStaff(c *fiber.Ctx) error {
 		})
 	}
 
-	_, customError := s.useCase.CreateOrder(c.Context(), sessionID, items)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	_, err = s.useCase.CreateOrder(c.Context(), sessionID, items)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseCreated(c, "create order success", nil)
+	return middleware.ResponseCreated(c, nil)
 }
 
 // CreateOrderItemsByStaff godoc
@@ -499,28 +513,28 @@ func (s *Handler) CreateOrderByStaff(c *fiber.Ctx) error {
 func (s *Handler) CreateOrderItemsByStaff(c *fiber.Ctx) error {
 	orderID, err := utils.StrToInt64(c.Params("id"))
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	body := new(OrderItems)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	sessionID, customErr := s.useCase.GetSessionIDByOrderID(c.Context(), orderID)
-	if customErr != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customErr.Status), customErr.Errors.Error())
+	sessionID, err := s.useCase.GetSessionIDByOrderID(c.Context(), orderID)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
 	var items []shareModel.OrderItems
 	for _, item := range body.Items {
 		productID, err := utils.StrToInt64(item.ProductID)
 		if err != nil {
-			return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+			return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 		}
 		items = append(items, shareModel.OrderItems{
 			ProductID: productID,
@@ -528,23 +542,23 @@ func (s *Handler) CreateOrderItemsByStaff(c *fiber.Ctx) error {
 			Note:      item.Note,
 		})
 	}
-	customError := s.useCase.CreateOrderItems(c.Context(), sessionID, items)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	err = s.useCase.CreateOrderItems(c.Context(), sessionID, items)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseCreated(c, "create order item success", nil)
+	return middleware.ResponseCreated(c, nil)
 }
 
 func getSession(c *fiber.Ctx) (uuid.UUID, error) {
 	sessionIDAny, ok := c.Locals("sessionID").(string)
 	if !ok {
-		return uuid.UUID{}, middleware.ResponseError(fiber.StatusInternalServerError, exceptions.ErrFailedToReadSession.Error())
+		return uuid.Nil, middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, exceptions.ErrFailedToReadSession.Error()))
 	}
 
 	sessionID, err := utils.PareStringToUUID(sessionIDAny)
 	if err != nil {
-		return uuid.UUID{}, middleware.ResponseError(fiber.StatusInternalServerError, exceptions.ErrFailedToReadSession.Error())
+		return uuid.Nil, middleware.ResponseError(c, exceptions.Error(exceptions.CodeSystem, exceptions.ErrFailedToReadSession.Error()))
 	}
 
 	return sessionID, nil
