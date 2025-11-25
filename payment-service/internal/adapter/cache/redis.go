@@ -8,7 +8,7 @@ import (
 )
 
 type RedisTableCacheInterface interface {
-	DeleteCachedTable(sessionID uuid.UUID) *exceptions.CustomError
+	DeleteCachedTable(sessionID uuid.UUID) error
 }
 
 type RedisTableCache struct {
@@ -21,13 +21,10 @@ func NewRedisTableCache(client *redis.RedisClient) *RedisTableCache {
 	}
 }
 
-func (r *RedisTableCache) DeleteCachedTable(sessionID uuid.UUID) *exceptions.CustomError {
+func (r *RedisTableCache) DeleteCachedTable(sessionID uuid.UUID) error {
 	err := r.client.Del(redis.KeyTable + sessionID.String())
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRCACHE,
-			Errors: err,
-		}
+		return exceptions.Errorf(exceptions.CodeRedis, "failed to delete cached table", err)
 	}
 	return nil
 }

@@ -2,79 +2,55 @@ package repository
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"food-story/pkg/exceptions"
 
 	"github.com/google/uuid"
 )
 
-func (i *Implement) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (customError *exceptions.CustomError) {
+func (i *Implement) IsOrderItemsNotFinal(ctx context.Context, orderID int64) (err error) {
 	isOrderItemsNotFinal, err := i.repository.IsOrderItemsNotFinal(ctx, orderID)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to fetch order item not final", err)
 	}
 
 	if isOrderItemsNotFinal {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: errors.New("all order items is not 'served' or 'cancel', cannot be paid"),
-		}
+		return exceptions.Error(exceptions.CodeBusiness, "all order items is not 'served' or 'cancel', cannot be paid")
 	}
 
 	return nil
 }
 
-func (i *Implement) IsOrderExist(ctx context.Context, orderID int64) (customError *exceptions.CustomError) {
+func (i *Implement) IsOrderExist(ctx context.Context, orderID int64) (err error) {
 	isExist, err := i.repository.IsOrderExist(ctx, orderID)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to check order exists: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to check order exists", err)
 	}
 
 	if !isExist {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRNOTFOUND,
-			Errors: exceptions.ErrOrderNotFound,
-		}
+		return exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
 	}
 
 	return nil
 }
-
-func (i *Implement) GetTableIDByOrderID(ctx context.Context, orderID int64) (result int64, customError *exceptions.CustomError) {
+func (i *Implement) GetTableIDByOrderID(ctx context.Context, orderID int64) (result int64, err error) {
 	tableID, err := i.repository.GetTableIDByOrderID(ctx, orderID)
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get table by order id: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to get table by order id", err)
 	}
 
 	return tableID, nil
 }
 
-func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, customError *exceptions.CustomError) {
+func (i *Implement) GetSessionIDByOrderID(ctx context.Context, orderID int64) (result uuid.UUID, err error) {
 	sessionIDData, err := i.repository.GetSessionIDByOrderID(ctx, orderID)
 	if err != nil {
-		return uuid.Nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get table by order id: %w", err),
-		}
+		return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get session by order id", err)
 	}
 
 	sessionIDString := sessionIDData.String()
 	sessionID, err := uuid.Parse(sessionIDString)
 	if err != nil {
-		return uuid.Nil, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: fmt.Errorf("failed to get session by order id: %w", err),
-		}
+		return uuid.Nil, exceptions.Errorf(exceptions.CodeSystem, "failed to get session by order id", err)
 	}
 
 	return sessionID, nil

@@ -66,7 +66,7 @@ func ResponseCreated(c *fiber.Ctx, payload interface{}) error {
 }
 
 func ResponseError(c *fiber.Ctx, err error) error {
-	httpCode, response := MapErrorToHTTP(err)
+	httpCode, response := mapErrorToHTTP(err)
 	if httpCode >= 500 {
 		slog.Error(response.Error.Message)
 	}
@@ -74,7 +74,7 @@ func ResponseError(c *fiber.Ctx, err error) error {
 	return c.Status(httpCode).JSON(response)
 }
 
-func MapErrorToHTTP(err error) (int, ErrorResponse) {
+func mapErrorToHTTP(err error) (int, ErrorResponse) {
 	var appErr *exceptions.AppError
 
 	if errors.As(err, &appErr) {

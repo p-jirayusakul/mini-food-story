@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"food-story/shared/config"
+
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 )

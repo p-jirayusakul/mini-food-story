@@ -3,62 +3,56 @@ package repository
 import (
 	"context"
 	"errors"
-	"fmt"
 	"food-story/kitchen-service/internal/domain"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
 	shareModel "food-story/shared/model"
-	"github.com/jackc/pgx/v5/pgtype"
 	"strings"
 	"sync"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
-	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
-	if customError != nil {
+func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload shareModel.OrderItemsStatus) (err error) {
+	err = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
+	if err != nil {
 		return
 	}
 
-	err := i.repository.UpdateOrderItemsStatus(ctx, database.UpdateOrderItemsStatusParams{
+	err = i.repository.UpdateOrderItemsStatus(ctx, database.UpdateOrderItemsStatusParams{
 		StatusCode: payload.StatusCode,
 		ID:         payload.ID,
 	})
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to update order items status: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to update order items status", err)
 	}
 
 	return
 }
 
-func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
-	customError = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
-	if customError != nil {
+func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload shareModel.OrderItemsStatus) (err error) {
+	err = i.IsOrderWithItemsExists(ctx, payload.OrderID, payload.ID)
+	if err != nil {
 		return
 	}
 
-	err := i.repository.UpdateOrderItemsStatusServed(ctx, payload.ID)
+	err = i.repository.UpdateOrderItemsStatusServed(ctx, payload.ID)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to update order items status: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to update order items status served", err)
 	}
 
 	return
 }
 
-func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, err error) {
 	searchParams := buildSearchOrderItemsParams(payload)
 
 	var (
 		searchResult  []*database.SearchOrderItemsRow
-		searchErr     *exceptions.CustomError
+		searchErr     error
 		totalItems    int64
-		totalItemsErr *exceptions.CustomError
+		totalItemsErr error
 	)
 
 	wg := sync.WaitGroup{}
@@ -85,24 +79,23 @@ func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchO
 	}
 
 	return domain.SearchOrderItemsResult{
+		PageNumber: utils.GetPageNumber(payload.PageNumber),
+		PageSize:   utils.GetPageSize(payload.PageSize),
 		TotalItems: totalItems,
 		TotalPages: utils.CalculateTotalPages(totalItems, searchParams.PageSize),
 		Data:       shareModel.TransformOrderItemsResults(searchResult),
 	}, nil
 }
 
-func (i *Implement) fetchSearchOrder(ctx context.Context, params database.SearchOrderItemsParams) ([]*database.SearchOrderItemsRow, *exceptions.CustomError) {
+func (i *Implement) fetchSearchOrder(ctx context.Context, params database.SearchOrderItemsParams) ([]*database.SearchOrderItemsRow, error) {
 	result, err := i.repository.SearchOrderItems(ctx, params)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch products: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch order items", err)
 	}
 	return result, nil
 }
 
-func (i *Implement) fetchSearchOrderTotalItems(ctx context.Context, params database.SearchOrderItemsParams) (int64, *exceptions.CustomError) {
+func (i *Implement) fetchSearchOrderTotalItems(ctx context.Context, params database.SearchOrderItemsParams) (int64, error) {
 	totalParams := database.GetTotalSearchOrderItemsParams{
 		ProductName: params.ProductName,
 		TableNumber: params.TableNumber,
@@ -110,28 +103,22 @@ func (i *Implement) fetchSearchOrderTotalItems(ctx context.Context, params datab
 	}
 	totalItems, err := i.repository.GetTotalSearchOrderItems(ctx, totalParams)
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch total items: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch total items", err)
 	}
 
 	return totalItems, nil
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, err error) {
 	searchParams := buildSearchOrderItemsParams(search)
 
 	if orderID <= 0 {
-		return domain.SearchOrderItemsResult{}, &exceptions.CustomError{
-			Status: exceptions.ERRBUSSINESS,
-			Errors: exceptions.ErrOrderRequired,
-		}
+		return domain.SearchOrderItemsResult{}, exceptions.Error(exceptions.CodeBusiness, exceptions.ErrOrderRequired.Error())
 	}
 
-	customError = i.IsOrderExist(ctx, orderID)
-	if customError != nil {
-		return domain.SearchOrderItemsResult{}, customError
+	err = i.IsOrderExist(ctx, orderID)
+	if err != nil {
+		return domain.SearchOrderItemsResult{}, err
 	}
 
 	var (
@@ -145,7 +132,7 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search dom
 
 	go func() {
 		defer wg.Done()
-		searchResult, customError = i.fetchOrderWithItems(ctx, database.GetOrderWithItemsParams{
+		searchResult, err = i.fetchOrderWithItems(ctx, database.GetOrderWithItemsParams{
 			OrderID:    orderID,
 			Pagesize:   searchParams.PageSize,
 			Pagenumber: searchParams.PageNumber,
@@ -153,13 +140,13 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search dom
 	}()
 	go func() {
 		defer wg.Done()
-		totalItems, customError = i.fetchTotalOrderWithItems(ctx, orderID)
+		totalItems, err = i.fetchTotalOrderWithItems(ctx, orderID)
 	}()
 
 	wg.Wait()
 
-	if customError != nil {
-		return domain.SearchOrderItemsResult{}, customError
+	if err != nil {
+		return domain.SearchOrderItemsResult{}, err
 	}
 
 	return domain.SearchOrderItemsResult{
@@ -168,35 +155,28 @@ func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search dom
 		Data:       shareModel.TransformOrderItemsResults(searchResult),
 	}, nil
 }
-
-func (i *Implement) fetchOrderWithItems(ctx context.Context, params database.GetOrderWithItemsParams) ([]*database.GetOrderWithItemsRow, *exceptions.CustomError) {
+func (i *Implement) fetchOrderWithItems(ctx context.Context, params database.GetOrderWithItemsParams) ([]*database.GetOrderWithItemsRow, error) {
 	result, err := i.repository.GetOrderWithItems(ctx, params)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch order items not final: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch order items not final", err)
 	}
 	return result, nil
 }
 
-func (i *Implement) fetchTotalOrderWithItems(ctx context.Context, orderID int64) (int64, *exceptions.CustomError) {
+func (i *Implement) fetchTotalOrderWithItems(ctx context.Context, orderID int64) (int64, error) {
 	totalItems, err := i.repository.GetTotalItemOrderWithItems(ctx, orderID)
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch total items: %w", err),
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch total items", err)
 	}
 
 	return totalItems, nil
 }
 
-func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *shareModel.OrderItems, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64, tableNumber int32) (result *shareModel.OrderItems, err error) {
 
-	customError = i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
-	if customError != nil {
-		return nil, customError
+	err = i.IsOrderWithItemsExists(ctx, orderID, orderItemsID)
+	if err != nil {
+		return nil, err
 	}
 
 	items, err := i.repository.GetOrderWithItemsByID(ctx, database.GetOrderWithItemsByIDParams{
@@ -206,16 +186,10 @@ func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID
 	if err != nil {
 
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: fmt.Errorf("order items not found"),
-			}
+			return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderItemsNotFound.Error())
 		}
 
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to get order items: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get order items", err)
 	}
 
 	return shareModel.TransformOrderItemsByIDResults(items), nil

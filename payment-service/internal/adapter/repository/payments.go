@@ -19,7 +19,7 @@ import (
 
 const FailToGetTotalAmount = "failed to fetch amount order: %w"
 
-func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, customError *exceptions.CustomError) {
+func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, err error) {
 
 	var note pgtype.Text
 	if payload.Note != nil {
@@ -29,10 +29,7 @@ func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain
 
 	amount, err := i.repository.GetTotalAmountToPayForServedItems(ctx, payload.OrderID)
 	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf(FailToGetTotalAmount, err),
-		}
+		return "", exceptions.Errorf(exceptions.CodeRepository, FailToGetTotalAmount, err)
 	}
 
 	transactionID = uuid.New().String()
@@ -53,17 +50,12 @@ func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain
 
 	_, err = i.repository.CreatePayment(ctx, arg)
 	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to create payment: %w", err),
-		}
+		return "", exceptions.Errorf(exceptions.CodeRepository, "failed to create payment", err)
 	}
 
 	err = i.repository.UpdateOrderStatusWaitForPayment(ctx, payload.OrderID)
 	if err != nil {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-		}
+		return "", exceptions.Errorf(exceptions.CodeRepository, "failed to update order status", err)
 	}
 
 	tableID, customError := i.GetTableIDByOrderID(ctx, payload.OrderID)
@@ -78,35 +70,25 @@ func (i *Implement) CreatePaymentTransaction(ctx context.Context, payload domain
 
 	return transactionID, nil
 }
-
-func (i *Implement) GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (statusCode string, customError *exceptions.CustomError) {
+func (i *Implement) GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (statusCode string, err error) {
 
 	const errNotFound = "payment status not found"
 	result, err := i.repository.GetPaymentLastStatusCodeByTransaction(ctx, transactionID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return "", &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: fmt.Errorf(errNotFound),
-			}
+			return "", exceptions.Error(exceptions.CodeNotFound, errNotFound)
 		}
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+		return "", exceptions.Errorf(exceptions.CodeRepository, "failed to get payment status", err)
 	}
 
 	if result.String == "" {
-		return "", &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf(errNotFound),
-		}
+		return "", exceptions.Error(exceptions.CodeRepository, errNotFound)
 	}
 
 	return result.String, nil
 }
 
-func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionID, statusCode string) (sessionID uuid.UUID, customError *exceptions.CustomError) {
+func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionID, statusCode string) (sessionID uuid.UUID, err error) {
 
 	if statusCode == "" || statusCode == "PENDING" {
 		return uuid.Nil, nil
@@ -117,75 +99,48 @@ func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionI
 		case "CANCELLED":
 			err := i.repository.UpdateStatusPaymentCancelledByTransactionID(ctx, transactionID)
 			if err != nil {
-				return uuid.Nil, &exceptions.CustomError{
-					Status: exceptions.ERRREPOSITORY,
-					Errors: err,
-				}
+				return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to update payment status cancelled", err)
 			}
 		case "FAILED":
 			err := i.repository.UpdateStatusPaymentFailedByTransactionID(ctx, transactionID)
 			if err != nil {
-				return uuid.Nil, &exceptions.CustomError{
-					Status: exceptions.ERRREPOSITORY,
-					Errors: err,
-				}
+				return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to update payment status failed", err)
 			}
 		case "TIMEOUT":
 			err := i.repository.UpdateStatusPaymentTimeOutByTransactionID(ctx, transactionID)
 			if err != nil {
-				return uuid.Nil, &exceptions.CustomError{
-					Status: exceptions.ERRREPOSITORY,
-					Errors: err,
-				}
+				return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to update payment status timeout", err)
 			}
 		default:
-			return uuid.Nil, &exceptions.CustomError{
-				Status: exceptions.ERRREPOSITORY,
-				Errors: errors.New("status code not supported"),
-			}
+			return uuid.Nil, exceptions.Error(exceptions.CodeRepository, "status code not supported")
 		}
 	} else {
 		err := i.repository.UpdateStatusPaymentSuccessByTransactionID(ctx, transactionID)
 		if err != nil {
-			return uuid.Nil, &exceptions.CustomError{
-				Status: exceptions.ERRREPOSITORY,
-				Errors: err,
-			}
+			return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to update payment status success", err)
 		}
 	}
 
 	orderID, err := i.repository.GetPaymentOrderIDByTransaction(ctx, transactionID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return uuid.Nil, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: exceptions.ErrOrderNotFound,
-			}
+			return uuid.Nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
 		}
 
-		return uuid.Nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+		return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get order id", err)
 	}
 
 	if strings.ToUpper(statusCode) != "SUCCESS" {
 		err = i.repository.UpdateOrderStatusWaitForPayment(ctx, orderID)
 		if err != nil {
-			return uuid.Nil, &exceptions.CustomError{
-				Status: exceptions.ERRREPOSITORY,
-				Errors: err,
-			}
+			return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to update order status", err)
 		}
 		return uuid.Nil, nil
 	}
 
 	amount, err := i.repository.GetTotalAmountToPayForServedItems(ctx, orderID)
 	if err != nil {
-		return uuid.Nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf(FailToGetTotalAmount, err),
-		}
+		return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, FailToGetTotalAmount, err)
 	}
 
 	err = i.repository.UpdateOrderStatusCompletedAndAmount(ctx, database.UpdateOrderStatusCompletedAndAmountParams{
@@ -193,10 +148,7 @@ func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionI
 		Amount: amount,
 	})
 	if err != nil {
-		return uuid.Nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+		return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to update order status and amount", err)
 	}
 
 	tableID, customError := i.GetTableIDByOrderID(ctx, orderID)
@@ -222,26 +174,17 @@ func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionI
 	return sessionID, nil
 }
 
-func (i *Implement) GetPaymentAmountByTransaction(ctx context.Context, transactionID string) (result float64, customError *exceptions.CustomError) {
+func (i *Implement) GetPaymentAmountByTransaction(ctx context.Context, transactionID string) (result float64, err error) {
 	amount, err := i.repository.GetPaymentAmountByTransaction(ctx, transactionID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return 0, &exceptions.CustomError{
-				Status: exceptions.ERRNOTFOUND,
-				Errors: fmt.Errorf(FailToGetTotalAmount, err),
-			}
+			return 0, exceptions.Errorf(exceptions.CodeNotFound, FailToGetTotalAmount, err)
 		}
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to get payment amount", err)
 	}
 	amountFloat, err := amount.Float64Value()
 	if err != nil {
-		return 0, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: err,
-		}
+		return 0, exceptions.Errorf(exceptions.CodeSystem, "failed to convert amount to float64", err)
 	}
 
 	return amountFloat.Float64, nil

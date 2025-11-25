@@ -31,33 +31,34 @@ import (
 func (s *Handler) CreatePaymentTransaction(c *fiber.Ctx) error {
 	body := new(Payment)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	orderID, err := utils.StrToInt64(body.OrderID)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	method, err := utils.StrToInt64(body.Method)
 	if err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	result, customError := s.useCase.CreatePaymentTransaction(c.Context(), domain.Payment{
+	result, err := s.useCase.CreatePaymentTransaction(c.Context(), domain.Payment{
 		OrderID: orderID,
 		Method:  method,
 		Note:    body.Note,
 	})
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	if err != nil {
+		return middleware.ResponseError(c, err)
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseCreated(c, "create payment transaction success", createResponse{
+	return middleware.ResponseCreated(c, createResponse{
 		TransactionID: result,
 	})
 }
@@ -78,19 +79,19 @@ func (s *Handler) CreatePaymentTransaction(c *fiber.Ctx) error {
 func (s *Handler) CallbackPaymentTransaction(c *fiber.Ctx) error {
 	body := new(CallbackPayment)
 	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
 	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(fiber.StatusBadRequest, err.Error())
+		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeBusiness, err.Error()))
 	}
 
-	customError := s.useCase.CallbackPaymentTransaction(c.Context(), body.TransactionID, body.Status)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	err := s.useCase.CallbackPaymentTransaction(c.Context(), body.TransactionID, body.Status)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "payment callback processed successfully", nil)
+	return middleware.ResponseOK(c, nil)
 }
 
 // ListPaymentMethods godoc
@@ -107,12 +108,12 @@ func (s *Handler) CallbackPaymentTransaction(c *fiber.Ctx) error {
 // @Failure 500 {object} middleware.ErrorResponse
 // @Router /methods [get]
 func (s *Handler) ListPaymentMethods(c *fiber.Ctx) error {
-	result, customError := s.useCase.ListPaymentMethods(c.Context())
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.ListPaymentMethods(c.Context())
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get list payment methods success", result)
+	return middleware.ResponseOK(c, result)
 }
 
 // StreamPaymentStatusByTransaction godoc
@@ -244,12 +245,12 @@ func (s *Handler) PaymentTransactionQR(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).SendString("missing transactionID")
 	}
 
-	result, customError := s.useCase.PaymentTransactionQR(c.Context(), txID)
-	if customError != nil {
-		return middleware.ResponseError(exceptions.MapToHTTPStatusCode(customError.Status), customError.Errors.Error())
+	result, err := s.useCase.PaymentTransactionQR(c.Context(), txID)
+	if err != nil {
+		return middleware.ResponseError(c, err)
 	}
 
-	return middleware.ResponseOK(c, "get payment transaction QR success", result)
+	return middleware.ResponseOK(c, result)
 }
 
 // ชุดสถานะที่ถือว่า final (ปรับตาม md_payment_statuses ของคุณ)

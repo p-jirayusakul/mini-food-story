@@ -2,26 +2,18 @@ package repository
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"food-story/payment-service/internal/domain"
 	"food-story/pkg/exceptions"
 )
 
-func (i *Implement) ListPaymentMethods(ctx context.Context) (result []*domain.PaymentMethod, customError *exceptions.CustomError) {
+func (i *Implement) ListPaymentMethods(ctx context.Context) (result []*domain.PaymentMethod, err error) {
 	data, err := i.repository.ListPaymentMethods(ctx)
 	if err != nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to fetch table status: %w", err),
-		}
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch table status", err)
 	}
 
 	if data == nil {
-		return nil, &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: errors.New("no data found"),
-		}
+		return nil, exceptions.Error(exceptions.CodeRepository, "data not found")
 	}
 
 	result = make([]*domain.PaymentMethod, len(data))

@@ -3,50 +3,49 @@ package usecase
 import (
 	"context"
 	"food-story/kitchen-service/internal/domain"
-	"food-story/pkg/exceptions"
 	shareModel "food-story/shared/model"
 )
 
-func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
+func (i *Implement) UpdateOrderItemsStatus(ctx context.Context, payload shareModel.OrderItemsStatus) (err error) {
 
-	customError = i.repository.UpdateOrderItemsStatus(ctx, payload)
-	if customError != nil {
-		return customError
+	err = i.repository.UpdateOrderItemsStatus(ctx, payload)
+	if err != nil {
+		return err
 	}
 
 	return i.updateTablesStatusFoodServed(ctx, payload.OrderID)
 }
 
-func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload shareModel.OrderItemsStatus) (customError *exceptions.CustomError) {
-	customError = i.repository.UpdateOrderItemsStatusServed(ctx, payload)
-	if customError != nil {
-		return customError
+func (i *Implement) UpdateOrderItemsStatusServed(ctx context.Context, payload shareModel.OrderItemsStatus) (err error) {
+	err = i.repository.UpdateOrderItemsStatusServed(ctx, payload)
+	if err != nil {
+		return err
 	}
 
 	return i.updateTablesStatusFoodServed(ctx, payload.OrderID)
 }
 
-func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+func (i *Implement) SearchOrderItems(ctx context.Context, payload domain.SearchOrderItems) (result domain.SearchOrderItemsResult, err error) {
 	return i.repository.SearchOrderItems(ctx, payload)
 }
 
-func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, customError *exceptions.CustomError) {
+func (i *Implement) GetOrderItems(ctx context.Context, orderID int64, search domain.SearchOrderItems) (result domain.SearchOrderItemsResult, err error) {
 	return i.repository.GetOrderItems(ctx, orderID, search)
 }
 
-func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *shareModel.OrderItems, customError *exceptions.CustomError) {
-	tableNumber, customError := i.repository.GetTableNumberOrderByID(ctx, orderID)
-	if customError != nil {
-		return nil, customError
+func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID int64) (result *shareModel.OrderItems, err error) {
+	tableNumber, err := i.repository.GetTableNumberOrderByID(ctx, orderID)
+	if err != nil {
+		return nil, err
 	}
 
 	return i.repository.GetOrderItemsByID(ctx, orderID, orderItemsID, tableNumber)
 }
 
-func (i *Implement) updateTablesStatusFoodServed(ctx context.Context, orderID int64) (customError *exceptions.CustomError) {
-	isOrderItemsNotFinal, customError := i.repository.IsOrderItemsNotFinal(ctx, orderID)
-	if customError != nil {
-		return customError
+func (i *Implement) updateTablesStatusFoodServed(ctx context.Context, orderID int64) (err error) {
+	isOrderItemsNotFinal, err := i.repository.IsOrderItemsNotFinal(ctx, orderID)
+	if err != nil {
+		return err
 	}
 
 	if !isOrderItemsNotFinal {

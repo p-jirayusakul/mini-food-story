@@ -1,4 +1,4 @@
-package internal
+package app
 
 import (
 	"context"
@@ -77,6 +77,9 @@ func New() *FiberServer {
 
 	// add log handler
 	app.Use(middleware.LogHandler(configApp.BaseURL))
+
+	// add request id
+	app.Use(middleware.RequestIDMiddleware())
 
 	// add log handler
 	app.Use(middleware.LogHandler(configApp.BaseURL))

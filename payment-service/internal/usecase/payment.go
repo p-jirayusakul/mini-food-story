@@ -12,35 +12,35 @@ import (
 	"github.com/howeyc/crc16"
 )
 
-func (i *PaymentImplement) CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, customError *exceptions.CustomError) {
+func (i *PaymentImplement) CreatePaymentTransaction(ctx context.Context, payload domain.Payment) (transactionID string, err error) {
 
-	customError = i.repository.IsOrderExist(ctx, payload.OrderID)
-	if customError != nil {
-		return "", customError
+	err = i.repository.IsOrderExist(ctx, payload.OrderID)
+	if err != nil {
+		return "", err
 	}
 
-	customError = i.repository.IsOrderItemsNotFinal(ctx, payload.OrderID)
-	if customError != nil {
-		return "", customError
+	err = i.repository.IsOrderItemsNotFinal(ctx, payload.OrderID)
+	if err != nil {
+		return "", err
 	}
 
-	transactionID, customError = i.repository.CreatePaymentTransaction(ctx, payload)
-	if customError != nil {
-		return "", customError
+	transactionID, err = i.repository.CreatePaymentTransaction(ctx, payload)
+	if err != nil {
+		return "", err
 	}
 
 	return transactionID, nil
 }
 
-func (i *PaymentImplement) GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (result string, customError *exceptions.CustomError) {
+func (i *PaymentImplement) GetPaymentLastStatusCodeByTransaction(ctx context.Context, transactionID string) (result string, err error) {
 	return i.repository.GetPaymentLastStatusCodeByTransaction(ctx, transactionID)
 }
 
-func (i *PaymentImplement) PaymentTransactionQR(ctx context.Context, transactionID string) (result domain.TransactionQR, customError *exceptions.CustomError) {
+func (i *PaymentImplement) PaymentTransactionQR(ctx context.Context, transactionID string) (result domain.TransactionQR, err error) {
 
-	amountOrder, customError := i.repository.GetPaymentAmountByTransaction(ctx, transactionID)
-	if customError != nil {
-		return domain.TransactionQR{}, customError
+	amountOrder, err := i.repository.GetPaymentAmountByTransaction(ctx, transactionID)
+	if err != nil {
+		return domain.TransactionQR{}, err
 	}
 
 	amount := amountOrder
@@ -60,10 +60,7 @@ func (i *PaymentImplement) PaymentTransactionQR(ctx context.Context, transaction
 		Dynamic:  true,
 	})
 	if err != nil {
-		return domain.TransactionQR{}, &exceptions.CustomError{
-			Status: exceptions.ERRSYSTEM,
-			Errors: err,
-		}
+		return domain.TransactionQR{}, exceptions.Errorf(exceptions.CodeSystem, "failed to build QR", err)
 	}
 
 	expires := time.Now().Add(2 * time.Minute).UTC().Format(time.RFC3339)
@@ -76,17 +73,17 @@ func (i *PaymentImplement) PaymentTransactionQR(ctx context.Context, transaction
 	}, nil
 }
 
-func (i *PaymentImplement) CallbackPaymentTransaction(ctx context.Context, transactionID string, statusCode string) (customError *exceptions.CustomError) {
+func (i *PaymentImplement) CallbackPaymentTransaction(ctx context.Context, transactionID string, statusCode string) (err error) {
 
-	sessionID, customError := i.repository.CallbackPaymentTransaction(ctx, transactionID, statusCode)
-	if customError != nil {
-		return customError
+	sessionID, err := i.repository.CallbackPaymentTransaction(ctx, transactionID, statusCode)
+	if err != nil {
+		return err
 	}
 
 	if sessionID != uuid.Nil {
-		customError = i.cache.DeleteCachedTable(sessionID)
-		if customError != nil {
-			return customError
+		err = i.cache.DeleteCachedTable(sessionID)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -118,7 +115,6 @@ type BuildOpts struct {
 	Dynamic  bool   // true=12 (Dynamic), false=11 (Static)
 }
 
-// สร้าง Dynamic PromptPay QR Text (Thai QR Payment)
 func BuildPromptPayQR(o BuildOpts) (string, error) {
 	if o.Mobile == "" && o.CitizenID == "" {
 		return "", fmt.Errorf("missing proxy (Mobile or CitizenID)")

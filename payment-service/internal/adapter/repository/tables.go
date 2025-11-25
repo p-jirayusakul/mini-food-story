@@ -2,29 +2,22 @@ package repository
 
 import (
 	"context"
-	"fmt"
 	"food-story/pkg/exceptions"
 )
 
-func (i *Implement) UpdateTablesStatusWaitingForPayment(ctx context.Context, tableID int64) (customError *exceptions.CustomError) {
-	err := i.repository.UpdateTablesStatusWaitingForPayment(ctx, tableID)
+func (i *Implement) UpdateTablesStatusWaitingForPayment(ctx context.Context, tableID int64) (err error) {
+	err = i.repository.UpdateTablesStatusWaitingForPayment(ctx, tableID)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to update table status waiting for payment: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to update table status waiting for payment", err)
 	}
 
 	return nil
 }
 
-func (i *Implement) UpdateTablesStatusCleaning(ctx context.Context, tableID int64) (customError *exceptions.CustomError) {
-	err := i.repository.UpdateTablesStatusCleaning(ctx, tableID)
+func (i *Implement) UpdateTablesStatusCleaning(ctx context.Context, tableID int64) (err error) {
+	err = i.repository.UpdateTablesStatusCleaning(ctx, tableID)
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: fmt.Errorf("failed to update table status cleaning: %w", err),
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to update table status cleaning", err)
 	}
 
 	return nil

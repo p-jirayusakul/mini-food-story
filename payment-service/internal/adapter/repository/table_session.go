@@ -8,13 +8,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func (i *Implement) UpdateStatusCloseTableSession(ctx context.Context, sessionID uuid.UUID) (customError *exceptions.CustomError) {
-	err := i.repository.UpdateStatusCloseTableSession(ctx, utils.UUIDToPgUUID(sessionID))
+func (i *Implement) UpdateStatusCloseTableSession(ctx context.Context, sessionID uuid.UUID) (err error) {
+	err = i.repository.UpdateStatusCloseTableSession(ctx, utils.UUIDToPgUUID(sessionID))
 	if err != nil {
-		return &exceptions.CustomError{
-			Status: exceptions.ERRREPOSITORY,
-			Errors: err,
-		}
+		return exceptions.Errorf(exceptions.CodeRepository, "failed to update status close table session", err)
 	}
 
 	return nil

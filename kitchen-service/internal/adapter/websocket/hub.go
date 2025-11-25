@@ -1,8 +1,9 @@
 package websocket
 
 import (
-	"github.com/gofiber/contrib/websocket"
 	"log"
+
+	"github.com/gofiber/contrib/websocket"
 )
 
 type Hub struct {

@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"food-story/kitchen-service/internal"
 	"food-story/kitchen-service/internal/adapter/queue/consumer"
+	"food-story/kitchen-service/internal/app"
 	"food-story/pkg/common"
 	"food-story/shared/config"
 	"food-story/shared/kafka"
@@ -18,7 +18,7 @@ import (
 	"food-story/kitchen-service/docs"
 )
 
-func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.CancelFunc, done chan bool) {
+func gracefulShutdown(fiberServer *app.FiberServer, cancelConsumer context.CancelFunc, done chan bool) {
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
@@ -59,7 +59,7 @@ func gracefulShutdown(fiberServer *internal.FiberServer, cancelConsumer context.
 // @name Authorization
 func main() {
 
-	server := internal.New()
+	server := app.New()
 	port, _ := strconv.Atoi(server.Config.AppPort)
 	initSwagger(server.Config)
 
