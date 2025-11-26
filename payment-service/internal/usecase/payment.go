@@ -97,9 +97,7 @@ func tlv(tag, val string) string {
 // 0891234567 -> 0066891234567
 func phoneToPromptPayProxy(thMobile string) string {
 	m := strings.TrimSpace(thMobile)
-	if strings.HasPrefix(m, "0") {
-		m = m[1:]
-	}
+	m = strings.TrimPrefix(m, "0")
 	return "0066" + m
 }
 

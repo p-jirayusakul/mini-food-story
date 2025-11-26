@@ -55,7 +55,6 @@ func (s *Handler) CreatePaymentTransaction(c *fiber.Ctx) error {
 	})
 	if err != nil {
 		return middleware.ResponseError(c, err)
-		return middleware.ResponseError(c, err)
 	}
 
 	return middleware.ResponseCreated(c, createResponse{
