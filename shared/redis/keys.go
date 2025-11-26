@@ -1,5 +1,6 @@
 package redis
 
 const (
-	KeyTable = "table:"
+	KeyTable       = "table:"
+	KeyTableStatus = "table::status"
 )

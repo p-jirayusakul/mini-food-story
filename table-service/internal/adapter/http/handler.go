@@ -54,28 +54,6 @@ func (s *Handler) ListSessionExtensionReason(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, result)
 }
 
-// ListProductTimeExtension godoc
-// @Summary Get list of table status
-// @Description Get list of all available table statuses
-// @Tags Table
-// @Security BearerAuth
-// @Accept json
-// @Produce json
-// @Success 200 {object} middleware.SuccessResponse{data=[]domain.Status}
-// @Failure 400 {object} middleware.ErrorResponse
-// @Failure 401 {object} middleware.ErrorResponse
-// @Failure 403 {object} middleware.ErrorResponse
-// @Failure 500 {object} middleware.ErrorResponse
-// @Router /status [get]
-func (s *Handler) ListProductTimeExtension(c *fiber.Ctx) error {
-	result, err := s.useCase.ListProductTimeExtension(c.Context())
-	if err != nil {
-		return middleware.ResponseError(c, err)
-	}
-
-	return middleware.ResponseOK(c, result)
-}
-
 // UpdateTableStatus godoc
 // @Summary Update table status
 // @Description Update status for existing table

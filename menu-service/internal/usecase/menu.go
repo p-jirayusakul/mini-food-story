@@ -16,3 +16,7 @@ func (i *Implement) SearchProductByFilters(ctx context.Context, payload domain.S
 func (i *Implement) GetProductByID(ctx context.Context, id int64) (result *domain.Product, err error) {
 	return i.repository.GetProductByID(ctx, id)
 }
+
+func (i *Implement) ListProductTimeExtension(ctx context.Context) (result []*domain.Product, err error) {
+	return i.repository.ListProductTimeExtension(ctx)
+}

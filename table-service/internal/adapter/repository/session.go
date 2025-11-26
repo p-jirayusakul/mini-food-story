@@ -6,18 +6,39 @@ import (
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
 	database "food-story/shared/database/sqlc"
-	shareModel "food-story/shared/model"
 	"food-story/table-service/internal/domain"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-var (
-	_errTableSessionNotFound = exceptions.Error(exceptions.CodeNotFound, exceptions.ErrTableSessionNotFound.Error())
-)
+func (i *Implement) ListSessionExtensionReason(ctx context.Context) (result []*domain.ListSessionExtensionReason, err error) {
+	const _errMessage = "failed to fetch session extension reason"
+
+	data, err := i.repository.ListSessionExtensionReason(ctx)
+	if err != nil {
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMessage, err)
+	}
+
+	if data == nil {
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMessage, err)
+	}
+
+	result = make([]*domain.ListSessionExtensionReason, len(data))
+	for index, v := range data {
+		result[index] = &domain.ListSessionExtensionReason{
+			ID:       v.ID,
+			Code:     v.Code,
+			Name:     v.Name,
+			NameEN:   v.NameEN,
+			Category: utils.PgTextToStringPtr(v.Category),
+			ModeCode: utils.PgTextToStringPtr(v.ModeCode),
+		}
+	}
+
+	return result, nil
+}
 
 func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession, sessionID uuid.UUID, expiry time.Time) error {
 
@@ -35,32 +56,6 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 	return nil
 }
 
-func (i *Implement) GetTableSession(ctx context.Context, sessionID uuid.UUID) (*shareModel.CurrentTableSession, error) {
-
-	data, err := i.repository.GetTableSession(ctx, utils.UUIDToPgUUID(sessionID))
-	if err != nil {
-		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, _errTableSessionNotFound
-		}
-		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get table session", err)
-	}
-
-	result := shareModel.CurrentTableSession{
-		SessionID:   sessionID,
-		TableID:     data.TableID,
-		TableNumber: data.TableNumber,
-		Status:      string(data.Status.TableSessionStatus),
-		StartedAt:   data.StartedAt.Time,
-	}
-
-	if data.OrderID.Valid {
-		orderID := strconv.FormatInt(data.OrderID.Int64, 10)
-		result.OrderID = &orderID
-	}
-
-	return &result, nil
-}
-
 func (i *Implement) GetCurrentDateTime(ctx context.Context) (time.Time, error) {
 	currentTime, err := i.repository.GetTimeNow(ctx)
 	if err != nil {
@@ -74,7 +69,7 @@ func (i *Implement) GetSessionIDByTableID(ctx context.Context, tableID int64) (u
 	sessionID, err := i.repository.GetSessionIDByTableID(ctx, tableID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return uuid.UUID{}, _errTableSessionNotFound
+			return uuid.UUID{}, exceptions.ErrorSessionNotFound()
 		}
 		return uuid.UUID{}, exceptions.Errorf(exceptions.CodeRepository, "failed to get session id by table id", err)
 	}
@@ -87,11 +82,11 @@ func (i *Implement) GetSessionIDByTableID(ctx context.Context, tableID int64) (u
 	return v, nil
 }
 
-func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension, requestedMinutes int32, orderID int64) error {
+func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension, requestedMinutes int32) error {
 	tableExp, err := i.repository.GetExpiresAtByTableID(ctx, payload.TableID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return _errTableSessionNotFound
+			return exceptions.ErrorSessionNotFound()
 		}
 		return exceptions.Errorf(exceptions.CodeRepository, "failed to get expires at by table id", err)
 	}
@@ -115,7 +110,7 @@ func (i *Implement) SessionExtension(ctx context.Context, payload domain.Session
 	}
 
 	if reasonResult.SessionExtensionModeID.Int64 == 0 {
-		return _errTableSessionNotFound
+		return exceptions.ErrorSessionNotFound()
 	}
 
 	createSessionExtensionParams := database.CreateSessionExtensionParams{
@@ -132,11 +127,32 @@ func (i *Implement) SessionExtension(ctx context.Context, payload domain.Session
 		ExpiresAt:              totalExpiresAt,
 		CreateSessionExtension: createSessionExtensionParams,
 		ProductID:              payload.ProductID,
-		OrderID:                orderID,
 		NewOrderItemsID:        i.snowflakeID.Generate(),
 	})
 	if err != nil {
 		return exceptions.Errorf(exceptions.CodeRepository, "failed to create session extension", err)
 	}
 	return nil
+}
+
+func (i *Implement) GetOrderIDBySessionID(ctx context.Context, sessionID uuid.UUID) (orderID int64, err error) {
+	data, err := i.repository.GetOrderIDBySessionID(ctx, utils.UUIDToPgUUID(sessionID))
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return 0, exceptions.ErrorSessionNotFound()
+		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch order id by session id", err)
+	}
+	return data, nil
+}
+
+func (i *Implement) GetDurationMinutesByProductID(ctx context.Context, productID int64) (durationMinutes int32, err error) {
+	data, err := i.repository.GetDurationMinutesByProductID(ctx, productID)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
+			return 0, exceptions.ErrorIDNotFound(exceptions.CodeProductNotFound, productID)
+		}
+		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch duration minutes by product id", err)
+	}
+	return data, nil
 }

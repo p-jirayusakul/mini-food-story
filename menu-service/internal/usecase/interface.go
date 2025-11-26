@@ -15,6 +15,7 @@ type Usecase interface {
 	SearchProductByFilters(ctx context.Context, payload domain.SearchProduct) (result domain.SearchProductResult, err error)
 	GetProductByID(ctx context.Context, id int64) (result *domain.Product, err error)
 	IsSessionValid(sessionID uuid.UUID) error
+	ListProductTimeExtension(ctx context.Context) (result []*domain.Product, err error)
 }
 
 type Implement struct {

@@ -47,6 +47,7 @@ func (s *Handler) setupRoutes() {
 
 	roles := []string{"CASHIER", "WAITER"}
 	group.Get("/internal", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.SearchMenu)
+	group.Get("/internal/session-extension", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.ListProductTimeExtension)
 	group.Get("/internal/:id<int>", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.GetProductByID)
 	group.Get("/internal/category", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.CategoryList)
 }

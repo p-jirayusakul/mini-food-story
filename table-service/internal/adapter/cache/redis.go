@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"food-story/pkg/exceptions"
-	shareModel "food-story/shared/model"
 	"food-story/shared/redis"
+	"food-story/table-service/internal/domain"
 	"strconv"
 	"time"
 
@@ -13,8 +13,10 @@ import (
 )
 
 type RedisTableCacheInterface interface {
-	GetCachedTable(sessionID uuid.UUID) (*shareModel.CurrentTableSession, error)
-	SetCachedTable(key string, table *shareModel.CurrentTableSession, ttl time.Duration) error
+	GetCachedTableStatus() ([]*domain.Status, error)
+	SetCachedTableStatus(payload []*domain.Status) error
+	GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, error)
+	SetCachedTable(key string, table *domain.CurrentTableSession, ttl time.Duration) error
 	DeleteCachedTable(key string) error
 	IsCachedTableExist(sessionID uuid.UUID) error
 	SetCachedTableNumber(key string, tableNumber int32, ttl time.Duration) error
@@ -33,22 +35,54 @@ func NewRedisTableCache(client *redis.RedisClient) *RedisTableCache {
 	}
 }
 
-func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*shareModel.CurrentTableSession, error) {
+func (r *RedisTableCache) GetCachedTableStatus() ([]*domain.Status, error) {
+	data, err := r.client.Get(redis.KeyTableStatus)
+	if err != nil {
+		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
+			return nil, exceptions.ErrRedisKeyNotFoundException
+		}
+		return nil, exceptions.Errorf(exceptions.CodeRedis, "failed to get cache table status", err)
+	}
+
+	var status []*domain.Status
+	err = json.Unmarshal([]byte(data), &status)
+	if err != nil {
+		return nil, exceptions.Errorf(exceptions.CodeSystem, "failed to unmarshal cache table status", err)
+	}
+
+	return status, nil
+}
+
+func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, error) {
 	data, err := r.client.Get(redis.KeyTable + sessionID.String())
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
-			return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrSessionNotFound.Error())
+			return nil, exceptions.ErrRedisKeyNotFoundException
 		}
 		return nil, exceptions.Errorf(exceptions.CodeRedis, "failed to get cache table", err)
 	}
 
-	var table shareModel.CurrentTableSession
+	var table domain.CurrentTableSession
 	err = json.Unmarshal([]byte(data), &table)
 	if err != nil {
 		return nil, exceptions.Errorf(exceptions.CodeSystem, "failed to unmarshal cache table", err)
 	}
 
 	return &table, nil
+}
+
+func (r *RedisTableCache) SetCachedTableStatus(payload []*domain.Status) error {
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return exceptions.Errorf(exceptions.CodeSystem, "failed to pare json session set cache table status", err)
+	}
+
+	err = r.client.Set(redis.KeyTableStatus, string(data), time.Hour*24)
+	if err != nil {
+		return exceptions.Errorf(exceptions.CodeRedis, "failed to set cache table status", err)
+	}
+
+	return nil
 }
 
 func (r *RedisTableCache) GetTTL(sessionID uuid.UUID) (time.Duration, error) {
@@ -58,13 +92,14 @@ func (r *RedisTableCache) GetTTL(sessionID uuid.UUID) (time.Duration, error) {
 		return 0, exceptions.Errorf(exceptions.CodeRedis, "failed to get TTL", err)
 	}
 
-	if ttl == -1 {
+	switch ttl {
+	case -1:
 		return 0, exceptions.Error(exceptions.CodeRedis, "key has no expiration (persist)")
-	} else if ttl == -2 {
-		return 0, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrSessionNotFound.Error())
+	case -2:
+		return 0, exceptions.ErrorSessionNotFound()
+	default:
+		return ttl, nil
 	}
-
-	return ttl, nil
 }
 
 func (r *RedisTableCache) ExtensionTTL(sessionID uuid.UUID, newTTL time.Duration) error {
@@ -87,7 +122,7 @@ func (r *RedisTableCache) ExtensionTTL(sessionID uuid.UUID, newTTL time.Duration
 	return nil
 }
 
-func (r *RedisTableCache) SetCachedTable(key string, table *shareModel.CurrentTableSession, ttl time.Duration) error {
+func (r *RedisTableCache) SetCachedTable(key string, table *domain.CurrentTableSession, ttl time.Duration) error {
 	data, err := json.Marshal(table)
 	if err != nil {
 		return exceptions.Errorf(exceptions.CodeSystem, "failed to pare json session set cache table", err)

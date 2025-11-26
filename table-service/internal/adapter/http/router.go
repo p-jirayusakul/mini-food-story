@@ -36,14 +36,12 @@ func (s *Handler) setupRoutes() {
 	group.Use(s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"CASHIER", "WAITER"}))
 
 	group.Get("/status", s.ListTableStatus)
-	group.Get("/extension", s.ListProductTimeExtension)
+	group.Patch("/:id<int>/status", s.UpdateTableStatus)
+	group.Patch("/:id<int>/status/available", s.UpdateTableStatusAvailable)
 
 	group.Post("/session", s.CreateTableSession)
 	group.Post("/session/extension", s.SessionExtension)
 	group.Get("/session/reason", s.ListSessionExtensionReason)
-
-	group.Patch("/:id<int>/status", s.UpdateTableStatus)
-	group.Patch("/:id<int>/status/available", s.UpdateTableStatusAvailable)
 	group.Get("", s.SearchTable)
 	group.Get("/quick-search", s.QuickSearchTable)
 

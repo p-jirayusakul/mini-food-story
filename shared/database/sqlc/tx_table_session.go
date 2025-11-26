@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"food-story/pkg/exceptions"
+	"errors"
 	"food-story/pkg/utils"
 	"time"
 
@@ -30,7 +30,6 @@ func (store *SQLStore) TXCreateTableSession(ctx context.Context, arg CreateTable
 
 type TXSessionsExtensionParams struct {
 	TableID                int64
-	OrderID                int64
 	NewOrderItemsID        int64
 	ProductID              int64
 	RequestedMinutes       int64
@@ -74,7 +73,7 @@ func (store *SQLStore) TXSessionsExtension(ctx context.Context, arg TXSessionsEx
 		}
 
 		if product == nil {
-			return exceptions.ErrProductNotFound
+			return errors.New("product is null")
 		}
 
 		statusServedID, err := q.GetOrderStatusServed(ctx)
@@ -103,9 +102,14 @@ func (store *SQLStore) TXSessionsExtension(ctx context.Context, arg TXSessionsEx
 			price = utils.Float64ToPgNumeric(productPrice.Float64)
 		}
 
+		orderID, err := q.GetOrderIDBySessionID(ctx, sessionID)
+		if err != nil {
+			return err
+		}
+
 		createOrderItemsParams := CreateOrderItemsPerRowParams{
 			ID:              arg.NewOrderItemsID,
-			OrderID:         arg.OrderID,
+			OrderID:         orderID,
 			ProductID:       product.ID,
 			StatusID:        statusServedID,
 			ProductName:     product.Name,

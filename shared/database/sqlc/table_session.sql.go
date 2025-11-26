@@ -54,7 +54,12 @@ func (q *Queries) GetExpiresAtByTableID(ctx context.Context, tableID int64) (*Ge
 }
 
 const getSessionIDByTableID = `-- name: GetSessionIDByTableID :one
-select session_id from public.table_session where table_id = $1::bigint and status = 'active' LIMIT 1
+SELECT session_id
+FROM public.table_session
+WHERE table_id = $1::bigint
+  AND status = 'active'
+ORDER BY started_at DESC
+LIMIT 1
 `
 
 func (q *Queries) GetSessionIDByTableID(ctx context.Context, tableID int64) (pgtype.UUID, error) {

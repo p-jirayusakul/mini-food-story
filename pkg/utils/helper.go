@@ -21,6 +21,7 @@ import (
 	"unicode"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/shopspring/decimal"
 )
@@ -350,4 +351,17 @@ func IsValidTimeZone(timeZone string) bool {
 	}
 	_, err := time.LoadLocation(timeZone)
 	return err == nil
+}
+
+func MapPgErr(err error) error {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		switch pgErr.Code {
+		case "23503":
+			return exceptions.ErrForeignKeyViolation
+		case "23505":
+			return exceptions.ErrInternalServerError
+		}
+	}
+	return err
 }

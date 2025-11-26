@@ -68,7 +68,7 @@ func ResponseCreated(c *fiber.Ctx, payload interface{}) error {
 func ResponseError(c *fiber.Ctx, err error) error {
 	httpCode, response := mapErrorToHTTP(err)
 	if httpCode >= 500 {
-		slog.Error(response.Error.Message)
+		slog.Error(err.Error())
 	}
 	response.Error.TraceId = getRequestID(c)
 	return c.Status(httpCode).JSON(response)
@@ -93,7 +93,7 @@ func mapErrorToHTTP(err error) (int, ErrorResponse) {
 		case exceptions.CodeForbidden:
 			return 403, getErrorResponse(string(appErr.Code), appErr.Message)
 
-		case exceptions.CodeNotFound:
+		case exceptions.CodeNotFound, exceptions.CodeOrderNotFound, exceptions.CodeTableNotFound, exceptions.CodeOrderItemNotFound, exceptions.CodeProductNotFound, exceptions.CodeTableStatusNotFound, exceptions.CodeSessionFound:
 			return 404, getErrorResponse(string(appErr.Code), appErr.Message)
 
 		case exceptions.CodeConflict:

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"food-story/pkg/exceptions"
 	"food-story/pkg/utils"
-	shareModel "food-story/shared/model"
 	"food-story/shared/redis"
 	"food-story/table-service/internal/domain"
 	"log/slog"
@@ -16,9 +15,13 @@ import (
 )
 
 const (
-	SessionStatusActive     = "active"
+	_sessionStatusActive    = "active"
 	_errInvalidTableSession = "invalid table session payload"
 )
+
+func (i *Implement) ListSessionExtensionReason(ctx context.Context) (result []*domain.ListSessionExtensionReason, err error) {
+	return i.repository.ListSessionExtensionReason(ctx)
+}
 
 func (i *Implement) CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, err error) {
 
@@ -48,11 +51,11 @@ func (i *Implement) CreateTableSession(ctx context.Context, payload domain.Table
 	}
 
 	key := redis.KeyTable + sessionID.String()
-	err = i.cache.SetCachedTable(key, &shareModel.CurrentTableSession{
+	err = i.cache.SetCachedTable(key, &domain.CurrentTableSession{
 		SessionID:   sessionID,
 		TableID:     payload.TableID,
 		TableNumber: tableNumber,
-		Status:      SessionStatusActive,
+		Status:      _sessionStatusActive,
 		StartedAt:   startedAt,
 		OrderID:     nil,
 	}, i.config.TableSessionDuration)
@@ -108,48 +111,39 @@ func (i *Implement) getTableNumberFromCache(ctx context.Context, tableID int64) 
 		}
 	}
 
-	if tableNumber == 0 {
-		return 0, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrTableNotFound.Error())
-	}
-
 	return tableNumber, nil
 }
 
 func (i *Implement) SessionExtension(ctx context.Context, payload domain.SessionExtension) error {
 
-	requestedMinutes, customErr := i.repository.GetDurationMinutesByProductID(ctx, payload.ProductID)
-	if customErr != nil {
-		return customErr
+	requestedMinutes, err := i.repository.GetDurationMinutesByProductID(ctx, payload.ProductID)
+	if err != nil {
+		return err
 	}
 
-	sessionID, customErr := i.repository.GetSessionIDByTableID(ctx, payload.TableID)
-	if customErr != nil {
-		return customErr
+	sessionID, err := i.repository.GetSessionIDByTableID(ctx, payload.TableID)
+	if err != nil {
+		return err
 	}
 
-	orderID, customErr := i.repository.GetOrderIDBySessionID(ctx, sessionID)
-	if customErr != nil {
-		return customErr
-	}
-
-	oldTTL, customErr := i.cache.GetTTL(sessionID)
-	if customErr != nil {
-		return customErr
+	oldTTL, err := i.cache.GetTTL(sessionID)
+	if err != nil {
+		return err
 	}
 
 	newTTLMinutes := oldTTL + time.Duration(requestedMinutes)*time.Minute
-	customErr = i.cache.ExtensionTTL(sessionID, newTTLMinutes)
-	if customErr != nil {
-		return customErr
+	err = i.cache.ExtensionTTL(sessionID, newTTLMinutes)
+	if err != nil {
+		return err
 	}
 
-	customErr = i.repository.SessionExtension(ctx, payload, requestedMinutes, orderID)
-	if customErr != nil {
+	err = i.repository.SessionExtension(ctx, payload, requestedMinutes)
+	if err != nil {
 		extensionTTLErr := i.cache.ExtensionTTL(sessionID, oldTTL)
 		if extensionTTLErr != nil {
 			return extensionTTLErr
 		}
-		return customErr
+		return err
 	}
 
 	return nil

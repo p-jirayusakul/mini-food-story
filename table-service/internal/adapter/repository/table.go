@@ -13,10 +13,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-var (
-	_errTableNotFound = exceptions.Error(exceptions.CodeNotFound, exceptions.ErrTableNotFound.Error())
-)
-
 const (
 	_errMsgUpdateTableStatusFailed    = "failed to update table status"
 	_errMsgFailToFetchTable           = "failed to fetch table"
@@ -55,7 +51,7 @@ func (i *Implement) IsTableExists(ctx context.Context, id int64) error {
 	}
 
 	if !isTableExists {
-		return _errTableNotFound
+		return exceptions.ErrorIDNotFound(exceptions.CodeTableNotFound, id)
 	}
 
 	return nil
@@ -65,7 +61,7 @@ func (i *Implement) GetTableNumber(ctx context.Context, tableID int64) (int32, e
 	data, err := i.repository.GetTableNumber(ctx, tableID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return 0, _errTableNotFound
+			return 0, exceptions.ErrorIDNotFound(exceptions.CodeTableNotFound, tableID)
 		}
 		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to get table number", err)
 	}
@@ -80,7 +76,7 @@ func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Statu
 	}
 
 	if data == nil {
-		return nil, _errTableNotFound
+		return nil, exceptions.ErrorDataNotFound()
 	}
 
 	result = make([]*domain.Status, len(data))
@@ -105,6 +101,9 @@ func (i *Implement) UpdateTablesStatus(ctx context.Context, tableStatus domain.T
 
 	err = i.repository.UpdateTablesStatus(ctx, tableStatusParams)
 	if err != nil {
+		if errors.Is(utils.MapPgErr(err), exceptions.ErrForeignKeyViolation) {
+			return exceptions.ErrorIDNotFound(exceptions.CodeTableStatusNotFound, tableStatus.StatusID)
+		}
 		return exceptions.Errorf(exceptions.CodeRepository, _errMsgUpdateTableStatusFailed, err)
 	}
 

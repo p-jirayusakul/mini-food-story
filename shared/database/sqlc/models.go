@@ -63,7 +63,7 @@ type MdCategory struct {
 	IconName  pgtype.Text        `json:"icon_name"`
 	SortOrder int32              `json:"sort_order"`
 	IsVisible bool               `json:"is_visible"`
-	Code      string             `json:"code"`
+	Code      pgtype.Text        `json:"code"`
 }
 
 type MdOrderStatus struct {
@@ -185,10 +185,10 @@ type Product struct {
 	Description pgtype.Text        `json:"description"`
 	Price       pgtype.Numeric     `json:"price"`
 	IsAvailable bool               `json:"is_available"`
-	IsVisible   bool               `json:"is_visible"`
 	ImageUrl    pgtype.Text        `json:"image_url"`
 	CreatedAt   pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
+	IsVisible   bool               `json:"is_visible"`
 }
 
 type ProductTimeExtension struct {
@@ -225,10 +225,10 @@ type TableSession struct {
 	Status             NullTableSessionStatus `json:"status"`
 	StartedAt          pgtype.Timestamptz     `json:"started_at"`
 	ExpiresAt          pgtype.Timestamptz     `json:"expires_at"`
-	EndedAt            pgtype.Timestamptz     `json:"ended_at"`
 	MaxExtendMinutes   int32                  `json:"max_extend_minutes"`
 	ExtendCount        int32                  `json:"extend_count"`
 	ExtendTotalMinutes int32                  `json:"extend_total_minutes"`
 	LastReasonCode     pgtype.Text            `json:"last_reason_code"`
 	LockVersion        int32                  `json:"lock_version"`
+	EndedAt            pgtype.Timestamptz     `json:"ended_at"`
 }

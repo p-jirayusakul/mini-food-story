@@ -10,7 +10,6 @@
 package mockcache
 
 import (
-	exceptions "food-story/pkg/exceptions"
 	model "food-story/shared/model"
 	reflect "reflect"
 
@@ -43,10 +42,10 @@ func (m *MockRedisTableCacheInterface) EXPECT() *MockRedisTableCacheInterfaceMoc
 }
 
 // DeleteCachedTable mocks base method.
-func (m *MockRedisTableCacheInterface) DeleteCachedTable(sessionID uuid.UUID) *exceptions.CustomError {
+func (m *MockRedisTableCacheInterface) DeleteCachedTable(sessionID uuid.UUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "DeleteCachedTable", sessionID)
-	ret0, _ := ret[0].(*exceptions.CustomError)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
@@ -57,11 +56,11 @@ func (mr *MockRedisTableCacheInterfaceMockRecorder) DeleteCachedTable(sessionID 
 }
 
 // GetCachedTable mocks base method.
-func (m *MockRedisTableCacheInterface) GetCachedTable(sessionID uuid.UUID) (*model.CurrentTableSession, *exceptions.CustomError) {
+func (m *MockRedisTableCacheInterface) GetCachedTable(sessionID uuid.UUID) (*model.CurrentTableSession, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetCachedTable", sessionID)
 	ret0, _ := ret[0].(*model.CurrentTableSession)
-	ret1, _ := ret[1].(*exceptions.CustomError)
+	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
@@ -72,10 +71,10 @@ func (mr *MockRedisTableCacheInterfaceMockRecorder) GetCachedTable(sessionID any
 }
 
 // IsCachedTableExist mocks base method.
-func (m *MockRedisTableCacheInterface) IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError {
+func (m *MockRedisTableCacheInterface) IsCachedTableExist(sessionID uuid.UUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsCachedTableExist", sessionID)
-	ret0, _ := ret[0].(*exceptions.CustomError)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 
@@ -86,10 +85,10 @@ func (mr *MockRedisTableCacheInterfaceMockRecorder) IsCachedTableExist(sessionID
 }
 
 // UpdateOrderID mocks base method.
-func (m *MockRedisTableCacheInterface) UpdateOrderID(sessionID uuid.UUID, orderID int64) *exceptions.CustomError {
+func (m *MockRedisTableCacheInterface) UpdateOrderID(sessionID uuid.UUID, orderID int64) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateOrderID", sessionID, orderID)
-	ret0, _ := ret[0].(*exceptions.CustomError)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 

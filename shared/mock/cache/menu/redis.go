@@ -10,7 +10,6 @@
 package mockcache
 
 import (
-	exceptions "food-story/pkg/exceptions"
 	reflect "reflect"
 
 	uuid "github.com/google/uuid"
@@ -42,10 +41,10 @@ func (m *MockRedisTableCacheInterface) EXPECT() *MockRedisTableCacheInterfaceMoc
 }
 
 // IsCachedTableExist mocks base method.
-func (m *MockRedisTableCacheInterface) IsCachedTableExist(sessionID uuid.UUID) *exceptions.CustomError {
+func (m *MockRedisTableCacheInterface) IsCachedTableExist(sessionID uuid.UUID) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "IsCachedTableExist", sessionID)
-	ret0, _ := ret[0].(*exceptions.CustomError)
+	ret0, _ := ret[0].(error)
 	return ret0
 }
 

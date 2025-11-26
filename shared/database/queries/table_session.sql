@@ -32,7 +32,12 @@ SET ended_at=NOW(), status='closed'
 WHERE session_id=sqlc.arg(sessionID)::uuid;
 
 -- name: GetSessionIDByTableID :one
-select session_id from public.table_session where table_id = sqlc.arg(table_id)::bigint and status = 'active' LIMIT 1;
+SELECT session_id
+FROM public.table_session
+WHERE table_id = sqlc.arg(table_id)::bigint
+  AND status = 'active'
+ORDER BY started_at DESC
+LIMIT 1;
 
 -- name: UpdateSessionExpireBySessionID :exec
 UPDATE public.table_session

@@ -130,3 +130,26 @@ func (s *Handler) GetProductByID(c *fiber.Ctx) error {
 func (s *Handler) SessionCurrent(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, nil)
 }
+
+// ListProductTimeExtension godoc
+// @Summary Get list of categories
+// @Description Get list of all available product categories
+// @Tags Category
+// @Accept json
+// @Produce json
+// @Param X-Session-Id header string true "Session ID"
+// @Success 200 {object} middleware.SuccessResponse{data=[]domain.Category}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /category [get]
+func (s *Handler) ListProductTimeExtension(c *fiber.Ctx) error {
+
+	result, err := s.useCase.ListProductTimeExtension(c.Context())
+	if err != nil {
+		return middleware.ResponseError(c, err)
+	}
+
+	return middleware.ResponseOK(c, result)
+}

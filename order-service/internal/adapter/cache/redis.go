@@ -3,8 +3,8 @@ package cache
 import (
 	"encoding/json"
 	"errors"
+	"food-story/order-service/internal/domain"
 	"food-story/pkg/exceptions"
-	shareModel "food-story/shared/model"
 	"food-story/shared/redis"
 	"strconv"
 
@@ -12,7 +12,7 @@ import (
 )
 
 type RedisTableCacheInterface interface {
-	GetCachedTable(sessionID uuid.UUID) (*shareModel.CurrentTableSession, error)
+	GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, error)
 	DeleteCachedTable(sessionID uuid.UUID) error
 	IsCachedTableExist(sessionID uuid.UUID) error
 	UpdateOrderID(sessionID uuid.UUID, orderID int64) error
@@ -28,7 +28,7 @@ func NewRedisTableCache(client *redis.RedisClient) *RedisTableCache {
 	}
 }
 
-func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*shareModel.CurrentTableSession, error) {
+func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*domain.CurrentTableSession, error) {
 	data, err := r.client.Get(redis.KeyTable + sessionID.String())
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRedisKeyNotFound) {
@@ -37,7 +37,7 @@ func (r *RedisTableCache) GetCachedTable(sessionID uuid.UUID) (*shareModel.Curre
 		return nil, exceptions.Errorf(exceptions.CodeRedis, "failed to get cached table", err)
 	}
 
-	var table shareModel.CurrentTableSession
+	var table domain.CurrentTableSession
 	err = json.Unmarshal([]byte(data), &table)
 	if err != nil {
 		return nil, exceptions.Errorf(exceptions.CodeRedis, "failed to unmarshal cached table", err)

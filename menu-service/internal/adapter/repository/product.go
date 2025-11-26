@@ -105,6 +105,15 @@ func (i *Implement) fetchTotalItems(ctx context.Context, params database.SearchP
 	return totalItems, nil
 }
 
+func (i *Implement) ListProductTimeExtension(ctx context.Context) (result []*domain.Product, err error) {
+	data, err := i.repository.ListProductTimeExtension(ctx)
+	if err != nil {
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch product time extension", err)
+	}
+
+	return transformListProductTimeExtension(data), nil
+}
+
 func buildSearchParams(payload domain.SearchProduct) database.SearchProductsParams {
 	params := database.SearchProductsParams{
 		Name:        pgtype.Text{String: payload.Name, Valid: payload.Name != ""},
@@ -122,6 +131,30 @@ func buildSearchParams(payload domain.SearchProduct) database.SearchProductsPara
 }
 
 func transformSearchResults(results []*database.SearchProductsRow) []*domain.Product {
+	data := make([]*domain.Product, len(results))
+	for index, row := range results {
+
+		if row == nil {
+			continue
+		}
+
+		data[index] = &domain.Product{
+			ID:             row.ID,
+			Name:           row.Name,
+			NameEN:         row.NameEn,
+			CategoryName:   row.CategoryName,
+			CategoryNameEN: row.CategoryNameEN,
+			CategoryID:     row.Categories,
+			Price:          utils.PgNumericToFloat64(row.Price),
+			Description:    utils.PgTextToStringPtr(row.Description),
+			IsAvailable:    row.IsAvailable,
+			ImageURL:       utils.PgTextToStringPtr(row.ImageUrl),
+		}
+	}
+	return data
+}
+
+func transformListProductTimeExtension(results []*database.ListProductTimeExtensionRow) []*domain.Product {
 	data := make([]*domain.Product, len(results))
 	for index, row := range results {
 

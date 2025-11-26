@@ -17,7 +17,6 @@ type UseCase interface {
 	UpdateTableStatusAvailable(ctx context.Context, tableID int64) (err error)
 	ListSessionExtensionReason(ctx context.Context) (result []*domain.ListSessionExtensionReason, err error)
 	SessionExtension(ctx context.Context, payload domain.SessionExtension) error
-	ListProductTimeExtension(ctx context.Context) (result []*domain.Product, err error)
 }
 
 type Implement struct {
