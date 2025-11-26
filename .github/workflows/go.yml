@@ -8,7 +8,7 @@ on:
 
 env:
   GO_VERSION: stable
-  GOLANGCI_LINT_VERSION: v2.1
+  GOLANGCI_LINT_VERSION: v2.6.2
   MODULES: "./pkg ./shared ./menu-service ./order-service ./kitchen-service ./payment-service ./table-service"
 
 jobs:
