@@ -14,7 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const FailedToGetOrderItems = "failed to get order items"
+const _failedToGetOrderItems = "failed to get order items"
 
 func (i *Implement) CreateOrderItems(ctx context.Context, orderItems []shareModel.OrderItems) (result []*shareModel.OrderItems, err error) {
 
@@ -65,7 +65,7 @@ func (i *Implement) GetOrderItemsByOrderID(ctx context.Context, orderID int64) (
 
 	orderItems, err := i.repository.GetOrderItemsByOrderID(ctx, orderID)
 	if err != nil {
-		return nil, exceptions.Errorf(exceptions.CodeRepository, FailedToGetOrderItems, err)
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _failedToGetOrderItems, err)
 	}
 
 	return shareModel.TransformOrderItemsResults(orderItems), nil
@@ -79,7 +79,7 @@ func (i *Implement) GetOderItemsGroupID(ctx context.Context, orderItemsID []int6
 
 	orderItems, err := i.repository.GetOrderWithItemsGroupID(ctx, orderItemsID)
 	if err != nil {
-		return nil, exceptions.Errorf(exceptions.CodeRepository, FailedToGetOrderItems, err)
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _failedToGetOrderItems, err)
 	}
 
 	return shareModel.TransformOrderItemsResults(orderItems), nil
@@ -138,10 +138,10 @@ func (i *Implement) GetCurrentOrderItemsByID(ctx context.Context, orderID, order
 	})
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderItemsNotFound.Error())
+			return nil, exceptions.ErrorIDNotFound(exceptions.CodeOrderItemNotFound, orderItemsID)
 		}
 
-		return nil, exceptions.Errorf(exceptions.CodeRepository, FailedToGetOrderItems, err)
+		return nil, exceptions.Errorf(exceptions.CodeRepository, _failedToGetOrderItems, err)
 	}
 
 	return transformCurrentOrderItemsByIDResults(orderItem), nil
@@ -261,14 +261,14 @@ func (i *Implement) buildPayloadOrderItems(ctx context.Context, orderItems []sha
 		product, err := i.repository.GetProductByID(ctx, item.ProductID)
 		if err != nil {
 			if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-				return []database.CreateOrderItemsParams{}, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrProductNotFound.Error())
+				return []database.CreateOrderItemsParams{}, exceptions.ErrorIDNotFound(exceptions.CodeProductNotFound, item.ProductID)
 			}
 
 			return []database.CreateOrderItemsParams{}, exceptions.Errorf(exceptions.CodeRepository, "failed to get product by id", err)
 		}
 
 		if product == nil {
-			return []database.CreateOrderItemsParams{}, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrProductNotFound.Error())
+			return []database.CreateOrderItemsParams{}, exceptions.Error(exceptions.CodeRepository, "product is null")
 		}
 
 		result[index] = database.CreateOrderItemsParams{

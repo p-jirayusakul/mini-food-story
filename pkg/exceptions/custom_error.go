@@ -19,7 +19,8 @@ const (
 	CodeTableStatusNotFound Code = "14003"
 	CodeOrderNotFound       Code = "14004"
 	CodeOrderItemNotFound   Code = "14005"
-	CodeSessionFound        Code = "14006"
+	CodeOrderStatusNotFound Code = "14006"
+	CodeSessionFound        Code = "14007"
 
 	CodeUnauthorized Code = "15000"
 	CodeForbidden    Code = "16000"
@@ -59,13 +60,15 @@ func ErrorIDNotFound(code Code, id int64) *AppError {
 
 func ErrorSessionNotFound() *AppError {
 	return &AppError{
-		Code: CodeSessionFound,
+		Code:    CodeSessionFound,
+		Message: "session not found",
 	}
 }
 
 func ErrorDataNotFound() *AppError {
 	return &AppError{
-		Code: CodeNotFound,
+		Code:    CodeNotFound,
+		Message: "data not found",
 	}
 }
 
@@ -85,14 +88,34 @@ func notFoundMapping(id int64, code Code) string {
 		switch code {
 		case CodeProductNotFound:
 			title = fmt.Sprintf("product id '%d' not found", id)
+			if id == 0 {
+				title = "product not found"
+			}
 		case CodeTableNotFound:
 			title = fmt.Sprintf("table id '%d' not found", id)
+			if id == 0 {
+				title = "table not found"
+			}
 		case CodeTableStatusNotFound:
 			title = fmt.Sprintf("table status id '%d' not found", id)
+			if id == 0 {
+				title = "table status not found"
+			}
 		case CodeOrderNotFound:
 			title = fmt.Sprintf("order id '%d' not found", id)
+			if id == 0 {
+				title = "order not found"
+			}
 		case CodeOrderItemNotFound:
 			title = fmt.Sprintf("order item id '%d' not found", id)
+			if id == 0 {
+				title = "order item not found"
+			}
+		case CodeOrderStatusNotFound:
+			title = fmt.Sprintf("order status id '%d' not found", id)
+			if id == 0 {
+				title = "order status not found"
+			}
 		case CodeSessionFound:
 			title = "session not found"
 		default:

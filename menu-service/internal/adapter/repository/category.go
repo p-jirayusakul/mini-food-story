@@ -9,15 +9,13 @@ import (
 
 func (i *Implement) ListCategory(ctx context.Context) (result []*domain.Category, err error) {
 
-	const _errMsg = "failed to fetch category"
-
 	data, err := i.repository.ListCategory(ctx)
 	if err != nil {
-		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMsg, err)
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to fetch category", err)
 	}
 
 	if data == nil {
-		return nil, exceptions.Errorf(exceptions.CodeRepository, _errMsg, err)
+		return nil, exceptions.ErrorDataNotFound()
 	}
 
 	result = make([]*domain.Category, len(data))

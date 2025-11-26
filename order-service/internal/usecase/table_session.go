@@ -16,7 +16,7 @@ func (i *Implement) GetOrderIDFromSession(sessionID uuid.UUID) (result int64, er
 	}
 
 	if session.OrderID == nil {
-		return 0, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
+		return 0, exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, 0)
 	}
 
 	orderID, err := utils.StrToInt64(*session.OrderID)
@@ -34,11 +34,11 @@ func (i *Implement) GetCurrentTableSession(sessionID uuid.UUID) (result domain.C
 	}
 
 	if session == nil {
-		return domain.CurrentTableSession{}, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrSessionNotFound.Error())
+		return domain.CurrentTableSession{}, exceptions.ErrorSessionNotFound()
 	}
 
 	if session.OrderID == nil {
-		return domain.CurrentTableSession{}, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
+		return domain.CurrentTableSession{}, exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, 0)
 	}
 
 	return *session, nil

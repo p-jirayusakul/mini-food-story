@@ -56,18 +56,16 @@ func (i *Implement) SearchProduct(ctx context.Context, payload domain.SearchProd
 
 func (i *Implement) GetProductByID(ctx context.Context, id int64) (*domain.Product, error) {
 
-	const _errorGetProductFailed = "failed to get product by id"
-
 	data, err := i.repository.GetProductAvailableByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrProductNotFound.Error())
+			return nil, exceptions.ErrorIDNotFound(exceptions.CodeProductNotFound, id)
 		}
-		return nil, exceptions.Errorf(exceptions.CodeRepository, _errorGetProductFailed, err)
+		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get product by id", err)
 	}
 
 	if data == nil {
-		return nil, exceptions.Errorf(exceptions.CodeRepository, _errorGetProductFailed, err)
+		return nil, exceptions.ErrorDataNotFound()
 	}
 
 	return &domain.Product{

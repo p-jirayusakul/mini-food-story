@@ -45,13 +45,13 @@ func (i *Implement) GetOrderByID(ctx context.Context, id int64) (result *domain.
 	order, err := i.repository.GetOrderByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
+			return nil, exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, id)
 		}
 		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to check order exists", err)
 	}
 
 	if order == nil {
-		return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
+		return nil, exceptions.Error(exceptions.CodeRepository, "order is null")
 	}
 
 	return &domain.Order{
@@ -72,7 +72,7 @@ func (i *Implement) IsOrderExist(ctx context.Context, id int64) (err error) {
 	}
 
 	if !isExist {
-		return exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
+		return exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, id)
 	}
 
 	return nil
@@ -88,7 +88,7 @@ func (i *Implement) IsOrderWithItemsExists(ctx context.Context, orderID, orderIt
 	}
 
 	if !isExist {
-		return exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderItemsNotFound.Error())
+		return exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, orderID)
 	}
 
 	return nil

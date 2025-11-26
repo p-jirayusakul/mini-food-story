@@ -184,9 +184,8 @@ func (i *Implement) GetOrderItemsByID(ctx context.Context, orderID, orderItemsID
 		OrderItemsID: orderItemsID,
 	})
 	if err != nil {
-
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderItemsNotFound.Error())
+			return nil, exceptions.ErrorIDNotFound(exceptions.CodeOrderItemNotFound, orderItemsID)
 		}
 
 		return nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get order items", err)

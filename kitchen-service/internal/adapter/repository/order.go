@@ -17,7 +17,7 @@ func (i *Implement) IsOrderWithItemsExists(ctx context.Context, orderID, orderIt
 	}
 
 	if !isExist {
-		return exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderItemsNotFound.Error())
+		return exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, orderID)
 	}
 
 	return nil
@@ -26,7 +26,7 @@ func (i *Implement) GetTableNumberOrderByID(ctx context.Context, orderID int64) 
 	result, err = i.repository.GetTableNumberOrderByID(ctx, orderID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return 0, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrTableNotFound.Error())
+			return 0, exceptions.ErrorIDNotFound(exceptions.CodeTableNotFound, 0)
 		}
 		return 0, exceptions.Errorf(exceptions.CodeRepository, "failed to get table number exists", err)
 	}
@@ -41,7 +41,7 @@ func (i *Implement) IsOrderExist(ctx context.Context, id int64) (err error) {
 	}
 
 	if !isExist {
-		return exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
+		return exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, id)
 	}
 
 	return nil

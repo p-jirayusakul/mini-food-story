@@ -13,12 +13,3 @@ func (i *Implement) UpdateTablesStatusFoodServed(ctx context.Context, tableID in
 
 	return nil
 }
-
-func (i *Implement) UpdateTablesStatusWaitingToBeServed(ctx context.Context, tableID int64) (err error) {
-	err = i.repository.UpdateTablesStatusWaitingToBeServed(ctx, tableID)
-	if err != nil {
-		return exceptions.Errorf(exceptions.CodeRepository, "failed to update table status waiting to be served", err)
-	}
-
-	return nil
-}
