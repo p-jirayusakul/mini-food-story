@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"food-story/pkg/utils"
 	"os"
@@ -26,7 +27,7 @@ type Config struct {
 	BaseURL              string
 }
 
-func InitConfig(envFile string) Config {
+func InitConfig(envFile string) (Config, error) {
 
 	currentDir, _ := os.Getwd()
 	envFile = currentDir + "/" + envFile
@@ -37,7 +38,7 @@ func InitConfig(envFile string) Config {
 		viper.SetConfigFile(envFile)
 		err := viper.ReadInConfig()
 		if err != nil { // Handle errors reading the config file
-			panic(fmt.Errorf("fatal error config file: %w", err))
+			return Config{}, fmt.Errorf("fatal error config file: %w", err)
 		}
 	} else {
 		fmt.Println("Config file not found")
@@ -59,14 +60,14 @@ func InitConfig(envFile string) Config {
 
 	if cfg.SecretKey != "" {
 		if len(cfg.SecretKey) != 32 {
-			panic("SecretKey must be 32 characters")
+			return Config{}, errors.New("secretKey must be 32 characters")
 		}
 	}
 
 	if !utils.IsValidTimeZone(cfg.TimeZone) {
-		panic("Invalid TimeZone")
+		return Config{}, errors.New("invalid time zone")
 	}
 
 	cfg.TableSessionDuration = 1 * time.Hour
-	return cfg
+	return cfg, nil
 }

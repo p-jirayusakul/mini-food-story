@@ -81,7 +81,7 @@ func (s *Handler) SearchMenu(c *fiber.Ctx) error {
 		PageSize:   result.PageSize,
 		TotalItems: result.TotalItems,
 		TotalPages: result.TotalPages,
-		Data:       result,
+		Data:       result.Data,
 	})
 }
 

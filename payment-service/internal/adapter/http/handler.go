@@ -154,11 +154,10 @@ func (s *Handler) StreamPaymentStatusByTransaction(c *fiber.Ctx) error {
 	txIDCopy := txID // ป้องกัน capture ตัวแปร outer
 
 	c.Context().SetBodyStreamWriter(func(w *bufio.Writer) {
-		// กัน panic ทั้งหมดใน stream แล้ว log stack
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Printf("[SSE panic] tx=%s err=%v\n%s\n", txIDCopy, r, debug.Stack())
-				_ = writeSSE(w, "error", "", `{"message":"internal panic"}`)
+				fmt.Printf("[SSE] tx=%s err=%v\n%s\n", txIDCopy, r, debug.Stack())
+				_ = writeSSE(w, "error", "", `{"message":"internal error"}`)
 			}
 		}()
 

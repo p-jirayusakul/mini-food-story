@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"fmt"
 	"food-story/pkg/exceptions"
 	"io"
 	"net/http"
@@ -23,12 +22,12 @@ type AuthInstance struct {
 	auth keyfunc.Keyfunc
 }
 
-func NewAuthInstance(keycloakCertURL string) *AuthInstance {
+func NewAuthInstance(keycloakCertURL string) (*AuthInstance, error) {
 
 	// validate keycloakCertURL
 	resp, err := http.Get(keycloakCertURL)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		panic(fmt.Sprintf("Failed to GET from keycloakCertURL: %s, error: %v", keycloakCertURL, err))
+		return nil, err
 	}
 
 	defer func(Body io.ReadCloser) {
@@ -37,12 +36,12 @@ func NewAuthInstance(keycloakCertURL string) *AuthInstance {
 
 	auth, err := keyfunc.NewDefault([]string{keycloakCertURL})
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &AuthInstance{
 		auth: auth,
-	}
+	}, nil
 }
 
 func (i *AuthInstance) JWTMiddleware() fiber.Handler {

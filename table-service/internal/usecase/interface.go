@@ -10,7 +10,6 @@ import (
 
 type UseCase interface {
 	ListTableStatus(ctx context.Context) (result []*domain.Status, err error)
-	UpdateTableStatus(ctx context.Context, payload domain.TableStatus) (err error)
 	SearchTableByFilters(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, err error)
 	QuickSearchAvailableTable(ctx context.Context, payload domain.SearchTables) (result domain.SearchTablesResult, err error)
 	CreateTableSession(ctx context.Context, payload domain.TableSession) (result string, err error)

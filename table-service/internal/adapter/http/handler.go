@@ -54,52 +54,6 @@ func (s *Handler) ListSessionExtensionReason(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, result)
 }
 
-// UpdateTableStatus godoc
-// @Summary Update table status
-// @Description Update status for existing table
-// @Tags Table
-// @Security BearerAuth
-// @Accept json
-// @Produce json
-// @Param id path string true "Table ID"
-// @Param status body updateTableStatus true "Table status details"
-// @Success 200 {object} middleware.SuccessResponse
-// @Failure 400 {object} middleware.ErrorResponse
-// @Failure 401 {object} middleware.ErrorResponse
-// @Failure 403 {object} middleware.ErrorResponse
-// @Failure 404 {object} middleware.ErrorResponse
-// @Failure 500 {object} middleware.ErrorResponse
-// @Router /{id}/status [patch]
-func (s *Handler) UpdateTableStatus(c *fiber.Ctx) error {
-	id, err := utils.StrToInt64(c.Params("id"))
-	if err != nil {
-		return middleware.ResponseError(c, validateFail(err))
-	}
-
-	body := new(updateTableStatus)
-	if err := c.BodyParser(body); err != nil {
-		return middleware.ResponseError(c, validateFail(err))
-	}
-
-	if err := s.validator.Validate(body); err != nil {
-		return middleware.ResponseError(c, validateFail(err))
-	}
-
-	statusID, err := utils.StrToInt64(body.StatusID)
-	if err != nil {
-		return middleware.ResponseError(c, validateFail(err))
-	}
-	err = s.useCase.UpdateTableStatus(c.Context(), domain.TableStatus{
-		ID:       id,
-		StatusID: statusID,
-	})
-	if err != nil {
-		return middleware.ResponseError(c, err)
-	}
-
-	return middleware.ResponseOK(c, nil)
-}
-
 // SearchTable godoc
 // @Summary Search table availability
 // @Description Search tables by filters like number of people, table number, seats, and status

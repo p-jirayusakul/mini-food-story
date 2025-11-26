@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	_ "food-story/order-service/docs"
 	"food-story/order-service/internal/adapter/cache"
 	orderhd "food-story/order-service/internal/adapter/http"
@@ -73,8 +74,11 @@ func (s *FiberServer) CloseAllConnection() {
 
 }
 
-func New() *FiberServer {
-	configApp := config.InitConfig(EnvFile)
+func New() (*FiberServer, error) {
+	configApp, err := config.InitConfig(EnvFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init config: %w", err)
+	}
 	configApp.BaseURL = common.BasePath + "/orders"
 	app := fiber.New(fiber.Config{
 		ServerHeader:             ServiceName,
@@ -97,11 +101,20 @@ func New() *FiberServer {
 	// add log handler
 	app.Use(middleware.LogHandler(configApp.BaseURL))
 
+	// init auth
+	authInstance, err := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init auth instance: %w", err)
+	}
+
 	// connect to database
-	configDB := config.InitDBConfig(EnvFile)
+	configDB, err := config.InitDBConfig(EnvFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init db config: %w", err)
+	}
 	dbConn, err := configDB.ConnectToDatabase()
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	store := database.NewStore(dbConn)
 
@@ -112,11 +125,14 @@ func New() *FiberServer {
 	brokers := strings.Split(configApp.KafkaBrokers, ",")
 	producerKafka, clientKafka, err := kafka.InitProducer(brokers)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to init kafka producer: %w", err)
 	}
 
 	// Create a new Node with a Node number of 1
-	node := snowflakeid.CreateSnowflakeNode(1)
+	node, err := snowflakeid.CreateSnowflakeNode(1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create snowflake: %w", err)
+	}
 	snowflakeNode := snowflakeid.NewSnowflake(node)
 
 	// init validator
@@ -140,7 +156,7 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, producerKafka)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, producerKafka, authInstance)
 	return &FiberServer{
 		App:           app,
 		Config:        configApp,
@@ -148,7 +164,7 @@ func New() *FiberServer {
 		redis:         redisConn,
 		kafkaProducer: producerKafka,
 		clientKafka:   clientKafka,
-	}
+	}, nil
 }
 
 func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.RedisClient, clientKafka sarama.Client) bool {
@@ -173,12 +189,11 @@ func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.Redis
 	return true
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, producerKafka sarama.SyncProducer) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, producerKafka sarama.SyncProducer, authInstance *middleware.AuthInstance) {
 	orderQueue := producer.NewQueue(producerKafka)
 	orderCache := cache.NewRedisTableCache(redisConn)
 	orderRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	orderUseCase := usecase.NewUsecase(configApp, *orderRepo, orderCache, orderQueue)
 
-	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
 	orderhd.NewHTTPHandler(router, orderUseCase, validator, configApp, authInstance)
 }

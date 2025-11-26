@@ -73,6 +73,7 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.9.4
     hostname: zookeeper
+    restart: always
     container_name: zookeeper
     ports:
       - "2181:2181"
@@ -85,6 +86,7 @@ services:
   kafka:
     image: confluentinc/cp-server:7.9.4
     hostname: kafka
+    restart: always
     container_name: kafka
     depends_on:
       - zookeeper
@@ -130,7 +132,7 @@ services:
   psql_bp:
     container_name: database
     image: postgres:18.1   # หรือ postgres:18.0 ถ้าเคยใช้ตัวนี้มาก่อน
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_DB: ${DB_DATABASE}
       POSTGRES_USER: ${DB_USERNAME}

@@ -49,7 +49,10 @@ func gracefulShutdown(fiberServer *app.FiberServer, done chan bool) {
 // @name Authorization
 func main() {
 
-	server := app.New()
+	server, err := app.New()
+	if err != nil {
+		panic(err)
+	}
 	port, _ := strconv.Atoi(server.Config.AppPort)
 	initSwagger(server.Config)
 

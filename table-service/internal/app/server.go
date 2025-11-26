@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"food-story/pkg/common"
 	"food-story/pkg/middleware"
 	"food-story/shared/config"
@@ -47,8 +48,11 @@ func (s *FiberServer) CloseAllConnection() {
 	}
 }
 
-func New() *FiberServer {
-	configApp := config.InitConfig(EnvFile)
+func New() (*FiberServer, error) {
+	configApp, err := config.InitConfig(EnvFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init config: %w", err)
+	}
 	configApp.BaseURL = common.BasePath + "/tables"
 
 	app := fiber.New(fiber.Config{
@@ -72,11 +76,21 @@ func New() *FiberServer {
 	// add log handler
 	app.Use(middleware.LogHandler(configApp.BaseURL))
 
+	// init auth
+	authInstance, err := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
+	if err != nil {
+		return nil, err
+	}
+
 	// connect to database
-	configDB := config.InitDBConfig(EnvFile)
+	configDB, err := config.InitDBConfig(EnvFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init db config: %w", err)
+	}
+
 	dbConn, err := configDB.ConnectToDatabase()
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	store := database.NewStore(dbConn)
 
@@ -84,7 +98,10 @@ func New() *FiberServer {
 	redisConn := redis.NewRedisClient(configApp.RedisAddress, configApp.RedisPassword, 0)
 
 	// Create a new Node with a Node number of 1
-	node := snowflakeid.CreateSnowflakeNode(1)
+	node, err := snowflakeid.CreateSnowflakeNode(1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create snowflake: %w", err)
+	}
 	snowflakeNode := snowflakeid.NewSnowflake(node)
 
 	// init validator
@@ -108,14 +125,14 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, authInstance)
 
 	return &FiberServer{
 		App:    app,
 		Config: configApp,
 		db:     dbConn,
 		redis:  redisConn,
-	}
+	}, nil
 }
 
 func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.RedisClient) bool {
@@ -134,11 +151,10 @@ func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.Redis
 	return true
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, authInstance *middleware.AuthInstance) {
 	tableCache := cache.NewRedisTableCache(redisConn)
 	tableRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	tableUseCase := usecase.NewUseCase(configApp, *tableRepo, tableCache)
 
-	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
 	tablehd.NewHTTPHandler(router, tableUseCase, validator, authInstance)
 }

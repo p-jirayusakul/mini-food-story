@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"food-story/pkg/utils"
 	"os"
@@ -20,15 +21,15 @@ type DBConfig struct {
 	TimeZone   string `mapstructure:"TZ"`
 }
 
-func InitDBConfig(envFile string) DBConfig {
+func InitDBConfig(envFile string) (DBConfig, error) {
 
 	var cfg DBConfig
 
 	if _, err := os.Stat(envFile); err == nil {
 		viper.SetConfigFile(envFile)
-		err := viper.ReadInConfig()
-		if err != nil { // Handle errors reading the config file
-			panic(fmt.Errorf("fatal error config file: %w", err))
+		readCfgErr := viper.ReadInConfig()
+		if readCfgErr != nil {
+			return DBConfig{}, readCfgErr
 		}
 	} else {
 		viper.SetDefault("DB_HOST", os.Getenv("DB_HOST"))
@@ -43,17 +44,17 @@ func InitDBConfig(envFile string) DBConfig {
 	_ = viper.Unmarshal(&cfg)
 
 	if !utils.IsValidTimeZone(cfg.TimeZone) {
-		panic("Invalid TimeZone")
+		return DBConfig{}, errors.New("invalid time zone")
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 func (d *DBConfig) ConnectToDatabase() (*pgxpool.Pool, error) {
 	source := fmt.Sprintf("user=%s password=%s host=%s port=%s dbname=%s search_path=%s sslmode=disable TimeZone=%s", d.DBUsername, d.DBPassword, d.DBHost, d.DBPort, d.DBDatabase, d.DBSchema, d.TimeZone)
 	dbConn, err := pgxpool.New(context.Background(), source)
 	if err != nil {
-		return nil, fmt.Errorf("unable to connect to database: %v", err)
+		return nil, err
 	}
 
 	return dbConn, nil

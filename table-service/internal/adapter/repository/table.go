@@ -44,19 +44,6 @@ func (i *Implement) IsTableAvailableOrReserved(ctx context.Context, tableID int6
 	return nil
 }
 
-func (i *Implement) IsTableExists(ctx context.Context, id int64) error {
-	isTableExists, err := i.repository.IsTableExists(ctx, id)
-	if err != nil {
-		return exceptions.Errorf(exceptions.CodeRepository, "failed to check table exists", err)
-	}
-
-	if !isTableExists {
-		return exceptions.ErrorIDNotFound(exceptions.CodeTableNotFound, id)
-	}
-
-	return nil
-}
-
 func (i *Implement) GetTableNumber(ctx context.Context, tableID int64) (int32, error) {
 	data, err := i.repository.GetTableNumber(ctx, tableID)
 	if err != nil {
@@ -90,24 +77,6 @@ func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Statu
 	}
 
 	return result, nil
-}
-
-func (i *Implement) UpdateTablesStatus(ctx context.Context, tableStatus domain.TableStatus) (err error) {
-
-	tableStatusParams := database.UpdateTablesStatusParams{
-		ID:       tableStatus.ID,
-		StatusID: tableStatus.StatusID,
-	}
-
-	err = i.repository.UpdateTablesStatus(ctx, tableStatusParams)
-	if err != nil {
-		if errors.Is(utils.MapPgErr(err), exceptions.ErrForeignKeyViolation) {
-			return exceptions.ErrorIDNotFound(exceptions.CodeTableStatusNotFound, tableStatus.StatusID)
-		}
-		return exceptions.Errorf(exceptions.CodeRepository, _errMsgUpdateTableStatusFailed, err)
-	}
-
-	return nil
 }
 
 func (i *Implement) SearchTables(ctx context.Context, search domain.SearchTables) (domain.SearchTablesResult, error) {

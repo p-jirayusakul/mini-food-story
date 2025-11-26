@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	kitchenhd "food-story/kitchen-service/internal/adapter/http"
 	"food-story/kitchen-service/internal/adapter/repository"
 	websockethub "food-story/kitchen-service/internal/adapter/websocket"
@@ -60,8 +61,11 @@ type FiberServer struct {
 	clientKafka sarama.Client
 }
 
-func New() *FiberServer {
-	configApp := config.InitConfig(EnvFile)
+func New() (*FiberServer, error) {
+	configApp, err := config.InitConfig(EnvFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init config: %w", err)
+	}
 	configApp.BaseURL = common.BasePath + "/kitchen"
 	app := fiber.New(fiber.Config{
 		ServerHeader:             ServiceName,
@@ -84,11 +88,20 @@ func New() *FiberServer {
 	// add log handler
 	app.Use(middleware.LogHandler(configApp.BaseURL))
 
+	// init auth
+	authInstance, err := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init auth instance: %w", err)
+	}
+
 	// connect to database
-	configDB := config.InitDBConfig(EnvFile)
+	configDB, err := config.InitDBConfig(EnvFile)
+	if err != nil {
+		return nil, fmt.Errorf("failed to init db config: %w", err)
+	}
 	dbConn, err := configDB.ConnectToDatabase()
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 	store := database.NewStore(dbConn)
 
@@ -99,11 +112,14 @@ func New() *FiberServer {
 	brokers := strings.Split(configApp.KafkaBrokers, ",")
 	consumerClient, clientKafka, err := kafka.InitConsumer(kafka.Group, brokers)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("failed to init kafka consumer: %w", err)
 	}
 
 	// Create a new Node with a Node number of 1
-	node := snowflakeid.CreateSnowflakeNode(1)
+	node, err := snowflakeid.CreateSnowflakeNode(1)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create snowflake: %w", err)
+	}
 	snowflakeNode := snowflakeid.NewSnowflake(node)
 
 	// init validator
@@ -127,7 +143,7 @@ func New() *FiberServer {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, hub)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, hub, authInstance)
 	return &FiberServer{
 		App:           app,
 		Config:        configApp,
@@ -136,7 +152,7 @@ func New() *FiberServer {
 
 		db:          dbConn,
 		clientKafka: clientKafka,
-	}
+	}, nil
 }
 
 func readiness(ctx context.Context, dbConn *pgxpool.Pool, clientKafka sarama.Client) bool {
@@ -155,12 +171,11 @@ func readiness(ctx context.Context, dbConn *pgxpool.Pool, clientKafka sarama.Cli
 	return true
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, hub *websockethub.Hub) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, hub *websockethub.Hub, authInstance *middleware.AuthInstance) {
 
 	kitchenRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	kitchenUseCase := usecase.NewUsecase(configApp, *kitchenRepo)
 
-	authInstance := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
 	kitchenhd.NewHTTPHandler(router, kitchenUseCase, validator, configApp, authInstance)
 
 	websockethub.NewWSHandler(router, configApp, hub)

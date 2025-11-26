@@ -11,14 +11,6 @@ func (i *Implement) ListTableStatus(ctx context.Context) (result []*domain.Statu
 	return i.getTableStatusFromCache(ctx)
 }
 
-func (i *Implement) UpdateTableStatus(ctx context.Context, payload domain.TableStatus) (err error) {
-	if err := i.repository.IsTableExists(ctx, payload.ID); err != nil {
-		return err
-	}
-
-	return i.repository.UpdateTablesStatus(ctx, payload)
-}
-
 func (i *Implement) UpdateTableStatusAvailable(ctx context.Context, tableID int64) (err error) {
 	return i.repository.UpdateTablesStatusAvailable(ctx, tableID)
 }

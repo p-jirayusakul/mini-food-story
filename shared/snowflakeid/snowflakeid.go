@@ -1,8 +1,6 @@
 package snowflakeid
 
 import (
-	"fmt"
-
 	"github.com/bwmarrin/snowflake"
 )
 
@@ -20,12 +18,12 @@ func NewSnowflake(snowflakeID *snowflake.Node) *SnowflakeImpl {
 	}
 }
 
-func CreateSnowflakeNode(nodeNumber int64) *snowflake.Node {
+func CreateSnowflakeNode(nodeNumber int64) (*snowflake.Node, error) {
 	node, err := snowflake.NewNode(nodeNumber)
 	if err != nil {
-		panic(fmt.Sprintf("snowflake error: %v\n", err))
+		return nil, err
 	}
-	return node
+	return node, nil
 }
 
 var _ SnowflakeInterface = (*SnowflakeImpl)(nil)
