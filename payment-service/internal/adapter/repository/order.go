@@ -27,7 +27,7 @@ func (i *Implement) IsOrderExist(ctx context.Context, orderID int64) (err error)
 	}
 
 	if !isExist {
-		return exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
+		return exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, orderID)
 	}
 
 	return nil

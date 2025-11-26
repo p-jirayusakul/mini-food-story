@@ -124,7 +124,7 @@ func (i *Implement) CallbackPaymentTransaction(ctx context.Context, transactionI
 	orderID, err := i.repository.GetPaymentOrderIDByTransaction(ctx, transactionID)
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRowDatabaseNotFound) {
-			return uuid.Nil, exceptions.Error(exceptions.CodeNotFound, exceptions.ErrOrderNotFound.Error())
+			return uuid.Nil, exceptions.ErrorIDNotFound(exceptions.CodeOrderNotFound, 0)
 		}
 
 		return uuid.Nil, exceptions.Errorf(exceptions.CodeRepository, "failed to get order id", err)

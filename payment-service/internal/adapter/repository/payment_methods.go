@@ -13,7 +13,7 @@ func (i *Implement) ListPaymentMethods(ctx context.Context) (result []*domain.Pa
 	}
 
 	if data == nil {
-		return nil, exceptions.Error(exceptions.CodeRepository, "data not found")
+		return nil, exceptions.ErrorDataNotFound()
 	}
 
 	result = make([]*domain.PaymentMethod, len(data))
