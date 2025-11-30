@@ -76,12 +76,6 @@ func New() (*FiberServer, error) {
 	// add log handler
 	app.Use(middleware.LogHandler(configApp.BaseURL))
 
-	// init auth
-	authInstance, err := middleware.NewAuthInstance(configApp.KeyCloakCertURL)
-	if err != nil {
-		return nil, err
-	}
-
 	// connect to database
 	configDB, err := config.InitDBConfig(EnvFile)
 	if err != nil {
@@ -125,7 +119,7 @@ func New() (*FiberServer, error) {
 		ReadinessEndpoint: common.ReadinessEndpoint,
 	}))
 
-	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn, authInstance)
+	registerHandlers(apiV1, store, validator, snowflakeNode, configApp, redisConn)
 
 	return &FiberServer{
 		App:    app,
@@ -151,10 +145,10 @@ func readiness(ctx context.Context, dbConn *pgxpool.Pool, redisConn *redis.Redis
 	return true
 }
 
-func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient, authInstance *middleware.AuthInstance) {
+func registerHandlers(router fiber.Router, store database.Store, validator *middleware.CustomValidator, snowflakeNode *snowflakeid.SnowflakeImpl, configApp config.Config, redisConn *redis.RedisClient) {
 	tableCache := cache.NewRedisTableCache(redisConn)
 	tableRepo := repository.NewRepository(configApp, store, snowflakeNode)
 	tableUseCase := usecase.NewUseCase(configApp, *tableRepo, tableCache)
 
-	tablehd.NewHTTPHandler(router, tableUseCase, validator, authInstance)
+	tablehd.NewHTTPHandler(router, tableUseCase, validator)
 }

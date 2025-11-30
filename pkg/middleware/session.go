@@ -16,7 +16,7 @@ func CheckSessionHeader(secretKey string) fiber.Handler {
 
 		sessionID, err := utils.DecryptSessionToUUID(sessionIDData, []byte(secretKey))
 		if err != nil {
-			return ResponseError(c, exceptions.Error(exceptions.CodeUnauthorized, "invalid session"))
+			return ResponseError(c, exceptions.Errorf(exceptions.CodeUnauthorized, "invalid session", err))
 		}
 
 		c.Locals("sessionID", sessionID.String())

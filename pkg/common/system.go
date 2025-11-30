@@ -9,6 +9,3 @@ const MaxPageSize = 100
 const DefaultPageSize = 10
 
 const DefaultAppEnv = "LOCAL"
-
-const UserID = "userID"
-const UserRole = "userRole"

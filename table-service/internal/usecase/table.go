@@ -27,9 +27,9 @@ func (i *Implement) getTableStatusFromCache(ctx context.Context) ([]*domain.Stat
 	tableStatus, err := i.cache.GetCachedTableStatus()
 	if err != nil {
 		if errors.Is(err, exceptions.ErrRedisKeyNotFoundException) {
-			tableStatusDB, getTableNumberErr := i.repository.ListTableStatus(ctx)
-			if getTableNumberErr != nil {
-				return nil, getTableNumberErr
+			tableStatusDB, dbErr := i.repository.ListTableStatus(ctx)
+			if dbErr != nil {
+				return nil, dbErr
 			}
 
 			setCacheErr := i.cache.SetCachedTableStatus(tableStatusDB)

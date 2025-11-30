@@ -193,7 +193,6 @@ func DecryptSession(encrypted string, key []byte) (SessionData, error) {
 func DecryptSessionToUUID(encrypted string, key []byte) (result uuid.UUID, err error) {
 	decrypt, err := DecryptSession(encrypted, key)
 	if err != nil {
-		slog.Error("DecryptSessionToUUID", "err", err)
 		return result, errors.New("invalid session id, please login again")
 	}
 
@@ -203,7 +202,6 @@ func DecryptSessionToUUID(encrypted string, key []byte) (result uuid.UUID, err e
 
 	result, err = uuid.Parse(decrypt.SessionID)
 	if err != nil {
-		slog.Error("DecryptSessionToUUID", "err", err)
 		return result, errors.New("invalid session id, please login again")
 	}
 

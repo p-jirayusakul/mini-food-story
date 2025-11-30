@@ -11,20 +11,17 @@ type Handler struct {
 	router    fiber.Router
 	useCase   usecase.UseCase
 	validator *middleware.CustomValidator
-	auth      middleware.AuthInterface
 }
 
 func NewHTTPHandler(
 	router fiber.Router,
 	useCase usecase.UseCase,
 	validator *middleware.CustomValidator,
-	auth middleware.AuthInterface,
 ) *Handler {
 	handler := &Handler{
 		router,
 		useCase,
 		validator,
-		auth,
 	}
 	handler.setupRoutes()
 	return handler
@@ -33,7 +30,7 @@ func NewHTTPHandler(
 func (s *Handler) setupRoutes() {
 
 	group := s.router.Group("/")
-	group.Use(s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"CASHIER", "WAITER"}))
+	//group.Use(s.auth.JWTMiddleware(), s.auth.RequireRole([]string{"CASHIER", "WAITER"}))
 
 	group.Get("", s.SearchTable)
 	group.Get("/quick-search", s.QuickSearchTable)
