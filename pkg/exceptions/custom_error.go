@@ -125,3 +125,7 @@ func notFoundMapping(id int64, code Code) string {
 	}
 	return ""
 }
+
+func NotFoundWithoutID(code Code) string {
+	return notFoundMapping(0, code)
+}

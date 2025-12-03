@@ -94,7 +94,8 @@ func mapErrorToHTTP(err error) (int, ErrorResponse) {
 			return 403, getErrorResponse(string(appErr.Code), appErr.Message)
 
 		case exceptions.CodeNotFound, exceptions.CodeOrderNotFound, exceptions.CodeTableNotFound, exceptions.CodeOrderItemNotFound, exceptions.CodeProductNotFound, exceptions.CodeTableStatusNotFound, exceptions.CodeSessionFound:
-			return 404, getErrorResponse(string(appErr.Code), appErr.Message)
+			slog.Error(appErr.Message)
+			return 404, getErrorResponse(string(appErr.Code), exceptions.NotFoundWithoutID(appErr.Code))
 
 		case exceptions.CodeConflict:
 			return 409, getErrorResponse(string(appErr.Code), appErr.Message)
