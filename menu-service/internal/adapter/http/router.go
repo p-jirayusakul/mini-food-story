@@ -15,7 +15,6 @@ type Handler struct {
 	useCase   usecase.Usecase
 	validator *middleware.CustomValidator
 	config    config.Config
-	auth      middleware.AuthInterface
 }
 
 func NewHTTPHandler(
@@ -23,7 +22,6 @@ func NewHTTPHandler(
 	useCase usecase.Usecase,
 	validator *middleware.CustomValidator,
 	config config.Config,
-	auth middleware.AuthInterface,
 
 ) *Handler {
 	handler := &Handler{
@@ -31,7 +29,6 @@ func NewHTTPHandler(
 		useCase,
 		validator,
 		config,
-		auth,
 	}
 	handler.setupRoutes()
 	return handler
@@ -40,21 +37,22 @@ func NewHTTPHandler(
 func (s *Handler) setupRoutes() {
 	group := s.router.Group("/")
 
-	group.Get("", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID, s.SearchMenu)
-	group.Get("/:id<int>", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID, s.GetProductByID)
-	group.Get("/category", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID, s.CategoryList)
-	group.Get("/session/current", middleware.CheckSessionHeader(s.config.SecretKey), s.handleSessionID, s.SessionCurrent)
+	groupCustomer := group.Group("/customer", s.handleSessionID)
+	groupCustomer.Get("", s.SearchMenu)
+	groupCustomer.Get("/:id<int>", s.GetProductByID)
+	groupCustomer.Get("/category", s.CategoryList)
+	groupCustomer.Get("/session/current", s.SessionCurrent)
 
-	roles := []string{"CASHIER", "WAITER"}
-	group.Get("/internal", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.SearchMenu)
-	group.Get("/internal/session-extension", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.ListProductTimeExtension)
-	group.Get("/internal/:id<int>", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.GetProductByID)
-	group.Get("/internal/category", s.auth.JWTMiddleware(), s.auth.RequireRole(roles), s.CategoryList)
+	groupStaff := group.Group("/staff")
+	groupStaff.Get("", s.SearchMenu)
+	groupStaff.Get("/session-extension", s.ListProductTimeExtension)
+	groupStaff.Get("/:id<int>", s.GetProductByID)
+	groupStaff.Get("/category", s.CategoryList)
 }
 
 func (s *Handler) handleSessionID(c *fiber.Ctx) error {
-	sessionIDAny, ok := c.Locals("sessionID").(string)
-	if !ok {
+	sessionIDAny := c.Get("X-Session-Id")
+	if sessionIDAny == "" {
 		return middleware.ResponseError(c, exceptions.Error(exceptions.CodeUnauthorized, exceptions.ErrFailedToReadSession.Error()))
 	}
 
