@@ -251,6 +251,35 @@ func (s *Handler) PaymentTransactionQR(c *fiber.Ctx) error {
 	return middleware.ResponseOK(c, result)
 }
 
+// GetPaymentLastStatusCodeByTransaction godoc
+// @Summary List payment methods
+// @Description Get list of available payment methods
+// @Tags Payment
+// @Security BearerAuth
+// @Accept json
+// @Produce json
+// @Success 200 {object} middleware.SuccessResponse{data=[]domain.PaymentMethod}
+// @Failure 400 {object} middleware.ErrorResponse
+// @Failure 401 {object} middleware.ErrorResponse
+// @Failure 403 {object} middleware.ErrorResponse
+// @Failure 500 {object} middleware.ErrorResponse
+// @Router /methods [get]
+func (s *Handler) GetPaymentLastStatusCodeByTransaction(c *fiber.Ctx) error {
+	txID := c.Params("transactionID")
+	if txID == "" {
+		return c.Status(fiber.StatusBadRequest).SendString("missing transactionID")
+	}
+
+	result, err := s.useCase.GetPaymentLastStatusCodeByTransaction(c.Context(), txID)
+	if err != nil {
+		return middleware.ResponseError(c, err)
+	}
+
+	return middleware.ResponseOK(c, LastStatusCodeResponse{
+		Code: result,
+	})
+}
+
 // ชุดสถานะที่ถือว่า final (ปรับตาม md_payment_statuses ของคุณ)
 var finalStatus = map[string]bool{
 	"SUCCESS":   true,

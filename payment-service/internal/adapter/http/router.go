@@ -36,6 +36,6 @@ func (s *Handler) setupRoutes() {
 
 	group.Post("/", s.CreatePaymentTransaction)
 	group.Get("/methods", s.ListPaymentMethods)
-	group.Get("/transactions/:transactionID/stream", s.StreamPaymentStatusByTransaction)
+	group.Get("/transactions/:transactionID/status", s.GetPaymentLastStatusCodeByTransaction)
 	group.Get("/transactions/:transactionID/qr", s.PaymentTransactionQR)
 }
