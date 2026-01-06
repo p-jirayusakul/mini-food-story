@@ -100,13 +100,16 @@ func (q *Queries) GetOrderItemsByID(ctx context.Context, id int64) (*GetOrderIte
 }
 
 const getTotalAmountToPayForServedItems = `-- name: GetTotalAmountToPayForServedItems :one
-SELECT SUM(price * quantity) AS "totalAmount"
-FROM public.order_items
-WHERE order_id = $1 AND status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1)
+SELECT COALESCE(SUM(oi.price * oi.quantity), 0) AS "totalAmount"
+FROM public.order_items oi
+         JOIN public.md_order_statuses ms
+              ON ms.id = oi.status_id
+WHERE oi.order_id = $1::bigint
+  AND ms.code = 'SERVED'
 `
 
-func (q *Queries) GetTotalAmountToPayForServedItems(ctx context.Context, orderID int64) (pgtype.Numeric, error) {
-	row := q.db.QueryRow(ctx, getTotalAmountToPayForServedItems, orderID)
+func (q *Queries) GetTotalAmountToPayForServedItems(ctx context.Context, id int64) (pgtype.Numeric, error) {
+	row := q.db.QueryRow(ctx, getTotalAmountToPayForServedItems, id)
 	var totalAmount pgtype.Numeric
 	err := row.Scan(&totalAmount)
 	return totalAmount, err

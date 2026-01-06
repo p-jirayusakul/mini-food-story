@@ -28,6 +28,9 @@ SET status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' L
 WHERE id = sqlc.arg(id)::bigint;
 
 -- name: GetTotalAmountToPayForServedItems :one
-SELECT SUM(price * quantity) AS "totalAmount"
-FROM public.order_items
-WHERE order_id = $1 AND status_id = (SELECT id FROM public.md_order_statuses WHERE code = 'SERVED' LIMIT 1);
+SELECT COALESCE(SUM(oi.price * oi.quantity), 0) AS "totalAmount"
+FROM public.order_items oi
+         JOIN public.md_order_statuses ms
+              ON ms.id = oi.status_id
+WHERE oi.order_id = sqlc.arg(id)::bigint
+  AND ms.code = 'SERVED';

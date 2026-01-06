@@ -47,7 +47,7 @@ type Querier interface {
 	GetTableNumberOrderByID(ctx context.Context, orderID int64) (int32, error)
 	GetTableSession(ctx context.Context, sessionid pgtype.UUID) (*GetTableSessionRow, error)
 	GetTimeNow(ctx context.Context) (pgtype.Timestamptz, error)
-	GetTotalAmountToPayForServedItems(ctx context.Context, orderID int64) (pgtype.Numeric, error)
+	GetTotalAmountToPayForServedItems(ctx context.Context, id int64) (pgtype.Numeric, error)
 	GetTotalItemOrderWithItems(ctx context.Context, orderID int64) (int64, error)
 	GetTotalPageQuickSearchTables(ctx context.Context, numberOfPeople int32) (int64, error)
 	GetTotalPageSearchProducts(ctx context.Context, arg GetTotalPageSearchProductsParams) (int64, error)
