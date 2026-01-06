@@ -312,6 +312,14 @@ insert into public.md_payment_methods (id, code, name, name_en, enable, created_
 values  (1923732004537372672, 'CASH', 'เงินสด', 'Cash', true, '2025-11-14 08:41:17.586336 +00:00', null),
         (1923732004537372675, 'PROMPTPAY', 'พร้อมเพย์', 'PromptPay', true, '2025-11-14 08:41:17.586336 +00:00', null);
 
+insert into public.md_payment_statuses (id, code, name, name_en, is_final, created_at, updated_at)
+values  (760000000000000001, 'PENDING', 'รอการชำระเงิน', 'Pending', false, '2026-01-06 08:12:25.653001 +00:00', null),
+        (760000000000000002, 'SUCCESS', 'ชำระเงินสำเร็จ', 'Success', true, '2026-01-06 08:12:25.653001 +00:00', null),
+        (760000000000000003, 'FAILED', 'ชำระเงินล้มเหลว', 'Failed', true, '2026-01-06 08:12:25.653001 +00:00', null),
+        (760000000000000004, 'CANCELLED', 'ยกเลิกการชำระ', 'Cancelled', true, '2026-01-06 08:12:25.653001 +00:00', null),
+        (760000000000000005, 'REFUNDED', 'คืนเงินแล้ว', 'Refunded', true, '2026-01-06 08:12:25.653001 +00:00', null),
+        (760000000000000006, 'TIMEOUT', 'หมดเวลาชำระเงิน', 'Timeout', true, '2026-01-06 08:12:25.653001 +00:00', null);
+
 insert into public.md_session_extension_mode (id, code, name, name_en, sort_order, created_at, updated_at)
 values  (1989547119583523322, 'COMP_FREE', 'ขยายเวลา (ฟรี)', 'Complimentary Free Extension', 1, '2025-11-14 08:59:08.870989 +00:00', null),
         (1989547119580791291, 'PAID', 'ขยายเวลา (เสียเงิน)', 'Paid Extension', 2, '2025-11-14 08:59:08.870989 +00:00', null);
